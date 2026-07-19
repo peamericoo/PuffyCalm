@@ -16,7 +16,8 @@ interface ProductBuyBoxProps {
 }
 
 /**
- * Square qty stepper + solid black ATC + wishlist.
+ * Always one row: compact qty + ATC + wishlist.
+ * Mobile no longer stacks into three heavy blocks.
  */
 export function ProductBuyBox({
   slug,
@@ -30,13 +31,9 @@ export function ProductBuyBox({
   const total = price * qty;
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-0",
-        className,
-      )}
-    >
-      <div className="inline-flex h-14 items-center justify-between border border-foreground/15 bg-white sm:w-36 sm:border-r-0">
+    <div className={cn("flex items-stretch gap-0", className)}>
+      {/* Qty — fixed compact width */}
+      <div className="inline-flex h-12 w-[6.75rem] shrink-0 items-center justify-between border border-foreground/15 border-r-0 bg-white sm:h-14 sm:w-32">
         <button
           type="button"
           onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -44,7 +41,7 @@ export function ProductBuyBox({
           aria-label="Decrease quantity"
           className={cn(
             iconStyles.minus,
-            "flex h-full w-11 items-center justify-center text-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-30",
+            "flex h-full w-9 items-center justify-center text-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-30 sm:w-10",
           )}
         >
           <Minus
@@ -52,7 +49,7 @@ export function ProductBuyBox({
             strokeWidth={2.25}
           />
         </button>
-        <span className="min-w-[1.5rem] text-center text-[15px] font-semibold tabular-nums">
+        <span className="min-w-[1.25rem] text-center text-[14px] font-semibold tabular-nums sm:text-[15px]">
           {qty}
         </span>
         <button
@@ -62,7 +59,7 @@ export function ProductBuyBox({
           aria-label="Increase quantity"
           className={cn(
             iconStyles.plus,
-            "flex h-full w-11 items-center justify-center text-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-30",
+            "flex h-full w-9 items-center justify-center text-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-30 sm:w-10",
           )}
         >
           <Plus
@@ -72,27 +69,30 @@ export function ProductBuyBox({
         </button>
       </div>
 
+      {/* ATC — grows */}
       <Link
         href={inStock ? `/cart?add=${slug}&qty=${qty}` : "#"}
         aria-disabled={!inStock}
         className={cn(
           iconStyles.cart,
-          "inline-flex h-14 flex-1 items-center justify-center gap-2 bg-foreground px-6",
-          "text-[13px] font-semibold uppercase tracking-[0.12em] text-white",
+          "inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 bg-foreground px-3",
+          "text-[11px] font-semibold uppercase tracking-[0.1em] text-white sm:h-14 sm:gap-2 sm:px-6 sm:text-[13px] sm:tracking-[0.12em]",
           "transition-colors hover:bg-foreground/90 active:scale-[0.99]",
-          "sm:min-w-[14rem] sm:px-8",
           !inStock && "pointer-events-none opacity-45",
         )}
       >
         <ShoppingBag
-          className={cn(iconStyles.iconSvg, "h-4 w-4")}
+          className={cn(iconStyles.iconSvg, "h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4")}
           strokeWidth={2.1}
         />
-        {inStock
-          ? `Add to cart · ${formatMoney(total, currency)}`
-          : "Out of stock"}
+        <span className="truncate">
+          {inStock
+            ? `Add · ${formatMoney(total, currency)}`
+            : "Out of stock"}
+        </span>
       </Link>
 
+      {/* Wishlist */}
       <button
         type="button"
         onClick={() => setWish((w) => !w)}
@@ -100,8 +100,8 @@ export function ProductBuyBox({
         aria-pressed={wish}
         className={cn(
           iconStyles.heart,
-          "inline-flex h-14 w-14 shrink-0 items-center justify-center border border-foreground/15 bg-white",
-          "text-foreground transition-colors hover:bg-foreground/[0.03] sm:border-l-0",
+          "inline-flex h-12 w-12 shrink-0 items-center justify-center border border-foreground/15 border-l-0 bg-white sm:h-14 sm:w-14",
+          "text-foreground transition-colors hover:bg-foreground/[0.03]",
           wish && "border-cta/40 text-cta",
         )}
       >

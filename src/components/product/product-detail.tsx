@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ProductBuyBox } from "@/components/product/product-buy-box";
 import { ProductGallery } from "@/components/product/product-gallery";
+import { ProductSpecs } from "@/components/product/product-specs";
 import { RelatedProducts } from "@/components/product/related-products";
 import { formatMoney } from "@/lib/format";
 import type { Product } from "@/types/product";
@@ -13,7 +14,9 @@ interface ProductDetailProps {
 }
 
 /**
- * Clean minimal PDP — info left, gallery right, no visual gimmicks.
+ * PDP info column:
+ * Mobile → price + CTA first, dense specs, short blurb (conversion-first).
+ * Desktop → editorial Seoul Bird flow (details then buy).
  */
 export function ProductDetail({ product, related = [] }: ProductDetailProps) {
   const specs = getProductSpecs(product).slice(0, 4);
@@ -33,10 +36,10 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
 
   return (
     <div className="bg-white">
-      <div className="mx-auto w-full max-w-[1200px] px-[var(--shell-gutter)] pb-16 pt-5 sm:px-8 sm:pb-20 sm:pt-7 lg:px-10">
+      <div className="mx-auto w-full max-w-[1200px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-7 lg:px-10">
         <nav
           aria-label="Breadcrumb"
-          className="mb-6 flex flex-wrap items-center gap-1 text-[12px] text-muted-foreground sm:mb-8 sm:text-[13px]"
+          className="mb-4 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground sm:mb-8 sm:text-[13px]"
         >
           <Link href="/" className="transition hover:text-foreground">
             Home
@@ -52,8 +55,7 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
           <span className="truncate text-foreground/75">{product.name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-14">
-          {/* Gallery — first on mobile, right on desktop */}
+        <div className="grid grid-cols-1 items-start gap-5 sm:gap-8 lg:grid-cols-2 lg:gap-14">
           <div className="order-1 min-w-0 lg:order-2">
             <ProductGallery
               images={product.images}
@@ -63,31 +65,31 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
             />
           </div>
 
-          {/* Info */}
           <div className="order-2 flex min-w-0 flex-col lg:order-1 lg:pt-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-[11px] sm:tracking-[0.18em]">
               {product.categoryLabel ?? "PuffyEasy"}
             </p>
 
-            <h1 className="mt-2 font-display text-[2rem] font-medium leading-[1.08] tracking-tight text-foreground sm:text-[2.5rem] lg:text-[2.75rem]">
+            <h1 className="mt-1.5 font-display text-[1.65rem] font-medium leading-[1.1] tracking-tight text-foreground sm:mt-2 sm:text-[2.5rem] lg:text-[2.75rem]">
               {product.name}
             </h1>
 
-            <p className="mt-2 font-mono text-[11px] tracking-wide text-muted-foreground/75 sm:text-[12px]">
+            {/* SKU — quieter on mobile */}
+            <p className="mt-1 hidden font-mono text-[12px] tracking-wide text-muted-foreground/75 sm:mt-2 sm:block">
               {sku}
             </p>
 
-            <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-[1.85rem] font-semibold tracking-tight text-foreground sm:text-[2.1rem]">
+            <div className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 sm:mt-5 sm:gap-x-3">
+              <span className="text-[1.5rem] font-semibold tracking-tight text-foreground sm:text-[2.1rem]">
                 {formatMoney(product.price, product.currency)}
               </span>
               {promo ? (
                 <>
-                  <span className="text-[15px] text-muted-foreground line-through">
+                  <span className="text-[13px] text-muted-foreground line-through sm:text-[15px]">
                     {formatMoney(promo, product.currency)}
                   </span>
                   {off ? (
-                    <span className="text-[12px] font-semibold text-brand-deep">
+                    <span className="text-[11px] font-semibold text-brand-deep sm:text-[12px]">
                       −{off}%
                     </span>
                   ) : null}
@@ -95,13 +97,13 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
               ) : null}
             </div>
 
-            <p className="mt-2 text-[13px] text-muted-foreground">
+            <p className="mt-1.5 text-[12px] text-muted-foreground sm:mt-2 sm:text-[13px]">
               <span className="font-medium text-foreground">
                 {product.rating.toFixed(1)}
               </span>
-              <span className="mx-1.5 text-border">·</span>
+              <span className="mx-1 text-border">·</span>
               {product.reviewCount} reviews
-              <span className="mx-1.5 text-border">·</span>
+              <span className="mx-1 text-border">·</span>
               {product.inStock ? (
                 <span className="text-success">In stock</span>
               ) : (
@@ -109,29 +111,29 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
               )}
             </p>
 
-            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+            {/* Mobile: CTA early — convert before the wall of copy */}
+            <div className="mt-4 lg:hidden">
+              <ProductBuyBox
+                slug={product.slug}
+                price={product.price}
+                currency={product.currency}
+                inStock={product.inStock}
+              />
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Free shipping $75+ · Easy returns
+              </p>
+            </div>
+
+            {/* Blurb — tighter on mobile */}
+            <p className="mt-4 max-w-md text-[13.5px] leading-snug text-muted-foreground sm:mt-6 sm:text-[15px] sm:leading-relaxed">
               {blurb}
             </p>
 
-            {specs.length > 0 ? (
-              <dl className="mt-8 border-t border-border/70">
-                {specs.map((row) => (
-                  <div
-                    key={row.label}
-                    className="grid grid-cols-1 gap-0.5 border-b border-border/70 py-3.5 sm:grid-cols-[6.5rem_1fr] sm:gap-6"
-                  >
-                    <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      {row.label}
-                    </dt>
-                    <dd className="text-[14px] leading-snug text-foreground/90">
-                      {row.value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
+            {/* Specs — dense mobile / editorial desktop */}
+            <ProductSpecs specs={specs} className="mt-4 sm:mt-8" />
 
-            <div className="mt-8 sm:mt-10">
+            {/* Desktop: buy after details (editorial flow) */}
+            <div className="mt-10 hidden lg:block">
               <ProductBuyBox
                 slug={product.slug}
                 price={product.price}
