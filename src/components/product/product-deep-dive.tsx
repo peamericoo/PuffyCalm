@@ -1,5 +1,5 @@
-import { ProductReviews } from "@/components/product/product-reviews";
 import { ProductStory } from "@/components/product/product-story";
+import { ProductReviews } from "@/components/product/reviews";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -14,21 +14,19 @@ const nav = [
 ] as const;
 
 /**
- * Full PDP depth below the buy grid: editorial story + innovative reviews.
- * Same sky-calm language as the top of the page — no heavy chrome.
+ * PDP depth below the buy grid: compact story + reviews-first layout.
  */
 export function ProductDeepDive({ product, className }: ProductDeepDiveProps) {
   return (
     <section
       className={cn(
-        "mt-14 border-t border-border/60 pt-10 sm:mt-20 sm:pt-14",
+        "mt-12 border-t border-border/60 pt-8 sm:mt-16 sm:pt-12",
         className,
       )}
     >
-      {/* Jump rail — quiet, mobile-friendly */}
       <nav
         aria-label="Product details"
-        className="mb-10 flex items-center gap-1 sm:mb-12"
+        className="mb-6 flex items-center gap-1 sm:mb-8"
       >
         {nav.map((item, i) => (
           <span key={item.href} className="flex items-center gap-1">
@@ -52,13 +50,12 @@ export function ProductDeepDive({ product, className }: ProductDeepDiveProps) {
 
       <ProductStory product={product} />
 
-      {/* Soft separator — sky wash, not a hard card wall */}
       <div
         aria-hidden
-        className="my-12 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-16"
+        className="my-8 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-10"
       />
 
-      <ProductReviews product={product} />
+      <ProductReviews product={product} pageSize={4} />
     </section>
   );
 }

@@ -77,7 +77,8 @@ export function ProductBuyBox({
           iconStyles.cart,
           "inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 bg-foreground px-3",
           "text-[11px] font-semibold uppercase tracking-[0.1em] text-white sm:h-14 sm:gap-2 sm:px-6 sm:text-[13px] sm:tracking-[0.12em]",
-          "transition-colors hover:bg-foreground/90 active:scale-[0.99]",
+          /* Success green on hover — purchase cue */
+          "transition-colors duration-200 hover:bg-success active:scale-[0.99]",
           !inStock && "pointer-events-none opacity-45",
         )}
       >
