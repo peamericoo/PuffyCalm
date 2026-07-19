@@ -20,17 +20,14 @@ export function Footer() {
             <form className="flex max-w-md flex-col gap-2 sm:flex-row">
               <Input
                 type="email"
-                placeholder="Email for calm updates"
+                placeholder="Email for product drops"
                 aria-label="Email for newsletter"
                 className="flex-1"
               />
-              <Button type="button" variant="brand" className="shrink-0">
+              <Button type="button" variant="default" className="shrink-0">
                 Subscribe
               </Button>
             </form>
-            <p className="text-xs text-muted-foreground">
-              No spam. Just thoughtful product drops and better-living ideas.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-8 lg:pl-8">

@@ -10,14 +10,16 @@ export interface Product {
   compareAtPrice?: number;
   currency: "USD";
   categorySlugs: string[];
-  imageGradient: string;
-  imageEmoji: string;
+  /** Lifestyle / product photography URL */
+  imageUrl: string;
+  imageAlt: string;
   rating: number;
   reviewCount: number;
   badges?: ProductBadge[];
   features: string[];
   inStock: boolean;
   featured?: boolean;
+  categoryLabel?: string;
 }
 
 export interface Category {
@@ -26,6 +28,7 @@ export interface Category {
   name: string;
   description: string;
   tagline: string;
-  imageGradient: string;
+  imageUrl: string;
+  ctaLabel: string;
   productCount: number;
 }

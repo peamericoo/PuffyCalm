@@ -6,7 +6,6 @@ interface PriceProps {
   compareAtPrice?: number;
   currency?: string;
   className?: string;
-  size?: "sm" | "md" | "lg";
 }
 
 export function Price({
@@ -14,18 +13,10 @@ export function Price({
   compareAtPrice,
   currency = "USD",
   className,
-  size = "md",
 }: PriceProps) {
-  const sizeClass =
-    size === "sm"
-      ? "text-sm"
-      : size === "lg"
-        ? "text-xl sm:text-2xl"
-        : "text-base";
-
   return (
-    <div className={cn("flex items-baseline gap-2", sizeClass, className)}>
-      <span className="font-medium tracking-tight text-foreground">
+    <div className={cn("flex items-baseline gap-2", className)}>
+      <span className="text-base font-semibold tracking-tight text-foreground">
         {formatMoney(price, currency)}
       </span>
       {compareAtPrice && compareAtPrice > price ? (

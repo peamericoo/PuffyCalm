@@ -43,38 +43,49 @@ export const footerNav = {
   ],
 } as const;
 
-export const trustPoints = [
+export const homepageHero = {
+  titleLine1: "Comfort That",
+  titleLine2: "Elevates Your",
+  titleLine3: "Every Day",
+  subtitle:
+    "Curated recovery tools, soft support, and practical upgrades for a lighter routine.",
+  primaryCta: { label: "Shop Now", href: "/category/all" },
+  imageUrl:
+    "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1400&q=80",
+  imageAlt: "Calm lifestyle wellness moment",
+} as const;
+
+export const lifestyleCollections = [
   {
-    title: "Curated for real life",
-    description: "Every product is selected to make daily routines lighter.",
+    id: "life_1",
+    title: "Desk Reset",
+    href: "/category/comfort",
+    imageUrl:
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1000&q=80",
+    span: "tall" as const,
   },
   {
-    title: "Premium feel, fair price",
-    description: "Thoughtful design without the unnecessary markup.",
+    id: "life_2",
+    title: "Evening Unwind",
+    href: "/category/recovery",
+    imageUrl:
+      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1000&q=80",
+    span: "wide" as const,
   },
   {
-    title: "Ships to US, UK, AU & CA",
-    description: "Tracked delivery and clear updates by email.",
+    id: "life_3",
+    title: "Better Posture",
+    href: "/category/everyday",
+    imageUrl:
+      "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1000&q=80",
+    span: "square" as const,
   },
   {
-    title: "Calm support",
-    description: "Human help when you need it — no scripted chaos.",
+    id: "life_4",
+    title: "Travel Light",
+    href: "/category/recovery",
+    imageUrl:
+      "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80",
+    span: "square" as const,
   },
 ] as const;
-
-export const homepageHero = {
-  eyebrow: "Better living, simplified",
-  title: "Make everyday feel lighter",
-  subtitle:
-    "Discover calm, premium products for comfort, recovery, and the little upgrades that change how your day feels.",
-  primaryCta: { label: "Shop the collection", href: "/category/all" },
-  secondaryCta: { label: "Why PuffyEasy", href: "/about" },
-} as const;
-
-export const homepagePromo = {
-  eyebrow: "New season calm",
-  title: "Recover better. Sit softer. Move freer.",
-  description:
-    "From heated wraps to ergonomic support and smart everyday tools — everything is chosen to help you feel good, more often.",
-  cta: { label: "Explore recovery", href: "/category/recovery" },
-} as const;
