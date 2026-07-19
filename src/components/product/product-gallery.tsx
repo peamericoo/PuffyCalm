@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getProductImages } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +14,8 @@ interface ProductGalleryProps {
 }
 
 /**
- * Minimal PDP gallery — large stage + thumbnail strip (manual, no autoplay).
- * Inspired by quiet commerce layouts (minim-style).
+ * Minimal square gallery — sharp edges, thin active border, soft image swap.
+ * Reference: Seoul Bird / quiet commerce.
  */
 export function ProductGallery({
   images,
@@ -31,11 +31,30 @@ export function ProductGallery({
   const [index, setIndex] = useState(0);
   const active = slides[index] ?? slides[0];
 
+  const go = useCallback(
+    (i: number) => {
+      if (i < 0 || i >= slides.length || i === index) return;
+      setIndex(i);
+    },
+    [index, slides.length],
+  );
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") go((index + 1) % slides.length);
+      if (e.key === "ArrowLeft")
+        go((index - 1 + slides.length) % slides.length);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, index, slides.length]);
+
   if (!active) {
     return (
       <div
         className={cn(
-          "flex aspect-square items-center justify-center rounded-2xl bg-brand-soft text-sm text-muted-foreground",
+          "flex aspect-square items-center justify-center bg-[#f0f4f7] text-sm text-muted-foreground",
           className,
         )}
       >
@@ -46,43 +65,52 @@ export function ProductGallery({
 
   return (
     <div className={cn("flex w-full flex-col gap-3 sm:gap-4", className)}>
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.25rem] bg-[#f3f7fa] sm:aspect-square sm:rounded-[1.5rem]">
+      {/* Main stage — square, no radius, pure field */}
+      <div className="pdp-stage group relative aspect-square w-full overflow-hidden bg-[#f0f4f7]">
         <Image
           key={active}
           src={active}
           alt={alt}
           fill
           priority={priority}
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover object-center animate-fade-in"
+          sizes="(max-width: 1024px) 100vw, 58vw"
+          className="object-cover object-center pdp-img-swap"
+        />
+        {/* Soft inner light on hover */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/[0.03] via-transparent to-white/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
         />
       </div>
 
       {slides.length > 1 ? (
-        <ul className="flex gap-2.5 overflow-x-auto pb-0.5 no-scrollbar sm:gap-3">
+        <ul className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar sm:gap-2.5">
           {slides.map((src, i) => {
             const selected = i === index;
             return (
               <li key={`${src}-${i}`} className="shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIndex(i)}
+                  onClick={() => go(i)}
                   aria-label={`View image ${i + 1}`}
                   aria-current={selected ? "true" : undefined}
                   className={cn(
-                    "relative h-[4.25rem] w-[4.25rem] overflow-hidden rounded-xl bg-[#f3f7fa] sm:h-[5rem] sm:w-[5rem] sm:rounded-2xl",
-                    "ring-1 transition-all duration-200",
+                    "pdp-thumb relative block h-[4.5rem] w-[4.5rem] overflow-hidden bg-[#f0f4f7] sm:h-[5.25rem] sm:w-[5.25rem]",
+                    "border transition-[border-color,transform,box-shadow] duration-250 ease-out",
                     selected
-                      ? "ring-2 ring-foreground/85 ring-offset-2 ring-offset-white"
-                      : "ring-border/70 hover:ring-brand/40",
+                      ? "border-foreground scale-[1.02] shadow-[0_6px_18px_-10px_rgb(26_35_50/0.35)]"
+                      : "border-transparent hover:border-foreground/25 active:scale-[0.98]",
                   )}
                 >
                   <Image
                     src={src}
                     alt=""
                     fill
-                    sizes="80px"
-                    className="object-cover"
+                    sizes="84px"
+                    className={cn(
+                      "object-cover transition-transform duration-500 ease-out",
+                      selected ? "scale-100" : "scale-[1.04] hover:scale-100",
+                    )}
                   />
                 </button>
               </li>

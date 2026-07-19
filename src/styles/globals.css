@@ -1101,6 +1101,75 @@ body {
   pointer-events: none;
 }
 
+/* ——— PDP (Seoul Bird / quiet commerce) ——— */
+@keyframes pdp-img-swap {
+  from {
+    opacity: 0;
+    transform: scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pdp-qty-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pdp-shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
+.pdp-img-swap {
+  animation: pdp-img-swap 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pdp-qty-bump {
+  display: inline-block;
+  animation: pdp-qty-bump 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ATC shine sweep on hover */
+.pdp-atc-shine {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.14) 45%,
+    transparent 100%
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  pointer-events: none;
+}
+
+.pdp-atc:hover .pdp-atc-shine {
+  animation: pdp-shine 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pdp-stage {
+  transition: box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pdp-stage:hover {
+  box-shadow: 0 28px 60px -36px rgb(26 35 50 / 0.28);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-fade-in,
@@ -1119,7 +1188,10 @@ body {
   .nav-icon--search:hover .nav-icon-svg,
   .nav-icon--heart:hover .nav-icon-svg,
   .nav-icon--user:hover .nav-icon-svg,
-  .nav-icon--cart:hover .nav-icon-svg {
+  .nav-icon--cart:hover .nav-icon-svg,
+  .pdp-img-swap,
+  .pdp-qty-bump,
+  .pdp-atc:hover .pdp-atc-shine {
     animation: none !important;
   }
 
