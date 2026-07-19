@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   Armchair,
@@ -33,8 +33,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
+import { SearchOverlay } from "@/components/layout/search-overlay";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { mainNav, type NavChild } from "@/lib/mock/site";
 import { getMockCartItemCount } from "@/lib/mock/cart";
 import { cn } from "@/lib/utils";
@@ -62,9 +62,8 @@ const NAV_ICONS: Record<NavChild["icon"], LucideIcon> = {
 };
 
 /**
- * Floating glass top bar.
- * Mobile: clean chrome + safe gutters (no inline search field).
- * Desktop: collapsible search panel + refined category balloons.
+ * Floating glass top bar — clear side gutters on mobile,
+ * refined desktop nav balloons, centered search with autocomplete.
  */
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -73,7 +72,6 @@ export function Header() {
   const [openMobileSection, setOpenMobileSection] = useState<string | null>(
     null,
   );
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const cartCount = getMockCartItemCount();
 
   useEffect(() => {
@@ -95,41 +93,18 @@ export function Header() {
   }, [mobileOpen, searchOpen]);
 
   useEffect(() => {
-    if (searchOpen) {
-      const t = window.setTimeout(() => searchInputRef.current?.focus(), 40);
-      return () => window.clearTimeout(t);
-    }
-  }, [searchOpen]);
-
-  useEffect(() => {
-    if (!searchOpen && !mobileOpen) return;
+    if (!mobileOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setSearchOpen(false);
-        setMobileOpen(false);
-      }
+      if (e.key === "Escape") setMobileOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [searchOpen, mobileOpen]);
-
-  const closeOverlays = () => {
-    setSearchOpen(false);
-    setMobileOpen(false);
-  };
+  }, [mobileOpen]);
 
   return (
     <>
-      {/* Shell: reliable side gutters on every device */}
-      <div
-        className={cn(
-          "pointer-events-none fixed inset-x-0 top-[var(--promo-h)] z-50",
-          "pt-2 sm:pt-2.5",
-          "pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]",
-          "sm:pl-[max(0.75rem,env(safe-area-inset-left,0px))] sm:pr-[max(0.75rem,env(safe-area-inset-right,0px))]",
-          "lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
-        )}
-      >
+      {/* CSS gutters — not Tailwind arbitrary max() (unreliable in prod) */}
+      <div className="nav-outer pointer-events-none fixed inset-x-0 top-[var(--promo-h)] z-50 pt-2 sm:pt-2.5">
         <header
           className={cn(
             "pointer-events-auto mx-auto flex h-14 w-full max-w-[min(1760px,100%)] items-center justify-between gap-2",
@@ -138,7 +113,6 @@ export function Header() {
             scrolled && "is-scrolled",
           )}
         >
-          {/* Left — menu + brand + desktop nav */}
           <div className="flex min-w-0 items-center gap-0.5 sm:gap-2">
             <Button
               type="button"
@@ -190,7 +164,7 @@ export function Header() {
                       <div
                         className={cn(
                           "pointer-events-none absolute left-1/2 top-full z-50 w-[18.5rem] -translate-x-1/2 pt-3",
-                          "opacity-0 invisible translate-y-1.5",
+                          "invisible translate-y-1.5 opacity-0",
                           "transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                           "group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100",
                           "group-focus-within/nav:pointer-events-auto group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100",
@@ -214,8 +188,7 @@ export function Header() {
                                     href={child.href}
                                     className={cn(
                                       "group/item flex items-start gap-3 rounded-[1rem] px-2.5 py-2.5",
-                                      "transition-all duration-200",
-                                      "hover:bg-brand-soft/90",
+                                      "transition-all duration-200 hover:bg-brand-soft/90",
                                     )}
                                   >
                                     <span
@@ -224,7 +197,7 @@ export function Header() {
                                         "bg-gradient-to-br from-brand-soft to-white text-brand-deep",
                                         "shadow-[0_1px_0_rgb(255_255_255/0.9)_inset] ring-1 ring-brand/12",
                                         "transition-all duration-200",
-                                        "group-hover/item:scale-[1.04] group-hover/item:ring-brand/25 group-hover/item:shadow-sm",
+                                        "group-hover/item:scale-[1.04] group-hover/item:shadow-sm group-hover/item:ring-brand/25",
                                       )}
                                     >
                                       <Icon className="h-4 w-4" strokeWidth={2} />
@@ -250,11 +223,7 @@ export function Header() {
                           <div className="mt-1.5 border-t border-border/40 px-1 pt-1.5">
                             <Link
                               href={item.href}
-                              className={cn(
-                                "flex items-center justify-between rounded-xl px-2.5 py-2.5",
-                                "text-[12.5px] font-semibold text-brand-deep",
-                                "transition-colors hover:bg-brand-soft",
-                              )}
+                              className="flex items-center justify-between rounded-xl px-2.5 py-2.5 text-[12.5px] font-semibold text-brand-deep transition-colors hover:bg-brand-soft"
                             >
                               <span>Explore all {item.label.toLowerCase()}</span>
                               <ArrowRight className="h-3.5 w-3.5 opacity-70" />
@@ -269,7 +238,6 @@ export function Header() {
             </nav>
           </div>
 
-          {/* Right — utility icons (search is toggle, not always-open field) */}
           <div className="flex shrink-0 items-center gap-0.5">
             <Button
               type="button"
@@ -343,65 +311,7 @@ export function Header() {
         </header>
       </div>
 
-      {/* Search panel — elegant slide-in below the bar */}
-      <div
-        className={cn(
-          "fixed inset-x-0 z-40 flex justify-center transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          "top-[calc(var(--promo-h)+3.75rem)] sm:top-[calc(var(--promo-h)+4.35rem)]",
-          "pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-3",
-          searchOpen
-            ? "pointer-events-auto translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-2 opacity-0",
-        )}
-        aria-hidden={!searchOpen}
-      >
-        <div
-          className={cn(
-            "w-full max-w-[22rem] rounded-2xl border border-border/70 bg-white/96 p-2 shadow-[0_18px_40px_-18px_rgb(26_35_50/0.35)] backdrop-blur-xl sm:max-w-sm",
-            "ring-1 ring-white/80",
-          )}
-        >
-          <form
-            className="flex items-center gap-1.5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSearchOpen(false);
-            }}
-          >
-            <div className="relative min-w-0 flex-1">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                ref={searchInputRef}
-                type="search"
-                placeholder="Search products..."
-                aria-label="Search products"
-                className="h-10 border-border/60 bg-muted/40 pl-9 pr-3 text-[13px] shadow-none"
-              />
-            </div>
-            <Button
-              type="submit"
-              variant="default"
-              size="sm"
-              className="h-10 shrink-0 px-3.5 text-xs"
-            >
-              Go
-            </Button>
-          </form>
-        </div>
-      </div>
-
-      {/* Search backdrop (desktop + mobile) */}
-      {searchOpen ? (
-        <button
-          type="button"
-          className="fixed inset-0 z-30 bg-foreground/10 backdrop-blur-[1px] lg:bg-foreground/[0.06]"
-          aria-label="Close search"
-          onClick={closeOverlays}
-        />
-      ) : null}
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile drawer */}
       <div
@@ -418,13 +328,7 @@ export function Header() {
           aria-label="Close menu"
           onClick={() => setMobileOpen(false)}
         />
-        <div
-          className={cn(
-            "absolute inset-x-0 top-[calc(var(--promo-h)+3.75rem)] max-h-[min(72vh,560px)]",
-            "pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]",
-            "sm:top-[calc(var(--promo-h)+4.35rem)] sm:px-3",
-          )}
-        >
+        <div className="nav-outer absolute inset-x-0 top-[calc(var(--promo-h)+3.85rem)] max-h-[min(72vh,560px)] sm:top-[calc(var(--promo-h)+4.45rem)]">
           <div
             className={cn(
               "max-h-[min(72vh,560px)] overflow-y-auto rounded-[1.35rem] border border-border/80 bg-white/97 p-2 shadow-2xl backdrop-blur-xl transition-transform duration-300",

@@ -231,3 +231,36 @@ export function getProductsByCategory(slug: string): Product[] {
   if (slug === "all") return products;
   return products.filter((p) => p.categorySlugs.includes(slug));
 }
+
+/** Lightweight catalog search for header autocomplete */
+export function searchProducts(query: string, limit = 6): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  const scored = products
+    .map((p) => {
+      const name = p.name.toLowerCase();
+      const cat = (p.categoryLabel ?? "").toLowerCase();
+      const short = p.shortDescription.toLowerCase();
+      const features = p.features.join(" ").toLowerCase();
+      let score = 0;
+      if (name === q) score += 100;
+      else if (name.startsWith(q)) score += 60;
+      else if (name.includes(q)) score += 40;
+      if (cat.includes(q)) score += 20;
+      if (short.includes(q)) score += 12;
+      if (features.includes(q)) score += 8;
+      // multi-word: every token must match somewhere
+      const tokens = q.split(/\s+/).filter(Boolean);
+      if (tokens.length > 1) {
+        const hay = `${name} ${cat} ${short} ${features}`;
+        if (tokens.every((t) => hay.includes(t))) score += 15;
+        else score = 0;
+      }
+      return { p, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, limit).map((x) => x.p);
+}
