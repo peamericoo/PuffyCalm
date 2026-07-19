@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { siteConfig } from "@/lib/mock/site";
 import "@/styles/globals.css";
@@ -30,6 +30,13 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
+};
+
+/** Enables safe-area insets on notched / rounded devices */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -91,10 +91,10 @@ export function Header() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-[var(--promo-h)] z-50 px-1.5 pt-2 sm:px-3 sm:pt-2.5 lg:px-4">
+      <div className="pointer-events-none fixed inset-x-0 top-[var(--promo-h)] z-50 nav-shell pt-2 sm:pt-2.5">
         <header
           className={cn(
-            "pointer-events-auto mx-auto flex h-[3.5rem] w-full max-w-[min(1760px,100%)] items-center gap-2 rounded-full px-2.5 pl-3 sm:h-[4rem] sm:gap-3 sm:px-3.5 sm:pl-4 lg:px-4 lg:pl-5 nav-float animate-fade-in",
+            "pointer-events-auto mx-auto flex h-[3.5rem] w-full max-w-[min(1760px,100%)] items-center gap-1.5 rounded-full px-2 pl-2.5 sm:h-[4rem] sm:gap-3 sm:px-3.5 sm:pl-4 lg:px-4 lg:pl-5 nav-float animate-fade-in",
             scrolled && "is-scrolled",
           )}
         >
@@ -337,10 +337,15 @@ export function Header() {
         />
         <div
           className={cn(
-            "absolute inset-x-2 top-[calc(var(--promo-h)+4.5rem)] max-h-[min(70vh,520px)] overflow-y-auto rounded-2xl border border-border bg-white/95 p-2.5 shadow-2xl backdrop-blur-xl transition-transform duration-300 sm:inset-x-3 sm:top-[calc(var(--promo-h)+5rem)]",
-            mobileOpen ? "translate-y-0" : "-translate-y-3",
+            "nav-shell absolute inset-x-0 top-[calc(var(--promo-h)+4.5rem)] max-h-[min(70vh,520px)] overflow-y-auto sm:top-[calc(var(--promo-h)+5rem)]",
           )}
         >
+          <div
+            className={cn(
+              "max-h-[min(70vh,520px)] overflow-y-auto rounded-2xl border border-border bg-white/95 p-2.5 shadow-2xl backdrop-blur-xl transition-transform duration-300",
+              mobileOpen ? "translate-y-0" : "-translate-y-3",
+            )}
+          >
           <nav className="flex flex-col gap-0.5" aria-label="Mobile">
             {mainNav.map((item) => {
               const children = item.children ?? [];
@@ -399,17 +404,18 @@ export function Header() {
               );
             })}
           </nav>
-          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5">
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                Sign in
-              </Link>
-            </Button>
-            <Button asChild variant="default" size="sm" className="w-full">
-              <Link href="/category/all" onClick={() => setMobileOpen(false)}>
-                Shop sale
-              </Link>
-            </Button>
+            <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5">
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  Sign in
+                </Link>
+              </Button>
+              <Button asChild variant="default" size="sm" className="w-full">
+                <Link href="/category/all" onClick={() => setMobileOpen(false)}>
+                  Shop sale
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

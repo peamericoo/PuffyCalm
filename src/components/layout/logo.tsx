@@ -18,7 +18,7 @@ export function Logo({ className }: LogoProps) {
       <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full brand-gradient text-[13px] font-semibold tracking-tight text-brand-deep shadow-sm ring-1 ring-brand/25 transition-transform duration-300 group-hover:scale-105">
         <span className="relative z-10">🐱</span>
       </span>
-      <span className="font-display text-[1.15rem] font-medium tracking-tight text-foreground sm:text-xl">
+      <span className="hidden font-display text-[1.15rem] font-medium tracking-tight text-foreground min-[380px]:inline sm:text-xl">
         Puffy<span className="text-brand-deep">Easy</span>
       </span>
     </Link>

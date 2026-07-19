@@ -28,6 +28,8 @@
   --nav-h: 4.25rem;
   --promo-h: 2.35rem;
   --page-pad: 1rem;
+  /* Floating chrome side inset — clears device edges + notches */
+  --nav-gutter: max(1rem, env(safe-area-inset-left, 0px));
 }
 
 @theme inline {
@@ -903,6 +905,27 @@ body {
   transform: scale(0.97);
 }
 
+/* Side gutters for floating top bar + mobile drawer */
+.nav-shell {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .nav-shell {
+    padding-left: max(0.875rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.875rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .nav-shell {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+}
+
 .nav-float {
   background: rgb(255 255 255 / 0.78);
   backdrop-filter: blur(18px) saturate(1.35);
@@ -914,6 +937,9 @@ body {
   transition:
     box-shadow 300ms ease,
     background-color 300ms ease;
+  /* Keep pill from overflowing its shell on narrow screens */
+  min-width: 0;
+  max-width: 100%;
 }
 
 .nav-float.is-scrolled {
