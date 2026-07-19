@@ -1101,51 +1101,7 @@ body {
   pointer-events: none;
 }
 
-/* ——— PDP (Seoul Bird / quiet commerce) ——— */
-@keyframes pdp-img-swap {
-  from {
-    opacity: 0;
-    transform: scale(1.035);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes pdp-qty-bump {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.18);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes pdp-shine {
-  0% {
-    transform: translateX(-120%) skewX(-18deg);
-  }
-  100% {
-    transform: translateX(220%) skewX(-18deg);
-  }
-}
-
-@keyframes pdp-amb-in {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Unique icon motions — same spirit as top-bar nav icons */
+/* ——— PDP icons (light, same idea as top-bar) ——— */
 @keyframes pdp-minus-nudge {
   0% {
     transform: translateX(0) scale(1);
@@ -1174,11 +1130,8 @@ body {
   0% {
     transform: scale(1) rotate(0deg);
   }
-  35% {
-    transform: scale(1.18) rotate(-8deg);
-  }
-  65% {
-    transform: scale(0.94) rotate(4deg);
+  40% {
+    transform: scale(1.15) rotate(-6deg);
   }
   100% {
     transform: scale(1) rotate(0deg);
@@ -1186,154 +1139,57 @@ body {
 }
 
 @keyframes pdp-prev-slide {
-  0% {
+  0%,
+  100% {
     transform: translateX(0);
   }
   40% {
-    transform: translateX(-5px);
-  }
-  100% {
-    transform: translateX(0);
+    transform: translateX(-4px);
   }
 }
 
 @keyframes pdp-next-slide {
-  0% {
+  0%,
+  100% {
     transform: translateX(0);
   }
   40% {
-    transform: translateX(5px);
-  }
-  100% {
-    transform: translateX(0);
+    transform: translateX(4px);
   }
 }
 
 @keyframes pdp-close-spin {
   0% {
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    transform: rotate(90deg) scale(1.08);
+    transform: rotate(0deg);
   }
   100% {
-    transform: rotate(90deg) scale(1);
+    transform: rotate(90deg);
   }
 }
 
-.pdp-img-swap {
-  animation: pdp-img-swap 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.pdp-qty-bump {
-  display: inline-block;
-  animation: pdp-qty-bump 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* ATC shine sweep on hover */
-.pdp-atc-shine {
-  position: absolute;
-  inset: 0;
-  width: 45%;
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    rgb(255 255 255 / 0.14) 45%,
-    transparent 100%
-  );
-  transform: translateX(-120%) skewX(-18deg);
-  pointer-events: none;
-}
-
-.pdp-atc:hover .pdp-atc-shine {
-  animation: pdp-shine 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/*
- * Ambilight frame — lives only inside .pdp-stage-wrap.
- * Padding on the wrap leaves a ring; blurred clone fills that ring.
- * overflow:hidden is mandatory so nothing paints into the page layout.
- */
-.pdp-stage-wrap {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-}
-
-.pdp-ambilight {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  animation: pdp-amb-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.pdp-ambilight-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transform: scale(1.2);
-  filter: blur(28px) saturate(1.5) brightness(1.05);
-  opacity: 0.7;
-}
-
-.pdp-stage {
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.4) inset;
-  transition: box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.pdp-stage-wrap:hover .pdp-stage {
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.5) inset,
-    0 16px 36px -24px rgb(26 35 50 / 0.3);
-}
-
-/* Fullscreen ambient — fully contained in lightbox */
-.pdp-lightbox-amb {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  opacity: 0.28;
-  animation: pdp-amb-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.pdp-lightbox-amb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.2);
-  filter: blur(56px) saturate(1.4) brightness(0.7);
-}
-
-/* ——— PDP icon system (mirrors nav-icon pattern) ——— */
 .pdp-icon-svg {
   transition:
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 220ms ease;
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 200ms ease;
   transform-origin: center;
-  will-change: transform;
 }
 
 .pdp-icon--minus:hover .pdp-icon-svg {
-  animation: pdp-minus-nudge 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pdp-minus-nudge 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pdp-icon--plus:hover .pdp-icon-svg {
-  animation: pdp-plus-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pdp-plus-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pdp-icon--cart:hover .pdp-icon-svg {
-  color: inherit;
-  animation: nav-cart-swing 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: nav-cart-swing 0.75s cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: 50% 15%;
 }
 
 .pdp-icon--heart:hover .pdp-icon-svg {
   color: var(--cta);
-  animation: nav-heart-beat 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: nav-heart-beat 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pdp-icon--heart[aria-pressed="true"] .pdp-icon-svg {
@@ -1342,19 +1198,19 @@ body {
 
 .pdp-icon--expand:hover .pdp-icon-svg {
   color: var(--brand-deep);
-  animation: pdp-expand-bloom 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pdp-expand-bloom 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pdp-icon--prev:hover .pdp-icon-svg {
-  animation: pdp-prev-slide 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pdp-prev-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pdp-icon--next:hover .pdp-icon-svg {
-  animation: pdp-next-slide 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pdp-next-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pdp-icon--close:hover .pdp-icon-svg {
-  animation: pdp-close-spin 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pdp-close-spin 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1376,11 +1232,6 @@ body {
   .nav-icon--heart:hover .nav-icon-svg,
   .nav-icon--user:hover .nav-icon-svg,
   .nav-icon--cart:hover .nav-icon-svg,
-  .pdp-img-swap,
-  .pdp-qty-bump,
-  .pdp-atc:hover .pdp-atc-shine,
-  .pdp-ambilight,
-  .pdp-lightbox-amb,
   .pdp-icon--minus:hover .pdp-icon-svg,
   .pdp-icon--plus:hover .pdp-icon-svg,
   .pdp-icon--cart:hover .pdp-icon-svg,
@@ -1390,11 +1241,6 @@ body {
   .pdp-icon--next:hover .pdp-icon-svg,
   .pdp-icon--close:hover .pdp-icon-svg {
     animation: none !important;
-  }
-
-  .pdp-ambilight,
-  .pdp-lightbox-amb {
-    opacity: 0 !important;
   }
 
   .search-panel,
