@@ -243,7 +243,7 @@ export function ShopNow() {
   const catalog = getConversionCatalog();
 
   return (
-    <section className="shop-stage relative border-y border-border/80 px-3 py-9 sm:px-5 sm:py-14">
+    <section className="shop-stage relative border-b border-border/80 px-3 py-9 sm:px-5 sm:py-14">
       <div className="mx-auto max-w-[1440px]">
         <div className="mb-5 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
           <Reveal className="max-w-lg">
