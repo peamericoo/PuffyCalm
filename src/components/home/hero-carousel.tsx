@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 const AUTO_MS = 5500;
 
 /**
- * Full-bleed aggressive hero carousel with crossfade + ken burns.
+ * Full-viewport hero — fills 100% of its section edge-to-edge.
+ * Promo bar + floating nav sit ON TOP of the hero (overlay), not above a gap.
  */
 export function HeroCarousel() {
   const [index, setIndex] = useState(0);
@@ -39,43 +40,54 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="px-2 pb-3 sm:px-4 sm:pb-4"
+      className="relative w-full h-[100dvh] min-h-[640px] max-h-none overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      aria-roledescription="carousel"
+      aria-label="Featured campaigns"
     >
-      <div className="relative mx-auto h-[min(88vh,920px)] min-h-[520px] max-w-[1440px] overflow-hidden rounded-[1.5rem] shadow-[0_30px_80px_-36px_rgba(26,35,50,0.35)] sm:rounded-[1.85rem] lg:min-h-[640px] animate-scale-in">
-        {/* Slides */}
-        {heroSlides.map((slide, i) => {
-          const isActive = i === index;
-          return (
-            <div
-              key={slide.id}
+      {/* Full-bleed slides — occupy entire section */}
+      {heroSlides.map((slide, i) => {
+        const isActive = i === index;
+        return (
+          <div
+            key={slide.id}
+            className={cn(
+              "absolute inset-0 hero-slide",
+              isActive ? "hero-slide-active" : "hero-slide-idle",
+            )}
+            aria-hidden={!isActive}
+          >
+            <Image
+              src={slide.imageUrl}
+              alt={slide.imageAlt}
+              fill
+              priority={i === 0}
+              sizes="100vw"
               className={cn(
-                "absolute inset-0 hero-slide",
-                isActive ? "hero-slide-active" : "hero-slide-idle",
+                "object-cover object-center",
+                isActive && "hero-kenburns",
               )}
-              aria-hidden={!isActive}
-            >
-              <Image
-                src={slide.imageUrl}
-                alt={slide.imageAlt}
-                fill
-                priority={i === 0}
-                sizes="100vw"
-                className={cn(
-                  "object-cover object-center",
-                  isActive && "hero-kenburns",
-                )}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/88 via-[#1a2332]/55 to-[#1a2332]/15" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/75 via-transparent to-[#1a2332]/25" />
-              <div className="absolute inset-0 brand-gradient opacity-25 mix-blend-soft-light" />
-            </div>
-          );
-        })}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/90 via-[#1a2332]/55 to-[#1a2332]/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/80 via-transparent to-[#1a2332]/35" />
+            <div className="absolute inset-0 brand-gradient opacity-20 mix-blend-soft-light" />
+          </div>
+        );
+      })}
 
-        {/* Content */}
-        <div className="relative z-10 flex h-full flex-col justify-end p-6 sm:justify-center sm:p-10 lg:p-14 xl:p-16">
+      {/*
+        Content lives inside the full-height stage.
+        Top padding clears the overlaid promo + nav so copy is never hidden.
+      */}
+      <div
+        className="relative z-10 flex h-full w-full flex-col justify-end px-5 pb-8 sm:justify-center sm:px-8 sm:pb-12 lg:px-14 xl:px-20"
+        style={{
+          paddingTop:
+            "calc(var(--promo-h) + var(--nav-h) + 1.75rem)",
+        }}
+      >
+        <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col justify-end sm:justify-center">
           <div
             key={active.id}
             className="max-w-2xl space-y-5 sm:space-y-6 animate-fade-up"
@@ -85,7 +97,7 @@ export function HeroCarousel() {
               {active.eyebrow}
             </div>
 
-            <h1 className="font-display text-[2.75rem] font-medium leading-[1.02] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.25rem] xl:text-[4.6rem]">
+            <h1 className="font-display text-[2.85rem] font-medium leading-[1.02] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.35rem] xl:text-[4.75rem]">
               <span className="block">{active.titleLine1}</span>
               <span className="block">{active.titleLine2}</span>
               {active.titleLine3 ? (
@@ -116,46 +128,11 @@ export function HeroCarousel() {
               ) : null}
             </div>
           </div>
+        </div>
 
-          {/* Controls */}
-          <div className="mt-8 flex items-center justify-between gap-4 sm:absolute sm:bottom-8 sm:right-8 sm:mt-0 sm:bottom-10 sm:right-10 lg:bottom-12 lg:right-12">
-            <div className="flex items-center gap-2 sm:hidden">
-              {heroSlides.map((s, i) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  aria-label={`Go to slide ${i + 1}`}
-                  onClick={() => go(i)}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-300",
-                    i === index ? "w-8 bg-white" : "w-1.5 bg-white/40",
-                  )}
-                />
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={prev}
-                aria-label="Previous slide"
-                className="pressable flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                aria-label="Next slide"
-                className="pressable flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Desktop progress dots */}
-          <div className="absolute bottom-8 left-6 hidden items-center gap-2 sm:bottom-10 sm:left-10 sm:flex lg:bottom-12 lg:left-14">
+        {/* Controls — pinned to bottom of full section */}
+        <div className="mx-auto flex w-full max-w-[1440px] items-end justify-between gap-4 pt-8">
+          <div className="flex items-center gap-2">
             {heroSlides.map((s, i) => (
               <button
                 key={s.id}
@@ -164,13 +141,35 @@ export function HeroCarousel() {
                 onClick={() => go(i)}
                 className={cn(
                   "h-1.5 rounded-full transition-all duration-500",
-                  i === index ? "w-10 bg-white" : "w-2 bg-white/40 hover:bg-white/70",
+                  i === index
+                    ? "w-10 bg-white"
+                    : "w-2 bg-white/40 hover:bg-white/70",
                 )}
               />
             ))}
-            <span className="ml-3 text-xs font-medium tabular-nums text-white/70">
-              {String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
+            <span className="ml-3 hidden text-xs font-medium tabular-nums text-white/70 sm:inline">
+              {String(index + 1).padStart(2, "0")} /{" "}
+              {String(count).padStart(2, "0")}
             </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous slide"
+              className="pressable flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next slide"
+              className="pressable flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </div>

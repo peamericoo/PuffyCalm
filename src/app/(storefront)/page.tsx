@@ -8,12 +8,16 @@ import { HomeBento } from "@/components/home/home-bento";
 export default function HomePage() {
   return (
     <>
+      {/* Full-bleed hero under floating chrome — no page-offset on home */}
       <HeroCarousel />
-      <HomeBento />
-      <FeaturedProducts />
-      <CategoriesStrip />
-      <LifestyleCollections />
-      <CtaBand />
+      <div className="relative z-0 bg-background">
+        <HomeBento />
+        <FeaturedProducts />
+        <CategoriesStrip />
+        <LifestyleCollections />
+        <CtaBand />
+      </div>
     </>
   );
 }
+
