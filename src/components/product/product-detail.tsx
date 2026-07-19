@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ProductBuyBox } from "@/components/product/product-buy-box";
+import { ProductDeepDive } from "@/components/product/product-deep-dive";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductSpecs } from "@/components/product/product-specs";
 import { RelatedProducts } from "@/components/product/related-products";
@@ -98,11 +99,16 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
             </div>
 
             <p className="mt-1.5 text-[12px] text-muted-foreground sm:mt-2 sm:text-[13px]">
-              <span className="font-medium text-foreground">
-                {product.rating.toFixed(1)}
-              </span>
-              <span className="mx-1 text-border">·</span>
-              {product.reviewCount} reviews
+              <a
+                href="#reviews"
+                className="transition-colors hover:text-foreground"
+              >
+                <span className="font-medium text-foreground">
+                  {product.rating.toFixed(1)}
+                </span>
+                <span className="mx-1 text-border">·</span>
+                {product.reviewCount} reviews
+              </a>
               <span className="mx-1 text-border">·</span>
               {product.inStock ? (
                 <span className="text-success">In stock</span>
@@ -146,6 +152,8 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
             </div>
           </div>
         </div>
+
+        <ProductDeepDive product={product} />
 
         <RelatedProducts products={related} />
       </div>

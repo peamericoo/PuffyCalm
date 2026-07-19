@@ -1,0 +1,146 @@
+/* Product reviews — score ring + calm distribution */
+
+.scoreRing {
+  --score: 0.96;
+  position: relative;
+  width: 7.5rem;
+  height: 7.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--brand-deep) calc(var(--score) * 1turn),
+    color-mix(in oklab, var(--brand-soft) 70%, white) 0
+  );
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--brand) 28%, transparent),
+    0 12px 40px -16px rgb(58 124 165 / 0.35);
+}
+
+.scoreRing::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--border) 80%, transparent);
+}
+
+.scoreInner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  line-height: 1;
+}
+
+.scoreValue {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 1.85rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+}
+
+.scoreOf {
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 640px) {
+  .scoreRing {
+    width: 8.75rem;
+    height: 8.75rem;
+  }
+
+  .scoreValue {
+    font-size: 2.15rem;
+  }
+}
+
+/* Distribution bar fill */
+.barTrack {
+  position: relative;
+  height: 0.35rem;
+  flex: 1;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--brand-soft) 65%, white);
+}
+
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--w, 0%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--brand) 75%, white),
+    var(--brand-deep)
+  );
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Featured review glow rail */
+.featured {
+  position: relative;
+  background:
+    radial-gradient(
+      ellipse 80% 70% at 0% 0%,
+      color-mix(in oklab, var(--brand-soft) 90%, white),
+      transparent 55%
+    ),
+    white;
+  border: 1px solid color-mix(in oklab, var(--brand) 22%, var(--border));
+}
+
+.featured::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--brand) 0%,
+    var(--brand-deep) 55%,
+    color-mix(in oklab, var(--cta) 55%, var(--brand-deep)) 100%
+  );
+}
+
+/* Minimal score marks (not yellow stars) */
+.marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+}
+
+.mark {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--border) 90%, white);
+}
+
+.markOn {
+  background: var(--brand-deep);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand) 40%, transparent);
+}
+
+.markHalf {
+  background: linear-gradient(
+    90deg,
+    var(--brand-deep) 50%,
+    color-mix(in oklab, var(--border) 90%, white) 50%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barFill {
+    transition: none;
+  }
+}
