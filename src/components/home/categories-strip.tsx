@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
+import { DisplayStack } from "@/components/shared/section-heading";
 import { categories } from "@/lib/mock/categories";
 import { cn } from "@/lib/utils";
 
@@ -54,17 +55,13 @@ export function CategoriesStrip() {
 
       <div className="relative mx-auto max-w-[1400px]">
         <div className="mb-5 flex items-end justify-between gap-4 sm:mb-8">
-          <Reveal className="max-w-md">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
-              Collections
-            </p>
-            <h2 className="mt-1.5 font-display text-3xl font-medium tracking-tight text-foreground sm:text-[2.35rem]">
-              Shop by mood
-            </h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Three ways in — pick how you want to feel.
-            </p>
-          </Reveal>
+          <DisplayStack
+            eyebrow="Collections"
+            title="Shop by mood"
+            description="Three ways in — pick how you want to feel."
+            accent="mood"
+            className="max-w-md"
+          />
           <Reveal delay={80} className="hidden sm:block">
             <Link
               href="/category/all"

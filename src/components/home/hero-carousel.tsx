@@ -98,14 +98,18 @@ export function HeroCarousel() {
           >
             <div
               key={active.id}
-              className="flex max-w-3xl flex-col gap-3 sm:gap-4 animate-fade-up"
+              className="display-stack display-stack--on-dark relative flex max-w-3xl flex-col gap-3 sm:gap-4 animate-fade-up"
             >
+              <span className="display-aura" aria-hidden>
+                <span className="display-aura-core" />
+              </span>
+
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/95 backdrop-blur-md sm:text-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-cta animate-[pulse-dot_1.5s_ease_infinite]" />
                 {active.eyebrow}
               </div>
 
-              <h1 className="font-display font-medium tracking-tight text-white">
+              <h1 className="display-title mt-0 font-display font-medium tracking-tight text-white">
                 <span className="block text-[2.65rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.25rem]">
                   {active.titleLine1}
                 </span>
@@ -114,13 +118,15 @@ export function HeroCarousel() {
                   {active.titleLine3 ? (
                     <>
                       {" "}
-                      <span className="text-brand">{active.titleLine3}</span>
+                      <span className="display-title-accent">{active.titleLine3}</span>
                     </>
                   ) : null}
                 </span>
               </h1>
 
-              <p className="max-w-md text-[15px] leading-snug text-white/78 sm:max-w-lg sm:text-base lg:text-lg">
+              <span className="display-mark opacity-90" aria-hidden />
+
+              <p className="display-lead mt-0 max-w-md text-[15px] leading-snug sm:max-w-lg sm:text-base lg:text-lg">
                 {active.subtitle}
               </p>
 

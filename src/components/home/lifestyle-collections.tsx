@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Reveal } from "@/components/shared/reveal";
+import { DisplayStack } from "@/components/shared/section-heading";
 import { lifestyleCollections } from "@/lib/mock/site";
 import { cn } from "@/lib/utils";
 
@@ -9,16 +10,14 @@ export function LifestyleCollections() {
     <section className="px-3 py-8 sm:px-5 sm:py-12">
       <div className="mx-auto max-w-[1400px]">
         <div className="mb-6 grid items-end gap-4 lg:mb-8 lg:grid-cols-12">
-          <Reveal className="lg:col-span-7">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-              Lifestyle
-            </p>
-            <h2 className="mt-2 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
-              Designed around how you actually live
-            </h2>
-          </Reveal>
+          <DisplayStack
+            eyebrow="Lifestyle"
+            title="Designed around how you actually live"
+            accent="live"
+            className="lg:col-span-7"
+          />
           <Reveal delay={100} className="lg:col-span-5">
-            <p className="text-sm leading-relaxed text-muted-foreground lg:text-right">
+            <p className="display-lead text-sm leading-relaxed lg:text-right lg:ml-auto">
               From desk reset to evening unwind — collections that fill the page
               with intent, not empty scroll.
             </p>

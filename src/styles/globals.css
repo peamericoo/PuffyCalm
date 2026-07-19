@@ -188,15 +188,285 @@ body {
 .reveal {
   opacity: 0;
   transform: translateY(22px);
+  filter: blur(4px);
   transition:
     opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
+    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, filter;
 }
 
 .reveal-in {
   opacity: 1;
   transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ——— Global display typography (titles / eyebrows / leads) ——— */
+.display-stack {
+  --display-ink: var(--foreground);
+  --display-muted: var(--muted-foreground);
+  --display-accent-a: var(--brand-deep);
+  --display-accent-b: #5a9fc4;
+  --display-aura: rgb(126 184 212 / 0.28);
+  position: relative;
+  isolation: isolate;
+}
+
+.display-stack--on-dark {
+  --display-ink: #ffffff;
+  --display-muted: rgb(255 255 255 / 0.78);
+  --display-accent-a: #b8d9ec;
+  --display-accent-b: #e8f4fa;
+  --display-aura: rgb(255 255 255 / 0.12);
+}
+
+.display-stack--on-brand {
+  --display-ink: var(--foreground);
+  --display-muted: var(--muted-foreground);
+  --display-accent-a: var(--brand-deep);
+  --display-accent-b: #2f6a8c;
+  --display-aura: rgb(255 255 255 / 0.35);
+}
+
+.display-aura {
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  inset: -18% -8% auto -6%;
+  height: 120%;
+  max-height: 7.5rem;
+  overflow: visible;
+}
+
+.display-aura-core {
+  display: block;
+  width: 72%;
+  max-width: 18rem;
+  height: 100%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 50%,
+    var(--display-aura) 0%,
+    transparent 68%
+  );
+  filter: blur(2px);
+  transform-origin: 30% 50%;
+  animation: display-aura-drift 9s ease-in-out infinite alternate;
+}
+
+.display-stack.text-center .display-aura,
+.display-stack.text-center .display-aura-core {
+  margin-inline: auto;
+  left: 0;
+  right: 0;
+  inset-inline: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.display-stack.text-center .display-aura-core {
+  width: 55%;
+  margin-inline: auto;
+}
+
+@keyframes display-aura-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate3d(10%, -6%, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+
+.display-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--display-accent-a);
+}
+
+.display-eyebrow-line {
+  display: inline-block;
+  width: 1.35rem;
+  height: 1.5px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--display-accent-a),
+    var(--display-accent-b)
+  );
+  transform-origin: left center;
+  box-shadow: 0 0 10px rgb(58 124 165 / 0.35);
+}
+
+.display-eyebrow-label {
+  background: linear-gradient(
+    105deg,
+    var(--display-accent-a) 0%,
+    var(--display-accent-b) 45%,
+    var(--display-accent-a) 90%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: display-shimmer 5.5s ease-in-out infinite;
+}
+
+@keyframes display-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.display-title {
+  position: relative;
+  margin: 0.4rem 0 0;
+  color: var(--display-ink);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.display-title-accent {
+  background: linear-gradient(
+    118deg,
+    var(--display-accent-a) 0%,
+    var(--display-accent-b) 48%,
+    color-mix(in oklab, var(--display-accent-a) 70%, white) 100%
+  );
+  background-size: 180% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: display-shimmer 7s ease-in-out infinite;
+  /* Soft brand glow so the accent feels “lit”, not flat */
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.35));
+}
+
+.display-stack--on-dark .display-title-accent {
+  filter: drop-shadow(0 0 18px rgb(184 217 236 / 0.35));
+}
+
+.display-mark {
+  display: block;
+  width: 3.25rem;
+  height: 3px;
+  margin-top: 0.7rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--display-accent-a),
+    var(--display-accent-b),
+    transparent
+  );
+  transform: scaleX(0.25);
+  transform-origin: left center;
+  opacity: 0.55;
+  transition:
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.12s,
+    opacity 0.8s ease 0.12s;
+}
+
+.display-stack.text-center .display-mark {
+  margin-inline: auto;
+  transform-origin: center;
+}
+
+.display-stack.text-right .display-mark {
+  margin-left: auto;
+  transform-origin: right center;
+}
+
+.display-lead {
+  margin: 0.65rem 0 0;
+  max-width: 36rem;
+  line-height: 1.55;
+  color: var(--display-muted);
+  text-wrap: pretty;
+}
+
+.display-stack.text-center .display-lead {
+  margin-inline: auto;
+}
+
+.display-stack.text-right .display-lead {
+  margin-left: auto;
+}
+
+/* When parent Reveal lands, title pieces settle with extra polish */
+.reveal-in .display-eyebrow-line {
+  animation: display-line-draw 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reveal-in .display-mark {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.reveal-in .display-title {
+  animation: display-title-settle 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reveal-in .display-lead {
+  animation: display-lead-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes display-line-draw {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes display-title-settle {
+  from {
+    letter-spacing: 0.01em;
+  }
+  to {
+    letter-spacing: -0.02em;
+  }
+}
+
+@keyframes display-lead-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Compact rail / inline display without full section scale */
+.display-stack--compact .display-title {
+  margin-top: 0.25rem;
+}
+
+.display-stack--compact .display-mark {
+  width: 2.25rem;
+  margin-top: 0.45rem;
+}
+
+.display-stack--compact .display-aura {
+  max-height: 4.5rem;
 }
 
 /* Coordinated product carousel — slow crossfade */
@@ -569,13 +839,29 @@ body {
   .stagger > *,
   .animate-star-spin,
   .animate-price-pop,
-  .animate-cart-icon {
+  .animate-cart-icon,
+  .display-eyebrow-label,
+  .display-title-accent,
+  .display-aura-core {
     animation: none !important;
   }
 
   .reveal {
     opacity: 1;
     transform: none;
+    filter: none;
+    transition: none !important;
+  }
+
+  .reveal-in .display-eyebrow-line,
+  .reveal-in .display-title,
+  .reveal-in .display-lead {
+    animation: none !important;
+  }
+
+  .display-mark {
+    transform: scaleX(1) !important;
+    opacity: 1 !important;
     transition: none !important;
   }
 

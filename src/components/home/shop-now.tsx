@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { Reveal } from "@/components/shared/reveal";
+import { DisplayStack } from "@/components/shared/section-heading";
 import { products } from "@/lib/mock/products";
 import { cn } from "@/lib/utils";
 
@@ -103,15 +104,17 @@ function CategoryRail({ className }: { className?: string }) {
       />
 
       <div className="relative mb-4 px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
-          Browse
-        </p>
-        <p className="mt-1 font-display text-xl font-medium tracking-tight text-foreground xl:text-2xl">
-          Shop by mood
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Jump straight into what you need.
-        </p>
+        <DisplayStack
+          eyebrow="Browse"
+          title="Shop by mood"
+          description="Jump straight into what you need."
+          size="sm"
+          accent="mood"
+          aura
+          mark
+          noReveal
+          className="display-stack--compact"
+        />
       </div>
 
       <nav
@@ -188,13 +191,20 @@ function CategoryRail({ className }: { className?: string }) {
 function MobileMoodStrip() {
   return (
     <div className="lg:hidden">
-      <div className="mb-2.5 flex items-center justify-between px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-deep">
-          Shop by mood
-        </p>
+      <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
+        <DisplayStack
+          eyebrow="Browse"
+          title="Shop by mood"
+          size="sm"
+          accent="mood"
+          aura={false}
+          mark={false}
+          noReveal
+          className="display-stack--compact min-w-0"
+        />
         <Link
           href="/category/all"
-          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           View all
         </Link>
@@ -244,18 +254,14 @@ export function ShopNow() {
   return (
     <section className="relative px-3 pb-10 pt-2 sm:px-5 sm:pb-14 sm:pt-4">
       <div className="mx-auto max-w-[1440px]">
-        <div className="mb-5 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-          <Reveal className="max-w-lg">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
-              Shop
-            </p>
-            <h2 className="mt-1.5 font-display text-3xl font-medium tracking-tight text-foreground sm:text-[2.35rem]">
-              What customers buy first
-            </h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Curated picks · free shipping over $75
-            </p>
-          </Reveal>
+        <div className="mb-5 sm:mb-8">
+          <DisplayStack
+            eyebrow="Shop"
+            title="What customers buy first"
+            description="Curated picks · free shipping over $75"
+            accent="first"
+            className="max-w-xl"
+          />
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
