@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { heroSlides } from "@/lib/mock/site";
 import { cn } from "@/lib/utils";
@@ -10,13 +10,14 @@ import { cn } from "@/lib/utils";
 const AUTO_MS = 6500;
 
 /**
- * Editorial commerce opener — impact without full-viewport tax.
- * Shorter stage, bigger type, one clear path into the catalog.
- * Mobile: compact, readable, product-first hierarchy for the page.
+ * Editorial commerce opener — provocative copy, soft parallax layers,
+ * no category tags. Text stays fully readable at all times.
  */
 export function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const stageRef = useRef<HTMLDivElement>(null);
   const count = heroSlides.length;
   const active = heroSlides[index];
 
@@ -38,6 +39,33 @@ export function HeroCarousel() {
     return () => window.clearInterval(id);
   }, [paused, count]);
 
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const el = stageRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    setParallax({ x, y });
+  }, []);
+
+  const onPointerLeave = useCallback(() => {
+    setParallax({ x: 0, y: 0 });
+  }, []);
+
+  /** Render title line with optional accent highlight on matching trailing phrase */
+  const renderLine2 = (line: string, accent?: string) => {
+    if (!accent || !line.endsWith(accent)) {
+      return line;
+    }
+    const head = line.slice(0, line.length - accent.length);
+    return (
+      <>
+        {head}
+        <span className="display-title-accent">{accent}</span>
+      </>
+    );
+  };
+
   return (
     <section
       className="relative w-full overflow-hidden pb-2 sm:pb-3 sm:pt-2"
@@ -46,15 +74,11 @@ export function HeroCarousel() {
       aria-roledescription="carousel"
       aria-label="Featured campaigns"
     >
-      {/*
-        Height strategy:
-        - Mobile: ~48–52vh max, never full screen — products stay close
-        - Desktop: cinematic but capped so shop is near
-        Parent page wrapper provides continuous shop-stage sky (no seam).
-      */}
-      {/* Wider than floating top bar (bar uses more side inset), still framed on large screens */}
       <div className="relative mx-auto w-full max-w-[min(1920px,100%)] px-0 sm:px-1.5 lg:px-2">
         <div
+          ref={stageRef}
+          onPointerMove={onPointerMove}
+          onPointerLeave={onPointerLeave}
           className={cn(
             "relative overflow-hidden",
             "h-[min(52dvh,420px)] min-h-[320px]",
@@ -73,20 +97,29 @@ export function HeroCarousel() {
                 )}
                 aria-hidden={!isActive}
               >
-                <Image
-                  src={slide.imageUrl}
-                  alt={slide.imageAlt}
-                  fill
-                  priority={i === 0}
-                  sizes="100vw"
-                  className={cn(
-                    "object-cover object-[center_30%]",
-                    isActive && "hero-kenburns",
-                  )}
-                />
-                {/* Cleaner, lighter wash — less “dark full-screen ad” */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/88 via-[#1a2332]/45 to-[#1a2332]/15" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/75 via-transparent to-[#1a2332]/25" />
+                <div
+                  className="absolute inset-[-4%] will-change-transform transition-transform duration-500 ease-out"
+                  style={{
+                    transform: isActive
+                      ? `translate3d(${parallax.x * -10}px, ${parallax.y * -8}px, 0) scale(1.06)`
+                      : undefined,
+                  }}
+                >
+                  <Image
+                    src={slide.imageUrl}
+                    alt={slide.imageAlt}
+                    fill
+                    priority={i === 0}
+                    sizes="100vw"
+                    className={cn(
+                      "object-cover object-[center_30%]",
+                      isActive && "hero-kenburns",
+                    )}
+                  />
+                </div>
+                {/* Readable wash — depth without crushing type */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/90 via-[#1a2332]/52 to-[#1a2332]/18" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/80 via-transparent to-[#1a2332]/28" />
               </div>
             );
           })}
@@ -99,37 +132,44 @@ export function HeroCarousel() {
           >
             <div
               key={active.id}
-              className="display-stack display-stack--on-dark relative flex max-w-3xl flex-col gap-3 sm:gap-4 animate-fade-up"
+              className="display-stack display-stack--on-dark relative flex max-w-3xl flex-col gap-3.5 sm:gap-4"
             >
               <span className="display-aura" aria-hidden>
                 <span className="display-aura-core" />
               </span>
 
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/95 backdrop-blur-md sm:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-cta animate-[pulse-dot_1.5s_ease_infinite]" />
-                {active.eyebrow}
-              </div>
-
-              <h1 className="display-title mt-0 font-display font-medium tracking-tight text-white">
-                <span className="block text-[2.65rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.25rem]">
+              {/* Parallax text layers — different depth, always fully opaque */}
+              <h1
+                className="display-title mt-0 font-display font-medium tracking-tight text-white will-change-transform transition-transform duration-300 ease-out"
+                style={{
+                  transform: `translate3d(${parallax.x * 14}px, ${parallax.y * 10}px, 0)`,
+                  textShadow: "0 2px 28px rgb(0 0 0 / 0.35)",
+                }}
+              >
+                <span className="hero-line block text-[2.55rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
                   {active.titleLine1}
                 </span>
-                <span className="block text-[2.65rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.25rem]">
-                  {active.titleLine2}
-                  {active.titleLine3 ? (
-                    <>
-                      {" "}
-                      <span className="display-title-accent">{active.titleLine3}</span>
-                    </>
-                  ) : null}
+                <span className="hero-line hero-line--delay block text-[2.55rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
+                  {renderLine2(active.titleLine2, active.titleAccent)}
                 </span>
               </h1>
 
-              <p className="display-lead mt-0 max-w-md text-[15px] leading-snug sm:max-w-lg sm:text-base lg:text-lg">
+              <p
+                className="display-lead mt-0 max-w-md text-[15px] font-medium leading-snug text-white/90 sm:max-w-lg sm:text-base lg:text-lg will-change-transform transition-transform duration-500 ease-out"
+                style={{
+                  transform: `translate3d(${parallax.x * 8}px, ${parallax.y * 6}px, 0)`,
+                  textShadow: "0 1px 16px rgb(0 0 0 / 0.4)",
+                }}
+              >
                 {active.subtitle}
               </p>
 
-              <div className="flex flex-wrap items-center gap-2.5 pt-0.5 sm:gap-3">
+              <div
+                className="flex flex-wrap items-center gap-2.5 pt-0.5 sm:gap-3 will-change-transform transition-transform duration-700 ease-out"
+                style={{
+                  transform: `translate3d(${parallax.x * 4}px, ${parallax.y * 3}px, 0)`,
+                }}
+              >
                 <Link
                   href={active.ctaHref}
                   className="pressable glass-btn-cta inline-flex h-11 items-center gap-2 rounded-full px-6 text-sm font-semibold text-white sm:h-12 sm:px-7 sm:text-[15px]"
@@ -140,7 +180,7 @@ export function HeroCarousel() {
                 {active.secondaryHref && active.secondaryLabel ? (
                   <Link
                     href={active.secondaryHref}
-                    className="pressable inline-flex h-11 items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-5 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/18 sm:h-12 sm:px-6"
+                    className="pressable inline-flex h-11 items-center gap-1.5 rounded-full border border-white/30 bg-white/12 px-5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:h-12 sm:px-6"
                   >
                     {active.secondaryLabel}
                   </Link>
@@ -148,7 +188,6 @@ export function HeroCarousel() {
               </div>
             </div>
 
-            {/* Slim controls — less chrome, more product path */}
             <div className="mt-5 flex items-center justify-between gap-3 sm:mt-6">
               <div className="flex items-center gap-1.5">
                 {heroSlides.map((s, i) => (

@@ -595,11 +595,134 @@ body {
 @keyframes dropdown-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Nav utility icons: unique subtle motion ── */
+.nav-icon-svg {
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms ease;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Search (lupa) — soft scan tilt on field hover/focus */
+.nav-search:hover .nav-icon-svg--search,
+.nav-search:focus-within .nav-icon-svg--search {
+  color: var(--brand-deep);
+  animation: nav-search-scan 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes nav-search-scan {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  30% {
+    transform: rotate(-14deg) scale(1.08);
+  }
+  55% {
+    transform: rotate(10deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+/* Heart — fluid double-beat */
+.nav-icon--heart:hover .nav-icon-svg {
+  color: var(--cta);
+  animation: nav-heart-beat 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes nav-heart-beat {
+  0% {
+    transform: scale(1);
+  }
+  18% {
+    transform: scale(1.22);
+  }
+  32% {
+    transform: scale(0.94);
+  }
+  48% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* User — soft upright nod */
+.nav-icon--user:hover .nav-icon-svg {
+  color: var(--brand-deep);
+  animation: nav-user-nod 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes nav-user-nod {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-2px) rotate(-6deg);
+  }
+  65% {
+    transform: translateY(1px) rotate(4deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+/* Cart — gentle swing like a bag */
+.nav-icon--cart:hover .nav-icon-svg {
+  color: var(--brand-deep);
+  animation: nav-cart-swing 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: 50% 15%;
+}
+
+@keyframes nav-cart-swing {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Hero title line entrance — staggered, fluid */
+.hero-line {
+  animation: hero-line-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-line--delay {
+  animation-delay: 0.08s;
+}
+
+@keyframes hero-line-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
   }
 }
 
@@ -853,7 +976,13 @@ body {
   .animate-cart-icon,
   .display-eyebrow-label,
   .display-title-accent,
-  .display-aura-core {
+  .display-aura-core,
+  .hero-line,
+  .nav-search:hover .nav-icon-svg--search,
+  .nav-search:focus-within .nav-icon-svg--search,
+  .nav-icon--heart:hover .nav-icon-svg,
+  .nav-icon--user:hover .nav-icon-svg,
+  .nav-icon--cart:hover .nav-icon-svg {
     animation: none !important;
   }
 

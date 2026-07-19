@@ -12,7 +12,31 @@ export const siteConfig = {
   },
 } as const;
 
-export type NavChild = { label: string; href: string };
+export type NavChild = {
+  label: string;
+  href: string;
+  /** Lucide icon name key — resolved in Header */
+  icon:
+    | "grid"
+    | "sparkles"
+    | "tag"
+    | "dollar"
+    | "star"
+    | "hand"
+    | "flame"
+    | "activity"
+    | "plane"
+    | "armchair"
+    | "sofa"
+    | "thermometer"
+    | "moon"
+    | "monitor"
+    | "target"
+    | "book"
+    | "truck"
+    | "refresh"
+    | "help";
+};
 
 export type NavItem = {
   label: string;
@@ -26,50 +50,50 @@ export const mainNav: NavItem[] = [
     label: "Shop",
     href: "/category/all",
     children: [
-      { label: "All products", href: "/category/all" },
-      { label: "New arrivals", href: "/category/all" },
-      { label: "Sale", href: "/category/all" },
-      { label: "Under $50", href: "/category/all" },
-      { label: "Bestsellers", href: "/category/all" },
+      { label: "All products", href: "/category/all", icon: "grid" },
+      { label: "New arrivals", href: "/category/all", icon: "sparkles" },
+      { label: "Sale", href: "/category/all", icon: "tag" },
+      { label: "Under $50", href: "/category/all", icon: "dollar" },
+      { label: "Bestsellers", href: "/category/all", icon: "star" },
     ],
   },
   {
     label: "Recovery",
     href: "/category/recovery",
     children: [
-      { label: "Massage & tension", href: "/category/recovery" },
-      { label: "Heat therapy", href: "/category/recovery" },
-      { label: "Neck & shoulders", href: "/category/recovery" },
-      { label: "Travel recovery", href: "/category/recovery" },
+      { label: "Massage & tension", href: "/category/recovery", icon: "hand" },
+      { label: "Heat therapy", href: "/category/recovery", icon: "flame" },
+      { label: "Neck & shoulders", href: "/category/recovery", icon: "activity" },
+      { label: "Travel recovery", href: "/category/recovery", icon: "plane" },
     ],
   },
   {
     label: "Comfort",
     href: "/category/comfort",
     children: [
-      { label: "Lumbar support", href: "/category/comfort" },
-      { label: "Seat cushions", href: "/category/comfort" },
-      { label: "Wraps & warmth", href: "/category/comfort" },
-      { label: "Sleep support", href: "/category/comfort" },
+      { label: "Lumbar support", href: "/category/comfort", icon: "armchair" },
+      { label: "Seat cushions", href: "/category/comfort", icon: "sofa" },
+      { label: "Wraps & warmth", href: "/category/comfort", icon: "thermometer" },
+      { label: "Sleep support", href: "/category/comfort", icon: "moon" },
     ],
   },
   {
     label: "Everyday",
     href: "/category/everyday",
     children: [
-      { label: "Desk essentials", href: "/category/everyday" },
-      { label: "Posture tools", href: "/category/everyday" },
-      { label: "Focus & routine", href: "/category/everyday" },
+      { label: "Desk essentials", href: "/category/everyday", icon: "monitor" },
+      { label: "Posture tools", href: "/category/everyday", icon: "activity" },
+      { label: "Focus & routine", href: "/category/everyday", icon: "target" },
     ],
   },
   {
     label: "About",
     href: "/about",
     children: [
-      { label: "Our story", href: "/about" },
-      { label: "Shipping", href: "/help#shipping" },
-      { label: "Returns", href: "/returns" },
-      { label: "Help center", href: "/help" },
+      { label: "Our story", href: "/about", icon: "book" },
+      { label: "Shipping", href: "/help#shipping", icon: "truck" },
+      { label: "Returns", href: "/returns", icon: "refresh" },
+      { label: "Help center", href: "/help", icon: "help" },
     ],
   },
 ];
@@ -109,10 +133,10 @@ export const promoMessages = [
 
 export type HeroSlide = {
   id: string;
-  eyebrow: string;
   titleLine1: string;
   titleLine2: string;
-  titleLine3?: string;
+  /** Optional accent word/phrase on line 2 */
+  titleAccent?: string;
   subtitle: string;
   ctaLabel: string;
   ctaHref: string;
@@ -122,17 +146,18 @@ export type HeroSlide = {
   imageAlt: string;
 };
 
-/** Homepage campaign slides — short copy, commercial impact */
+/** Homepage campaign slides — provocative, short, commercial impact */
 export const heroSlides: HeroSlide[] = [
   {
     id: "slide_launch",
-    eyebrow: "Launch offer",
-    titleLine1: "Feel better",
-    titleLine2: "every day",
-    subtitle: "Premium comfort & recovery — free shipping over $75.",
-    ctaLabel: "Shop the sale",
+    titleLine1: "Your body is",
+    titleLine2: "asking for better.",
+    titleAccent: "better.",
+    subtitle:
+      "Stop living with the ache. Premium comfort & recovery — free shipping over $75.",
+    ctaLabel: "Shop the launch",
     ctaHref: "/category/all",
-    secondaryLabel: "Bestsellers",
+    secondaryLabel: "See bestsellers",
     secondaryHref: "/category/recovery",
     imageUrl:
       "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1800&q=80",
@@ -140,13 +165,14 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "slide_recovery",
-    eyebrow: "Recovery",
-    titleLine1: "Tension out.",
-    titleLine2: "Energy back.",
-    subtitle: "Massage & heat therapy for desk-heavy days.",
-    ctaLabel: "Shop recovery",
+    titleLine1: "Release the tension",
+    titleLine2: "you keep ignoring.",
+    titleAccent: "ignoring.",
+    subtitle:
+      "Massage & heat therapy engineered for desk-heavy days that never clock out.",
+    ctaLabel: "Unknot now",
     ctaHref: "/category/recovery",
-    secondaryLabel: "View all",
+    secondaryLabel: "Browse all",
     secondaryHref: "/category/all",
     imageUrl:
       "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1800&q=80",
@@ -154,13 +180,14 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "slide_comfort",
-    eyebrow: "Comfort",
-    titleLine1: "Sit softer.",
-    titleLine2: "Work longer.",
-    subtitle: "Support that turns long hours into better hours.",
-    ctaLabel: "Shop comfort",
+    titleLine1: "Long hours.",
+    titleLine2: "Zero excuses for pain.",
+    titleAccent: "pain.",
+    subtitle:
+      "Support that turns eight hours at a desk into eight better ones — finally.",
+    ctaLabel: "Sit better",
     ctaHref: "/category/comfort",
-    secondaryLabel: "View all",
+    secondaryLabel: "Browse all",
     secondaryHref: "/category/all",
     imageUrl:
       "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1800&q=80",
@@ -168,13 +195,14 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "slide_everyday",
-    eyebrow: "Everyday",
-    titleLine1: "Small upgrades.",
-    titleLine2: "Big difference.",
-    subtitle: "Tools for posture, focus, and better routines.",
-    ctaLabel: "Shop everyday",
+    titleLine1: "Tiny upgrades.",
+    titleLine2: "Ridiculously better days.",
+    titleAccent: "better days.",
+    subtitle:
+      "Posture, focus, routine — small tools that quietly change how you feel by 5pm.",
+    ctaLabel: "Upgrade daily",
     ctaHref: "/category/everyday",
-    secondaryLabel: "View all",
+    secondaryLabel: "Browse all",
     secondaryHref: "/category/all",
     imageUrl:
       "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1800&q=80",
