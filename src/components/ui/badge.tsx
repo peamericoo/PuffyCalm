@@ -7,10 +7,11 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-foreground/90 text-white",
-        soft: "bg-accent-soft text-accent",
+        soft: "bg-brand-soft text-brand-deep",
         muted: "bg-muted text-muted-foreground",
-        sale: "bg-rose-100 text-rose-700",
-        new: "bg-emerald-50 text-emerald-700",
+        /** Promo / sale — calm success green (brand-aligned) */
+        sale: "bg-success/15 text-success ring-1 ring-success/25",
+        new: "bg-brand-soft text-brand-deep ring-1 ring-brand/20",
       },
     },
     defaultVariants: {

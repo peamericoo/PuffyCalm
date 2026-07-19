@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -9,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
+import { ProductImageCarousel } from "@/components/product/product-image-carousel";
 import { Button } from "@/components/ui/button";
 import { products } from "@/lib/mock/products";
 import { formatMoney } from "@/lib/format";
@@ -18,7 +18,6 @@ import { formatMoney } from "@/lib/format";
  * 1) On sale (price anchoring)
  * 2) Bestsellers (social proof)
  * 3) Highest rated
- * Hick's law: show a short curated set, not the whole catalog.
  */
 function getConversionCatalog() {
   return [...products]
@@ -42,27 +41,26 @@ const filters = [
 ] as const;
 
 /**
- * Post-hero shop section — applied conversion science:
- * - Social proof (ratings, “customers chose”)
- * - Scarcity/urgency that’s honest (launch window)
- * - Price anchoring (compare-at + save amount)
- * - Limited choice set (Hick’s law)
- * - Trust near money (shipping / guest checkout)
- * - One primary CTA path (coral)
+ * Floating product cards — no outer panel wrapper.
+ * Each product image is a resilient autoplay carousel.
  */
 export function ShopNow() {
   const catalog = getConversionCatalog();
   const heroProduct = catalog[0];
   const grid = catalog.slice(1, 7);
   const totalReviews = products.reduce((s, p) => s + p.reviewCount, 0);
+  const heroPromo = Boolean(
+    heroProduct?.compareAtPrice &&
+      heroProduct.compareAtPrice > heroProduct.price,
+  );
 
   return (
     <section className="shop-stage relative border-y border-border/80 px-3 py-11 sm:px-5 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
-        {/* Urgency strip — temporal motivation (Cialdini: scarcity + commitment) */}
-        <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-cta/20 bg-white px-4 py-3 shadow-sm sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5 animate-fade-up">
+        {/* Urgency strip */}
+        <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-success/20 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-sm sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5 animate-fade-up">
           <div className="flex items-start gap-3 sm:items-center">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cta text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-white">
               <Clock3 className="h-4 w-4" />
             </span>
             <div>
@@ -70,8 +68,7 @@ export function ShopNow() {
                 Launch pricing is live this week
               </p>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Real limited-time launch offer — not fake stock. Prices return
-                to regular after the window ends.
+                Real limited-time launch offer — savings highlighted in green.
               </p>
             </div>
           </div>
@@ -87,7 +84,6 @@ export function ShopNow() {
           </div>
         </div>
 
-        {/* Section header — outcome language, not catalog language */}
         <div className="mb-6 flex flex-col gap-5 lg:mb-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl animate-fade-up">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
@@ -97,8 +93,8 @@ export function ShopNow() {
               What customers buy first
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              A short list of high-intent picks — sorted by demand, ratings, and
-              launch savings. Less scrolling. Clearer choices.
+              Floating product cards with live image carousels — hover or tap to
+              pause and explore.
             </p>
           </div>
 
@@ -110,7 +106,7 @@ export function ShopNow() {
                 className={
                   "active" in filter && filter.active
                     ? "pressable rounded-full bg-foreground px-4 py-2 text-sm font-medium text-white"
-                    : "pressable rounded-full border border-border bg-white px-4 py-2 text-sm font-medium text-foreground hover:border-brand hover:bg-brand-soft hover:text-brand-deep"
+                    : "pressable rounded-full border border-border bg-white/90 px-4 py-2 text-sm font-medium text-foreground hover:border-brand hover:bg-brand-soft hover:text-brand-deep"
                 }
               >
                 {filter.label}
@@ -119,32 +115,32 @@ export function ShopNow() {
           </div>
         </div>
 
-        {/* Featured + grid on elevated white panel for contrast */}
-        <div className="shop-panel rounded-[1.6rem] p-3 sm:p-4 lg:p-5">
+        {/* Cards float freely — no shop-panel wrapper */}
         <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
           {heroProduct ? (
-            <article className="group relative overflow-hidden rounded-[1.35rem] bg-card shadow-sm ring-1 ring-border/80 lg:col-span-5 card-soft animate-fade-up">
+            <article className="group/card relative overflow-hidden rounded-[1.35rem] bg-card shadow-sm ring-1 ring-border/70 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] hover:ring-brand/35 lg:col-span-5 card-soft animate-fade-up">
               <Link
                 href={`/product/${heroProduct.slug}`}
-                className="relative block aspect-[4/5] overflow-hidden product-plate sm:aspect-[5/4] lg:min-h-[400px] lg:aspect-auto"
+                className="relative block aspect-[4/5] overflow-hidden sm:aspect-[5/4] lg:min-h-[400px] lg:aspect-auto"
               >
-                <Image
-                  src={heroProduct.imageUrl}
+                <ProductImageCarousel
+                  images={heroProduct.images}
+                  imageUrl={heroProduct.imageUrl}
                   alt={heroProduct.imageAlt}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                  className="object-cover img-zoom"
                   priority
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="absolute inset-0"
+                  intervalMs={3000}
                 />
-                <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-cta px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                <div className="absolute left-4 top-4 z-[3] flex flex-wrap gap-2">
+                  <span className="rounded-full bg-brand-deep px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
                     #1 most popular
                   </span>
-                  {heroProduct.compareAtPrice ? (
-                    <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-cta">
+                  {heroPromo ? (
+                    <span className="rounded-full bg-success px-3 py-1 text-[11px] font-semibold text-white">
                       Save{" "}
                       {formatMoney(
-                        heroProduct.compareAtPrice - heroProduct.price,
+                        (heroProduct.compareAtPrice ?? 0) - heroProduct.price,
                       )}
                     </span>
                   ) : null}
@@ -154,40 +150,42 @@ export function ShopNow() {
               <div className="space-y-4 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400 transition-transform duration-500 group-hover/card:animate-star-spin" />
                     <span className="font-semibold text-foreground">
                       {heroProduct.rating}
                     </span>
                     <span>({heroProduct.reviewCount} reviews)</span>
                   </span>
                   <span className="text-border">·</span>
-                  <span className="text-success font-medium">In stock</span>
+                  <span className="font-medium text-success">In stock</span>
                 </div>
 
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-deep">
                     Customers’ first pick
                   </p>
-                  <h3 className="mt-1 font-display text-2xl font-medium tracking-tight text-foreground">
-                    <Link
-                      href={`/product/${heroProduct.slug}`}
-                      className="hover:text-brand-deep"
-                    >
+                  <h3 className="mt-1 font-display text-2xl font-medium tracking-tight text-foreground transition-colors group-hover/card:text-brand-deep">
+                    <Link href={`/product/${heroProduct.slug}`}>
                       {heroProduct.name}
                     </Link>
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground transition-all duration-300 group-hover/card:text-[0.9375rem] group-hover/card:text-foreground/80">
                     {heroProduct.shortDescription}
                   </p>
                 </div>
 
-                {/* Anchoring: big sale price + struck regular */}
-                <div className="rounded-2xl bg-brand-soft/80 px-4 py-3">
+                <div
+                  className={
+                    heroPromo
+                      ? "rounded-2xl bg-success/10 px-4 py-3 ring-1 ring-success/20"
+                      : "rounded-2xl bg-brand-soft/80 px-4 py-3"
+                  }
+                >
                   <div className="flex flex-wrap items-end gap-2">
                     <span className="text-3xl font-semibold tracking-tight text-brand-deep">
                       {formatMoney(heroProduct.price, heroProduct.currency)}
                     </span>
-                    {heroProduct.compareAtPrice ? (
+                    {heroPromo && heroProduct.compareAtPrice ? (
                       <>
                         <span className="pb-1 text-sm text-muted-foreground line-through">
                           {formatMoney(
@@ -195,7 +193,7 @@ export function ShopNow() {
                             heroProduct.currency,
                           )}
                         </span>
-                        <span className="pb-1 text-sm font-semibold text-cta">
+                        <span className="pb-1 text-sm font-semibold text-success">
                           You save{" "}
                           {formatMoney(
                             heroProduct.compareAtPrice - heroProduct.price,
@@ -212,9 +210,12 @@ export function ShopNow() {
                 <div className="space-y-2">
                   <Button
                     asChild
-                    variant="default"
                     size="lg"
-                    className="pressable w-full"
+                    className={
+                      heroPromo
+                        ? "pressable w-full bg-success text-white hover:bg-success/90"
+                        : "pressable w-full"
+                    }
                   >
                     <Link href={`/cart?add=${heroProduct.slug}`}>
                       Add to cart — {formatMoney(heroProduct.price)}
@@ -253,9 +254,7 @@ export function ShopNow() {
             ))}
           </div>
         </div>
-        </div>
 
-        {/* Bottom conversion band */}
         <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-3 animate-fade-up">
           <div className="rounded-2xl border border-border/80 bg-white/90 px-4 py-4 text-center shadow-sm backdrop-blur-sm sm:text-left">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-deep">
@@ -275,7 +274,7 @@ export function ShopNow() {
               Guest checkout is on by default — buy without creating an account.
             </p>
           </div>
-          <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-foreground px-4 py-4 text-white shadow-sm sm:flex-row sm:items-center sm:col-span-1">
+          <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-foreground px-4 py-4 text-white shadow-sm sm:flex-row sm:items-center">
             <div>
               <p className="font-display text-lg font-medium">See everything</p>
               <p className="text-xs text-white/65">

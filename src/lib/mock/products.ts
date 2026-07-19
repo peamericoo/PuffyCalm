@@ -1,5 +1,9 @@
 import type { Product } from "@/types/product";
 
+/**
+ * Product fixtures — each item has a multi-image gallery for the
+ * shared ProductImageCarousel (autoplay, pause on hover/touch).
+ */
 export const products: Product[] = [
   {
     id: "prod_001",
@@ -16,6 +20,11 @@ export const products: Product[] = [
     categoryLabel: "Recovery",
     imageUrl:
       "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Person enjoying a calm neck massage ritual",
     rating: 4.8,
     reviewCount: 214,
@@ -38,6 +47,11 @@ export const products: Product[] = [
     categoryLabel: "Recovery",
     imageUrl:
       "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Active recovery with compact massage tools",
     rating: 4.7,
     reviewCount: 168,
@@ -59,6 +73,11 @@ export const products: Product[] = [
     categoryLabel: "Recovery",
     imageUrl:
       "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1599058945522-28d584b6f14f?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Strength and recovery training lifestyle",
     rating: 4.6,
     reviewCount: 97,
@@ -81,10 +100,15 @@ export const products: Product[] = [
     categoryLabel: "Comfort",
     imageUrl:
       "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Calm wellness rest and eye recovery",
     rating: 4.9,
     reviewCount: 142,
-    badges: ["bestseller"],
+    badges: ["bestseller", "sale"],
     features: ["Warm compress", "Soft blindfold fit", "Rechargeable"],
     inStock: true,
     featured: true,
@@ -102,6 +126,11 @@ export const products: Product[] = [
     categoryLabel: "Comfort",
     imageUrl:
       "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Minimal home office comfort setup",
     rating: 4.5,
     reviewCount: 88,
@@ -122,6 +151,11 @@ export const products: Product[] = [
     categoryLabel: "Comfort",
     imageUrl:
       "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1616628182501-df42145cf54d?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Soft living room comfort seating",
     rating: 4.6,
     reviewCount: 121,
@@ -138,14 +172,21 @@ export const products: Product[] = [
     description:
       "A plush heated neck wrap that delivers steady warmth where tension collects.",
     price: 44.0,
+    compareAtPrice: 55.0,
     currency: "USD",
     categorySlugs: ["recovery", "comfort", "all"],
     categoryLabel: "Recovery",
     imageUrl:
       "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Warm spa-like self care moment",
     rating: 4.7,
     reviewCount: 76,
+    badges: ["sale"],
     features: ["Even heat zones", "Soft fabric", "Auto shut-off"],
     inStock: true,
     featured: false,
@@ -163,6 +204,11 @@ export const products: Product[] = [
     categoryLabel: "Everyday",
     imageUrl:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80",
+    ],
     imageAlt: "Clean desk setup with elevated laptop",
     rating: 4.8,
     reviewCount: 203,

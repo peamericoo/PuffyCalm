@@ -10,8 +10,13 @@ export interface Product {
   compareAtPrice?: number;
   currency: "USD";
   categorySlugs: string[];
-  /** Lifestyle / product photography URL */
+  /**
+   * Primary cover (kept for convenience).
+   * Prefer `images` for carousels — always at least 1 item.
+   */
   imageUrl: string;
+  /** Gallery for product image carousel (resilient mock → real PDP later) */
+  images: string[];
   imageAlt: string;
   rating: number;
   reviewCount: number;
@@ -31,4 +36,15 @@ export interface Category {
   imageUrl: string;
   ctaLabel: string;
   productCount: number;
+}
+
+/** Normalize any product-like object to a non-empty image list. */
+export function getProductImages(product: {
+  imageUrl?: string;
+  images?: string[];
+}): string[] {
+  const list = (product.images ?? []).filter(Boolean);
+  if (list.length > 0) return list;
+  if (product.imageUrl) return [product.imageUrl];
+  return [];
 }

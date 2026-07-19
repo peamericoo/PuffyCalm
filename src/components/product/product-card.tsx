@@ -1,7 +1,10 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Star } from "lucide-react";
 import type { Product } from "@/types/product";
+import { ProductImageCarousel } from "@/components/product/product-image-carousel";
 import { Price } from "@/components/product/price";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,6 @@ import { cn } from "@/lib/utils";
 interface ProductCardProps {
   product: Product;
   className?: string;
-  /** Social proof line under rating (conversion science) */
   socialProof?: string;
 }
 
@@ -20,19 +22,24 @@ function percentOff(price: number, compareAt?: number) {
   return Math.round(((compareAt - price) / compareAt) * 100);
 }
 
+function isPromo(product: Product) {
+  return Boolean(
+    product.compareAtPrice && product.compareAtPrice > product.price,
+  ) || product.badges?.includes("sale");
+}
+
 /**
- * Conversion-tuned product card:
- * - Rating always visible (social proof)
- * - Price anchoring with % off
- * - One dominant CTA (coral) reduces choice paralysis
- * - Secondary path as quiet text link
+ * Interactive product card — hover (desktop) + tap/focus (mobile).
+ * Image always uses ProductImageCarousel when gallery exists.
  */
 export function ProductCard({
   product,
   className,
   socialProof,
 }: ProductCardProps) {
+  const [active, setActive] = useState(false);
   const off = percentOff(product.price, product.compareAtPrice);
+  const promo = isPromo(product);
   const proof =
     socialProof ??
     (product.reviewCount >= 100
@@ -41,28 +48,50 @@ export function ProductCard({
 
   return (
     <article
+      tabIndex={0}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+      onFocus={() => setActive(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setActive(false);
+        }
+      }}
+      onTouchStart={() => setActive(true)}
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-card shadow-sm ring-1 ring-border/70 card-soft",
+        "group/card flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-card shadow-sm ring-1 ring-border/70 transition-all duration-300 outline-none",
+        "hover:-translate-y-1.5 hover:shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] hover:ring-brand/35",
+        "focus-visible:-translate-y-1.5 focus-visible:shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] focus-visible:ring-2 focus-visible:ring-brand/40",
+        active &&
+          "is-active/card -translate-y-1.5 shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] ring-brand/35",
         className,
       )}
     >
       <Link
         href={`/product/${product.slug}`}
-        className="relative block aspect-[4/5] overflow-hidden product-plate sm:aspect-square"
+        className="relative block aspect-[4/5] overflow-hidden sm:aspect-square"
       >
-        <Image
-          src={product.imageUrl}
+        <ProductImageCarousel
+          images={product.images}
+          imageUrl={product.imageUrl}
           alt={product.imageAlt}
-          fill
+          paused={active}
+          className="absolute inset-0"
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-          className="object-cover img-zoom"
         />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+
+        <div className="absolute left-3 top-3 z-[3] flex flex-wrap gap-1.5">
           {product.badges?.slice(0, 2).map((badge) => (
             <Badge
               key={badge}
               variant={
-                badge === "sale" ? "sale" : badge === "new" ? "new" : "soft"
+                badge === "sale"
+                  ? "sale"
+                  : badge === "new"
+                    ? "new"
+                    : badge === "bestseller"
+                      ? "soft"
+                      : "muted"
               }
               className="backdrop-blur-sm"
             >
@@ -86,7 +115,13 @@ export function ProductCard({
       <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <Star
+              className={cn(
+                "h-3.5 w-3.5 fill-amber-400 text-amber-400 transition-transform duration-500",
+                active && "animate-star-spin",
+                "group-hover/card:animate-star-spin",
+              )}
+            />
             <span className="font-semibold text-foreground">
               {product.rating}
             </span>
@@ -100,17 +135,18 @@ export function ProductCard({
             </p>
           ) : null}
 
-          <h3 className="text-[15px] font-medium leading-snug tracking-tight text-foreground">
-            <Link
-              href={`/product/${product.slug}`}
-              className="transition-colors hover:text-brand-deep"
-            >
-              {product.name}
-            </Link>
+          <h3 className="text-[15px] font-medium leading-snug tracking-tight text-foreground transition-colors group-hover/card:text-brand-deep">
+            <Link href={`/product/${product.slug}`}>{product.name}</Link>
           </h3>
 
-          {/* Benefit-first line (outcome > feature) */}
-          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          <p
+            className={cn(
+              "text-sm leading-relaxed text-muted-foreground transition-all duration-300 origin-top",
+              active || "line-clamp-2",
+              active && "line-clamp-none scale-[1.02] text-[0.9375rem] text-foreground/80",
+              "group-hover/card:line-clamp-none group-hover/card:scale-[1.02] group-hover/card:text-[0.9375rem] group-hover/card:text-foreground/80",
+            )}
+          >
             {product.shortDescription}
           </p>
         </div>
@@ -121,21 +157,37 @@ export function ProductCard({
             compareAtPrice={product.compareAtPrice}
             currency={product.currency}
           />
-          {product.compareAtPrice && product.compareAtPrice > product.price ? (
-            <span className="text-[11px] font-semibold text-cta">
+          {promo && product.compareAtPrice ? (
+            <span className="text-[11px] font-semibold text-success">
               Save {formatMoney(product.compareAtPrice - product.price)}
             </span>
           ) : null}
         </div>
 
-        {/* Single dominant action — fewer decisions = more clicks */}
         <div className="mt-auto space-y-2 pt-1">
-          <Button asChild variant="default" size="sm" className="pressable w-full">
+          <Button
+            asChild
+            variant={promo ? "soft" : "default"}
+            size="sm"
+            className={cn(
+              "pressable w-full transition-all duration-300",
+              promo &&
+                "bg-success text-white hover:bg-success/90 group-hover/card:bg-success group-hover/card:text-white",
+              !promo &&
+                "group-hover/card:bg-brand-deep group-hover/card:text-white",
+              active && promo && "bg-success text-white",
+              active && !promo && "bg-brand-deep text-white",
+            )}
+          >
             <Link href={`/cart?add=${product.slug}`}>Add to cart</Link>
           </Button>
           <Link
             href={`/product/${product.slug}`}
-            className="block text-center text-xs font-medium text-brand-deep transition-colors hover:text-foreground"
+            className={cn(
+              "block text-center text-xs font-medium transition-colors duration-300",
+              "text-brand-deep hover:text-foreground",
+              active && "text-foreground underline-offset-2",
+            )}
           >
             View details
           </Link>
