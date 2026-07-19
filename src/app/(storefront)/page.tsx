@@ -7,10 +7,13 @@ import { ShopNow } from "@/components/home/shop-now";
 export default function HomePage() {
   return (
     <>
-      <HeroCarousel />
-      <div className="relative z-0 bg-background">
-        {/* Immediate product contact for conversion */}
+      {/* Continuous sky stage — no seam between hero gutter and shop */}
+      <div className="shop-stage relative">
+        <HeroCarousel />
         <ShopNow />
+      </div>
+
+      <div className="relative z-0 bg-background">
         <CategoriesStrip />
         <LifestyleCollections />
         <CtaBand />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, Star } from "lucide-react";
+import { ShoppingBag, Star } from "lucide-react";
 import type { Product } from "@/types/product";
 import { ProductImageCarousel } from "@/components/product/product-image-carousel";
 import { formatMoney } from "@/lib/format";
@@ -22,7 +22,8 @@ function percentOff(price: number, compareAt?: number) {
 
 /**
  * Fixed-height product card — no layout shift on hover.
- * Larger type + bold sale callouts for conversion.
+ * Solid CTAs (no backdrop-filter) so hover never “eats” the button.
+ * Price uses brand-deep (trust), not coral (reserved for CTA).
  */
 export function ProductCard({
   product,
@@ -52,15 +53,16 @@ export function ProductCard({
       }}
       onTouchStart={() => setActive(true)}
       className={cn(
-        "group/card product-card relative flex h-full flex-col overflow-hidden rounded-[1.2rem] bg-card outline-none",
+        "group/card product-card relative flex h-full flex-col rounded-[1.2rem] bg-card outline-none",
         active && "is-active",
         className,
       )}
     >
+      {/* Image alone clips — body stays overflow-visible so CTA never vanishes */}
       <Link
         href={`/product/${product.slug}`}
         className={cn(
-          "relative z-[1] block overflow-hidden",
+          "relative z-[1] block overflow-hidden rounded-t-[1.2rem]",
           compact ? "aspect-[1/1.02]" : "aspect-[4/5]",
         )}
       >
@@ -76,33 +78,21 @@ export function ProductCard({
 
         {off ? (
           <span className="absolute left-2 top-2 z-[3] flex flex-col items-start gap-0.5 sm:left-2.5 sm:top-2.5">
-            <span className="rounded-full bg-cta px-2.5 py-1 text-[12px] font-bold tracking-wide text-white shadow-[0_8px_18px_-8px_rgb(224_122_95/0.7)] sm:px-3 sm:text-[13px]">
+            <span className="rounded-full bg-brand-deep px-2.5 py-1 text-[12px] font-bold tracking-wide text-white shadow-sm sm:px-3 sm:text-[13px]">
               −{off}%
             </span>
             {saveAmt > 0 ? (
-              <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-cta shadow-sm backdrop-blur-sm sm:text-[11px]">
+              <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-brand-deep shadow-sm sm:text-[11px]">
                 Save {formatMoney(saveAmt, product.currency)}
               </span>
             ) : null}
           </span>
         ) : null}
-
-        <span
-          className={cn(
-            "absolute bottom-2 right-2 z-[3] flex h-9 w-9 items-center justify-center rounded-full glass-chip text-foreground transition-all duration-500",
-            "opacity-0 translate-y-1 scale-90",
-            "group-hover/card:opacity-100 group-hover/card:translate-y-0 group-hover/card:scale-100",
-            active && "opacity-100 translate-y-0 scale-100",
-          )}
-          aria-hidden
-        >
-          <Plus className="h-4 w-4" strokeWidth={2.25} />
-        </span>
       </Link>
 
       <div
         className={cn(
-          "relative z-[1] flex flex-1 flex-col",
+          "relative z-[2] flex flex-1 flex-col rounded-b-[1.2rem] bg-card",
           compact ? "gap-1.5 px-3 pb-3 pt-2.5" : "gap-2 px-3.5 pb-3.5 pt-3",
         )}
       >
@@ -132,36 +122,41 @@ export function ProductCard({
           <Link href={`/product/${product.slug}`}>{product.name}</Link>
         </h3>
 
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1 pt-1">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-1.5">
-            <span
-              className={cn(
-                "font-bold tracking-tight",
-                compact ? "text-[18px] sm:text-[19px]" : "text-[19px] sm:text-xl",
-                promo ? "text-cta" : "text-foreground",
-              )}
-            >
-              {formatMoney(product.price, product.currency)}
+        <div className="mt-auto flex flex-wrap items-end gap-x-2 gap-y-0.5 pt-1">
+          <span
+            className={cn(
+              "price-value inline-block font-bold tracking-tight text-brand-deep",
+              compact
+                ? "text-[22px] sm:text-[24px]"
+                : "text-[23px] sm:text-[25px]",
+              active && "animate-price-pop",
+              "group-hover/card:animate-price-pop",
+            )}
+          >
+            {formatMoney(product.price, product.currency)}
+          </span>
+          {promo && product.compareAtPrice ? (
+            <span className="pb-0.5 text-[13px] font-medium text-muted-foreground line-through">
+              {formatMoney(product.compareAtPrice, product.currency)}
             </span>
-            {promo && product.compareAtPrice ? (
-              <span className="text-[13px] font-medium text-muted-foreground line-through">
-                {formatMoney(product.compareAtPrice, product.currency)}
-              </span>
-            ) : null}
-          </div>
+          ) : null}
         </div>
 
         <Link
           href={`/cart?add=${product.slug}`}
           className={cn(
-            "pressable mt-1.5 flex w-full items-center justify-center rounded-full font-semibold transition-all duration-300",
-            compact ? "h-10 text-[13px]" : "h-10 text-sm",
-            "glass-btn text-brand-deep",
-            "group-hover/card:bg-cta group-hover/card:text-white group-hover/card:shadow-[0_8px_20px_-10px_rgb(224_122_95/0.65)]",
-            active &&
-              "bg-cta text-white shadow-[0_8px_20px_-10px_rgb(224_122_95/0.65)]",
+            "add-cart-btn mt-2 flex w-full items-center justify-center gap-1.5 rounded-full font-semibold",
+            compact ? "h-11 text-[13px]" : "h-11 text-sm",
+            active && "is-active",
           )}
         >
+          <ShoppingBag
+            className={cn(
+              "h-3.5 w-3.5 transition-transform duration-500",
+              active && "animate-cart-icon",
+              "group-hover/card:animate-cart-icon",
+            )}
+          />
           Add to cart
         </Link>
       </div>

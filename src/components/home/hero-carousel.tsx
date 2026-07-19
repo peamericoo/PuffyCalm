@@ -40,7 +40,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="shop-stage relative w-full overflow-hidden pb-3 sm:pb-4 sm:pt-2"
+      className="relative w-full overflow-hidden pb-2 sm:pb-3 sm:pt-2"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
@@ -50,7 +50,7 @@ export function HeroCarousel() {
         Height strategy:
         - Mobile: ~48–52vh max, never full screen — products stay close
         - Desktop: cinematic but capped so shop is near
-        Gutter uses shop-stage sky (same as What customers buy first).
+        Parent page wrapper provides continuous shop-stage sky (no seam).
       */}
       <div className="relative mx-auto w-full max-w-[1760px] px-0 sm:px-3 lg:px-4">
         <div
