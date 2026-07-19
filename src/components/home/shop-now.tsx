@@ -57,10 +57,10 @@ export function ShopNow() {
   const totalReviews = products.reduce((s, p) => s + p.reviewCount, 0);
 
   return (
-    <section className="shop-stage relative border-b border-border/70 px-3 py-11 sm:px-5 sm:py-16">
+    <section className="shop-stage relative border-y border-border/80 px-3 py-11 sm:px-5 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
         {/* Urgency strip — temporal motivation (Cialdini: scarcity + commitment) */}
-        <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-cta/25 bg-gradient-to-r from-cta/10 via-white to-brand-soft px-4 py-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5 animate-fade-up">
+        <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-cta/20 bg-white px-4 py-3 shadow-sm sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5 animate-fade-up">
           <div className="flex items-start gap-3 sm:items-center">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cta text-white">
               <Clock3 className="h-4 w-4" />
@@ -119,10 +119,11 @@ export function ShopNow() {
           </div>
         </div>
 
-        {/* Featured + grid */}
+        {/* Featured + grid on elevated white panel for contrast */}
+        <div className="shop-panel rounded-[1.6rem] p-3 sm:p-4 lg:p-5">
         <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
           {heroProduct ? (
-            <article className="group relative overflow-hidden rounded-[1.5rem] bg-card shadow-sm ring-1 ring-border/80 lg:col-span-5 card-soft animate-fade-up">
+            <article className="group relative overflow-hidden rounded-[1.35rem] bg-card shadow-sm ring-1 ring-border/80 lg:col-span-5 card-soft animate-fade-up">
               <Link
                 href={`/product/${heroProduct.slug}`}
                 className="relative block aspect-[4/5] overflow-hidden product-plate sm:aspect-[5/4] lg:min-h-[400px] lg:aspect-auto"
@@ -252,10 +253,11 @@ export function ShopNow() {
             ))}
           </div>
         </div>
+        </div>
 
         {/* Bottom conversion band */}
         <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-3 animate-fade-up">
-          <div className="rounded-2xl border border-border bg-white px-4 py-4 text-center sm:text-left">
+          <div className="rounded-2xl border border-border/80 bg-white/90 px-4 py-4 text-center shadow-sm backdrop-blur-sm sm:text-left">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-deep">
               Social proof
             </p>
@@ -265,7 +267,7 @@ export function ShopNow() {
               the catalog.
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-white px-4 py-4 text-center sm:text-left">
+          <div className="rounded-2xl border border-border/80 bg-white/90 px-4 py-4 text-center shadow-sm backdrop-blur-sm sm:text-left">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-deep">
               Low friction
             </p>
@@ -273,7 +275,7 @@ export function ShopNow() {
               Guest checkout is on by default — buy without creating an account.
             </p>
           </div>
-          <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-foreground px-4 py-4 text-white sm:flex-row sm:items-center sm:col-span-1">
+          <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-foreground px-4 py-4 text-white shadow-sm sm:flex-row sm:items-center sm:col-span-1">
             <div>
               <p className="font-display text-lg font-medium">See everything</p>
               <p className="text-xs text-white/65">
