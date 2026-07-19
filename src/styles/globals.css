@@ -28,8 +28,6 @@
   --nav-h: 4.25rem;
   --promo-h: 2.35rem;
   --page-pad: 1rem;
-  /* Floating chrome side inset — clears device edges + notches */
-  --nav-gutter: max(1rem, env(safe-area-inset-left, 0px));
 }
 
 @theme inline {
@@ -614,9 +612,8 @@ body {
   will-change: transform;
 }
 
-/* Search (lupa) — soft scan tilt on field hover/focus */
-.nav-search:hover .nav-icon-svg--search,
-.nav-search:focus-within .nav-icon-svg--search {
+/* Search (lupa) — soft scan tilt on hover */
+.nav-icon--search:hover .nav-icon-svg {
   color: var(--brand-deep);
   animation: nav-search-scan 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -905,27 +902,6 @@ body {
   transform: scale(0.97);
 }
 
-/* Side gutters for floating top bar + mobile drawer */
-.nav-shell {
-  padding-left: max(1rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1rem, env(safe-area-inset-right, 0px));
-  box-sizing: border-box;
-}
-
-@media (min-width: 640px) {
-  .nav-shell {
-    padding-left: max(0.875rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.875rem, env(safe-area-inset-right, 0px));
-  }
-}
-
-@media (min-width: 1024px) {
-  .nav-shell {
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
-  }
-}
-
 .nav-float {
   background: rgb(255 255 255 / 0.78);
   backdrop-filter: blur(18px) saturate(1.35);
@@ -937,9 +913,9 @@ body {
   transition:
     box-shadow 300ms ease,
     background-color 300ms ease;
-  /* Keep pill from overflowing its shell on narrow screens */
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .nav-float.is-scrolled {
@@ -1004,8 +980,7 @@ body {
   .display-title-accent,
   .display-aura-core,
   .hero-line,
-  .nav-search:hover .nav-icon-svg--search,
-  .nav-search:focus-within .nav-icon-svg--search,
+  .nav-icon--search:hover .nav-icon-svg,
   .nav-icon--heart:hover .nav-icon-svg,
   .nav-icon--user:hover .nav-icon-svg,
   .nav-icon--cart:hover .nav-icon-svg {

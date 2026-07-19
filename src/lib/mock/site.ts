@@ -15,6 +15,7 @@ export const siteConfig = {
 export type NavChild = {
   label: string;
   href: string;
+  blurb: string;
   /** Lucide icon name key — resolved in Header */
   icon:
     | "grid"
@@ -50,50 +51,150 @@ export const mainNav: NavItem[] = [
     label: "Shop",
     href: "/category/all",
     children: [
-      { label: "All products", href: "/category/all", icon: "grid" },
-      { label: "New arrivals", href: "/category/all", icon: "sparkles" },
-      { label: "Sale", href: "/category/all", icon: "tag" },
-      { label: "Under $50", href: "/category/all", icon: "dollar" },
-      { label: "Bestsellers", href: "/category/all", icon: "star" },
+      {
+        label: "All products",
+        href: "/category/all",
+        icon: "grid",
+        blurb: "Full catalog, one calm place",
+      },
+      {
+        label: "New arrivals",
+        href: "/category/all",
+        icon: "sparkles",
+        blurb: "Fresh drops this week",
+      },
+      {
+        label: "Sale",
+        href: "/category/all",
+        icon: "tag",
+        blurb: "Launch prices worth a look",
+      },
+      {
+        label: "Under $50",
+        href: "/category/all",
+        icon: "dollar",
+        blurb: "Smart upgrades, light spend",
+      },
+      {
+        label: "Bestsellers",
+        href: "/category/all",
+        icon: "star",
+        blurb: "What people re-order",
+      },
     ],
   },
   {
     label: "Recovery",
     href: "/category/recovery",
     children: [
-      { label: "Massage & tension", href: "/category/recovery", icon: "hand" },
-      { label: "Heat therapy", href: "/category/recovery", icon: "flame" },
-      { label: "Neck & shoulders", href: "/category/recovery", icon: "activity" },
-      { label: "Travel recovery", href: "/category/recovery", icon: "plane" },
+      {
+        label: "Massage & tension",
+        href: "/category/recovery",
+        icon: "hand",
+        blurb: "Release what you carry",
+      },
+      {
+        label: "Heat therapy",
+        href: "/category/recovery",
+        icon: "flame",
+        blurb: "Warmth that actually helps",
+      },
+      {
+        label: "Neck & shoulders",
+        href: "/category/recovery",
+        icon: "activity",
+        blurb: "Desk-day rescue kit",
+      },
+      {
+        label: "Travel recovery",
+        href: "/category/recovery",
+        icon: "plane",
+        blurb: "Light tools for the road",
+      },
     ],
   },
   {
     label: "Comfort",
     href: "/category/comfort",
     children: [
-      { label: "Lumbar support", href: "/category/comfort", icon: "armchair" },
-      { label: "Seat cushions", href: "/category/comfort", icon: "sofa" },
-      { label: "Wraps & warmth", href: "/category/comfort", icon: "thermometer" },
-      { label: "Sleep support", href: "/category/comfort", icon: "moon" },
+      {
+        label: "Lumbar support",
+        href: "/category/comfort",
+        icon: "armchair",
+        blurb: "Back that stays with you",
+      },
+      {
+        label: "Seat cushions",
+        href: "/category/comfort",
+        icon: "sofa",
+        blurb: "Soft hours, longer focus",
+      },
+      {
+        label: "Wraps & warmth",
+        href: "/category/comfort",
+        icon: "thermometer",
+        blurb: "Cozy where it counts",
+      },
+      {
+        label: "Sleep support",
+        href: "/category/comfort",
+        icon: "moon",
+        blurb: "Wind down, properly",
+      },
     ],
   },
   {
     label: "Everyday",
     href: "/category/everyday",
     children: [
-      { label: "Desk essentials", href: "/category/everyday", icon: "monitor" },
-      { label: "Posture tools", href: "/category/everyday", icon: "activity" },
-      { label: "Focus & routine", href: "/category/everyday", icon: "target" },
+      {
+        label: "Desk essentials",
+        href: "/category/everyday",
+        icon: "monitor",
+        blurb: "Small tools, better days",
+      },
+      {
+        label: "Posture tools",
+        href: "/category/everyday",
+        icon: "activity",
+        blurb: "Stand taller without trying",
+      },
+      {
+        label: "Focus & routine",
+        href: "/category/everyday",
+        icon: "target",
+        blurb: "Habits that stick",
+      },
     ],
   },
   {
     label: "About",
     href: "/about",
     children: [
-      { label: "Our story", href: "/about", icon: "book" },
-      { label: "Shipping", href: "/help#shipping", icon: "truck" },
-      { label: "Returns", href: "/returns", icon: "refresh" },
-      { label: "Help center", href: "/help", icon: "help" },
+      {
+        label: "Our story",
+        href: "/about",
+        icon: "book",
+        blurb: "Why PuffyEasy exists",
+      },
+      {
+        label: "Shipping",
+        href: "/help#shipping",
+        icon: "truck",
+        blurb: "Where & how we ship",
+      },
+      {
+        label: "Returns",
+        href: "/returns",
+        icon: "refresh",
+        blurb: "Easy change of mind",
+      },
+      {
+        label: "Help center",
+        href: "/help",
+        icon: "help",
+        blurb: "Answers, quickly",
+      },
     ],
   },
 ];
