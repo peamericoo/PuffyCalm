@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { ProductLightbox } from "@/components/product/product-lightbox";
+import { ProductSpotlight } from "@/components/product/product-spotlight";
 import { getProductImages } from "@/types/product";
 import iconStyles from "./product-icons.module.css";
 import { cn } from "@/lib/utils";
@@ -82,13 +83,16 @@ export function ProductGallery({
             className="pointer-events-none object-cover object-center animate-fade-in"
           />
 
+          {/* Stage light — isolated component + CSS module */}
+          <ProductSpotlight size="lg" />
+
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Zoom"
             className={cn(
               iconStyles.expand,
-              "absolute right-3 top-3 z-[2] flex h-9 w-9 items-center justify-center",
+              "absolute right-3 top-3 z-[3] flex h-9 w-9 items-center justify-center",
               "border border-foreground/10 bg-white/95 text-foreground shadow-sm",
               "opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100",
             )}
@@ -107,7 +111,7 @@ export function ProductGallery({
                 aria-label="Previous image"
                 className={cn(
                   iconStyles.prev,
-                  "absolute left-3 top-1/2 z-[2] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
+                  "absolute left-3 top-1/2 z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
                   "border border-foreground/10 bg-white/95 text-foreground shadow-sm lg:flex",
                   "opacity-0 transition-opacity group-hover:opacity-100",
                 )}
@@ -123,7 +127,7 @@ export function ProductGallery({
                 aria-label="Next image"
                 className={cn(
                   iconStyles.next,
-                  "absolute right-3 top-1/2 z-[2] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
+                  "absolute right-3 top-1/2 z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
                   "border border-foreground/10 bg-white/95 text-foreground shadow-sm lg:flex",
                   "opacity-0 transition-opacity group-hover:opacity-100",
                 )}
@@ -133,7 +137,7 @@ export function ProductGallery({
                   strokeWidth={2}
                 />
               </button>
-              <span className="pointer-events-none absolute bottom-3 right-3 z-[2] bg-black/50 px-2 py-0.5 text-[11px] font-medium tabular-nums text-white">
+              <span className="pointer-events-none absolute bottom-3 right-3 z-[3] bg-black/50 px-2 py-0.5 text-[11px] font-medium tabular-nums text-white">
                 {index + 1}/{slides.length}
               </span>
             </>
