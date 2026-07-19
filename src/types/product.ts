@@ -1,5 +1,10 @@
 export type ProductBadge = "bestseller" | "new" | "limited" | "sale";
 
+export type ProductSpec = {
+  label: string;
+  value: string;
+};
+
 export interface Product {
   id: string;
   slug: string;
@@ -22,9 +27,21 @@ export interface Product {
   reviewCount: number;
   badges?: ProductBadge[];
   features: string[];
+  /** PDP detail rows — Material / Design / Size style */
+  specs?: ProductSpec[];
   inStock: boolean;
   featured?: boolean;
   categoryLabel?: string;
+}
+
+/** Specs for PDP table; falls back from features when missing */
+export function getProductSpecs(product: Product): ProductSpec[] {
+  if (product.specs && product.specs.length > 0) return product.specs;
+  const labels = ["Design", "Build", "Care", "Detail"];
+  return product.features.map((value, i) => ({
+    label: labels[i] ?? `Detail ${i + 1}`,
+    value,
+  }));
 }
 
 export interface Category {
