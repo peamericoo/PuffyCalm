@@ -1,52 +1,73 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Container } from "@/components/shared/container";
-import { SectionHeading } from "@/components/shared/section-heading";
 import { lifestyleCollections } from "@/lib/mock/site";
 import { cn } from "@/lib/utils";
 
 export function LifestyleCollections() {
   return (
-    <section className="pb-14 pt-4 sm:pb-20 sm:pt-6">
-      <Container>
-        <SectionHeading
-          title="Most Recommended For You"
-          description="Lifestyle moments we designed PuffyEasy around — calmer workdays, softer recovery, better everyday flow."
-        />
+    <section className="px-3 py-8 sm:px-5 sm:py-12">
+      <div className="mx-auto max-w-[1400px]">
+        <div className="mb-6 grid items-end gap-4 lg:mb-8 lg:grid-cols-12">
+          <div className="lg:col-span-7 animate-fade-up">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+              Lifestyle
+            </p>
+            <h2 className="mt-2 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+              Designed around how you actually live
+            </h2>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground lg:col-span-5 lg:text-right animate-fade-up delay-1">
+            From desk reset to evening unwind — collections that fill the page
+            with intent, not empty scroll.
+          </p>
+        </div>
 
-        <div className="grid auto-rows-[180px] grid-cols-2 gap-3 sm:auto-rows-[220px] sm:gap-4 lg:auto-rows-[240px] lg:grid-cols-4">
+        {/* Wide bento: uses horizontal space on desktop */}
+        <div className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[200px] sm:gap-4 lg:auto-rows-[220px] lg:grid-cols-4">
           {lifestyleCollections.map((item, index) => (
             <Link
               key={item.id}
               href={item.href}
               className={cn(
-                "group relative overflow-hidden rounded-[1.35rem] card-soft",
-                index === 0 && "row-span-2",
-                index === 1 && "col-span-1 lg:col-span-2",
+                "group relative overflow-hidden rounded-[1.35rem] card-soft animate-fade-up",
+                index === 0 && "col-span-2 row-span-2 lg:col-span-2",
+                index === 1 && "col-span-2 lg:col-span-2",
                 index === 2 && "col-span-1",
                 index === 3 && "col-span-1",
+                index === 0
+                  ? "delay-1"
+                  : index === 1
+                    ? "delay-2"
+                    : index === 2
+                      ? "delay-3"
+                      : "delay-4",
               )}
             >
               <Image
                 src={item.imageUrl}
                 alt={item.title}
                 fill
-                sizes="(max-width: 1024px) 50vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                sizes="(max-width: 1024px) 50vw, 40vw"
+                className="object-cover img-zoom"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                <p className="font-display text-xl font-medium tracking-tight text-white sm:text-2xl">
-                  {item.title}
-                </p>
-                <span className="mt-3 inline-flex rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-foreground shadow-sm">
-                  View collection
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-5">
+                <div>
+                  <p className="font-display text-xl font-medium tracking-tight text-white sm:text-2xl">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-xs text-white/75 sm:text-sm">
+                    Explore the edit
+                  </p>
+                </div>
+                <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-foreground opacity-0 translate-y-2 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  View
                 </span>
               </div>
             </Link>
           ))}
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

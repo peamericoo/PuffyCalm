@@ -15,20 +15,20 @@ export function ProductCard({ product, className }: ProductCardProps) {
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl bg-card card-soft",
+        "group flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-card shadow-sm card-soft",
         className,
       )}
     >
       <Link
         href={`/product/${product.slug}`}
-        className="relative block aspect-square overflow-hidden product-plate"
+        className="relative block aspect-[4/5] overflow-hidden product-plate sm:aspect-square"
       >
         <Image
           src={product.imageUrl}
           alt={product.imageAlt}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+          className="object-cover img-zoom"
         />
         {product.badges?.length ? (
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
@@ -38,6 +38,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 variant={
                   badge === "sale" ? "sale" : badge === "new" ? "new" : "soft"
                 }
+                className="backdrop-blur-sm"
               >
                 {badge === "bestseller"
                   ? "Bestseller"
@@ -50,6 +51,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
             ))}
           </div>
         ) : null}
+        <span className="absolute bottom-3 right-3 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-foreground opacity-0 translate-y-2 shadow-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          Quick view
+        </span>
       </Link>
 
       <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
@@ -79,10 +83,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
         />
 
         <div className="mt-auto grid grid-cols-2 gap-2 pt-1">
-          <Button asChild variant="outline" size="sm" className="w-full">
+          <Button asChild variant="outline" size="sm" className="pressable w-full">
             <Link href={`/cart?add=${product.slug}`}>Add to Cart</Link>
           </Button>
-          <Button asChild variant="dark" size="sm" className="w-full">
+          <Button asChild variant="dark" size="sm" className="pressable w-full">
             <Link href={`/product/${product.slug}`}>Buy Now</Link>
           </Button>
         </div>

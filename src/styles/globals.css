@@ -1,24 +1,26 @@
 @import "tailwindcss";
 
-/* PuffyEasy — editorial retail (inspired by modern lifestyle e-comm) */
+/* PuffyEasy — editorial retail + motion */
 :root {
-  --background: #f4f2ef;
-  --foreground: #2a211c;
+  --background: #f0ebe4;
+  --foreground: #1f1915;
   --card: #ffffff;
-  --card-foreground: #2a211c;
-  --muted: #ebe7e1;
-  --muted-foreground: #7a6f66;
-  --border: #e4ddd4;
+  --card-foreground: #1f1915;
+  --muted: #e7e0d6;
+  --muted-foreground: #6f645a;
+  --border: #ddd4c8;
   --ring: #8b7355;
-  --accent: #6b5344;
-  --accent-hover: #543f34;
-  --accent-soft: #efe6db;
-  --hero: #8a7360;
-  --hero-deep: #6e5a4a;
-  --cream: #f7f1e8;
-  --cream-text: #f3e9db;
+  --accent: #5c4638;
+  --accent-hover: #463528;
+  --accent-soft: #efe4d6;
+  --hero: #7d6754;
+  --hero-deep: #5e4c3d;
+  --cream: #f8f2ea;
+  --cream-text: #f5ede2;
   --success: #3d7a5c;
   --radius: 1.25rem;
+  --nav-h: 4.25rem;
+  --page-pad: 1rem;
 }
 
 @theme inline {
@@ -78,22 +80,224 @@ body {
   font-family: var(--font-display), Georgia, "Times New Roman", serif;
 }
 
-/* Soft product image plate */
+/* Content clears floating nav */
+.page-offset {
+  padding-top: calc(var(--nav-h) + 1.75rem);
+}
+
 .product-plate {
   background:
     radial-gradient(circle at 50% 40%, #ffffff 0%, #f5f2ed 55%, #ebe6df 100%);
 }
 
-/* Subtle card hover */
+/* ——— Motion system ——— */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.7;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-float {
+  animation: float-soft 5s ease-in-out infinite;
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+.delay-1 {
+  animation-delay: 0.08s;
+}
+.delay-2 {
+  animation-delay: 0.16s;
+}
+.delay-3 {
+  animation-delay: 0.24s;
+}
+.delay-4 {
+  animation-delay: 0.32s;
+}
+.delay-5 {
+  animation-delay: 0.4s;
+}
+.delay-6 {
+  animation-delay: 0.48s;
+}
+
+/* Hover elevation */
 .card-soft {
   transition:
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .card-soft:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 22px 50px -28px rgb(42 33 28 / 0.35);
+  transform: translateY(-5px);
+  box-shadow: 0 24px 50px -28px rgb(31 25 21 / 0.4);
+}
+
+.img-zoom {
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.group:hover .img-zoom {
+  transform: scale(1.06);
+}
+
+/* Magnetic-ish press on interactive chips */
+.pressable {
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.pressable:hover {
+  transform: translateY(-1px);
+}
+
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* Floating nav glass */
+.nav-float {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    0 10px 40px -18px rgb(31 25 21 / 0.28),
+    0 0 0 1px rgb(255 255 255 / 0.55) inset,
+    0 1px 0 rgb(255 255 255 / 0.8) inset;
+  transition:
+    box-shadow 300ms ease,
+    background-color 300ms ease,
+    transform 300ms ease;
+}
+
+.nav-float.is-scrolled {
+  background: rgb(255 255 255 / 0.88);
+  box-shadow:
+    0 14px 44px -16px rgb(31 25 21 / 0.32),
+    0 0 0 1px rgb(255 255 255 / 0.7) inset;
+}
+
+/* Stagger children utility via CSS custom prop */
+.stagger > * {
+  animation: fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.19s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.26s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.33s;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-float,
+  .animate-marquee,
+  .stagger > * {
+    animation: none !important;
+  }
+
+  .card-soft,
+  .img-zoom,
+  .pressable {
+    transition: none !important;
+  }
 }
 
 .no-scrollbar {
