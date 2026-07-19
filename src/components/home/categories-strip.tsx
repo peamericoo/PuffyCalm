@@ -42,7 +42,7 @@ export function CategoriesStrip() {
   const items = categories.filter((c) => c.slug !== "all");
 
   return (
-    <section className="relative overflow-hidden px-3 py-10 sm:px-5 sm:py-14">
+    <section className="relative overflow-x-clip px-[var(--shell-gutter)] py-10 sm:px-5 sm:py-14">
       {/* Soft ambient blobs — breaks the flat section feel */}
       <span
         className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-brand/20 blur-3xl"

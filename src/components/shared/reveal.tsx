@@ -45,7 +45,11 @@ export function Reveal({
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
+    /* Mobile: skip scroll reveals — static paint, better scroll perf */
+    const mobileLite =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches;
+    if (reduced || mobileLite) {
       setShown(true);
       return;
     }

@@ -250,7 +250,7 @@ export function ShopNow() {
   const catalog = getConversionCatalog();
 
   return (
-    <section className="relative px-3 pb-10 pt-2 sm:px-5 sm:pb-14 sm:pt-4">
+    <section className="relative overflow-x-clip px-[var(--shell-gutter)] pb-10 pt-2 sm:px-5 sm:pb-14 sm:pt-4">
       <div className="mx-auto max-w-[1440px]">
         <div className="mb-5 sm:mb-8">
           <DisplayStack

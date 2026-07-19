@@ -15,10 +15,17 @@ export function StorefrontShell({ children }: { children: React.ReactNode }) {
   const isHome = pathname === "/";
 
   return (
-    <div className="app-grain flex min-h-screen flex-col">
+    <div className="app-grain flex min-h-screen w-full max-w-[100%] flex-col overflow-x-clip">
       <PromoBar />
       <Header />
-      <main className={cn("flex-1", !isHome && "page-offset")}>{children}</main>
+      <main
+        className={cn(
+          "min-w-0 w-full max-w-[100%] flex-1 overflow-x-clip",
+          !isHome && "page-offset",
+        )}
+      >
+        {children}
+      </main>
       <Footer />
     </div>
   );

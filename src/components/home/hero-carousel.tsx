@@ -10,13 +10,14 @@ import { cn } from "@/lib/utils";
 const AUTO_MS = 6500;
 
 /**
- * Editorial commerce opener — provocative copy, soft parallax layers,
- * no category tags. Text stays fully readable at all times.
+ * Editorial commerce opener.
+ * Desktop: soft pointer parallax. Mobile: static, clipped, no extra motion cost.
  */
 export function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const [allowParallax, setAllowParallax] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const count = heroSlides.length;
   const active = heroSlides[index];
@@ -32,6 +33,14 @@ export function HeroCarousel() {
   const next = useCallback(() => go(index + 1), [go, index]);
 
   useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px) and (hover: hover)");
+    const sync = () => setAllowParallax(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
     if (paused) return;
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % count);
@@ -39,20 +48,23 @@ export function HeroCarousel() {
     return () => window.clearInterval(id);
   }, [paused, count]);
 
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    const el = stageRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-    setParallax({ x, y });
-  }, []);
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!allowParallax) return;
+      const el = stageRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      setParallax({ x, y });
+    },
+    [allowParallax],
+  );
 
   const onPointerLeave = useCallback(() => {
     setParallax({ x: 0, y: 0 });
   }, []);
 
-  /** Render title line with optional accent highlight on matching trailing phrase */
   const renderLine2 = (line: string, accent?: string) => {
     if (!accent || !line.endsWith(accent)) {
       return line;
@@ -66,21 +78,25 @@ export function HeroCarousel() {
     );
   };
 
+  const px = allowParallax ? parallax.x : 0;
+  const py = allowParallax ? parallax.y : 0;
+
   return (
     <section
-      className="relative w-full overflow-hidden pb-2 sm:pb-3 sm:pt-2"
+      className="relative w-full max-w-[100%] overflow-x-clip overflow-y-hidden pb-2 sm:pb-3 sm:pt-2"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
       aria-label="Featured campaigns"
     >
+      {/* Same shell gutter token as top bar — no competing horizontal systems */}
       <div className="relative mx-auto w-full max-w-[min(1920px,100%)] px-0 sm:px-1.5 lg:px-2">
         <div
           ref={stageRef}
           onPointerMove={onPointerMove}
           onPointerLeave={onPointerLeave}
           className={cn(
-            "relative overflow-hidden",
+            "relative w-full max-w-full overflow-hidden",
             "h-[min(52dvh,420px)] min-h-[320px]",
             "sm:h-[min(56dvh,480px)] sm:min-h-[380px] sm:rounded-[1.85rem]",
             "lg:h-[min(58dvh,540px)] lg:min-h-[420px]",
@@ -98,12 +114,17 @@ export function HeroCarousel() {
                 aria-hidden={!isActive}
               >
                 <div
-                  className="absolute inset-[-4%] will-change-transform transition-transform duration-500 ease-out"
-                  style={{
-                    transform: isActive
-                      ? `translate3d(${parallax.x * -10}px, ${parallax.y * -8}px, 0) scale(1.06)`
-                      : undefined,
-                  }}
+                  className={cn(
+                    "absolute inset-0 md:inset-[-3%]",
+                    allowParallax && "will-change-transform transition-transform duration-500 ease-out",
+                  )}
+                  style={
+                    allowParallax && isActive
+                      ? {
+                          transform: `translate3d(${px * -10}px, ${py * -8}px, 0) scale(1.05)`,
+                        }
+                      : undefined
+                  }
                 >
                   <Image
                     src={slide.imageUrl}
@@ -113,62 +134,82 @@ export function HeroCarousel() {
                     sizes="100vw"
                     className={cn(
                       "object-cover object-[center_30%]",
-                      isActive && "hero-kenburns",
+                      isActive && allowParallax && "hero-kenburns",
                     )}
                   />
                 </div>
-                {/* Readable wash — depth without crushing type */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/90 via-[#1a2332]/52 to-[#1a2332]/18" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/80 via-transparent to-[#1a2332]/28" />
               </div>
             );
           })}
 
+          {/* Content pad uses --shell-gutter (shared with .nav-outer) */}
           <div
-            className="relative z-10 flex h-full flex-col justify-end px-5 pb-5 sm:px-8 sm:pb-7 lg:px-12 lg:pb-9"
+            className="relative z-10 flex h-full w-full max-w-full flex-col justify-end px-[var(--shell-gutter)] pb-5 sm:px-8 sm:pb-7 lg:px-12 lg:pb-9"
             style={{
               paddingTop: "calc(var(--promo-h) + var(--nav-h) + 0.5rem)",
             }}
           >
             <div
               key={active.id}
-              className="display-stack display-stack--on-dark relative flex max-w-3xl flex-col gap-3.5 sm:gap-4"
+              className="display-stack display-stack--on-dark relative flex w-full max-w-3xl flex-col gap-3.5 sm:gap-4"
             >
               <span className="display-aura" aria-hidden>
                 <span className="display-aura-core" />
               </span>
 
-              {/* Parallax text layers — different depth, always fully opaque */}
               <h1
-                className="display-title mt-0 font-display font-medium tracking-tight text-white will-change-transform transition-transform duration-300 ease-out"
-                style={{
-                  transform: `translate3d(${parallax.x * 14}px, ${parallax.y * 10}px, 0)`,
-                  textShadow: "0 2px 28px rgb(0 0 0 / 0.35)",
-                }}
+                className={cn(
+                  "display-title mt-0 font-display font-medium tracking-tight text-white",
+                  allowParallax && "will-change-transform transition-transform duration-300 ease-out",
+                )}
+                style={
+                  allowParallax
+                    ? {
+                        transform: `translate3d(${px * 14}px, ${py * 10}px, 0)`,
+                        textShadow: "0 2px 28px rgb(0 0 0 / 0.35)",
+                      }
+                    : { textShadow: "0 2px 28px rgb(0 0 0 / 0.35)" }
+                }
               >
-                <span className="hero-line block text-[2.55rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
+                <span className="hero-line block text-[2.45rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
                   {active.titleLine1}
                 </span>
-                <span className="hero-line hero-line--delay block text-[2.55rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
+                <span className="hero-line hero-line--delay block text-[2.45rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
                   {renderLine2(active.titleLine2, active.titleAccent)}
                 </span>
               </h1>
 
               <p
-                className="display-lead mt-0 max-w-md text-[15px] font-medium leading-snug text-white/90 sm:max-w-lg sm:text-base lg:text-lg will-change-transform transition-transform duration-500 ease-out"
-                style={{
-                  transform: `translate3d(${parallax.x * 8}px, ${parallax.y * 6}px, 0)`,
-                  textShadow: "0 1px 16px rgb(0 0 0 / 0.4)",
-                }}
+                className={cn(
+                  "display-lead mt-0 max-w-md text-[15px] font-medium leading-snug text-white/90 sm:max-w-lg sm:text-base lg:text-lg",
+                  allowParallax && "will-change-transform transition-transform duration-500 ease-out",
+                )}
+                style={
+                  allowParallax
+                    ? {
+                        transform: `translate3d(${px * 8}px, ${py * 6}px, 0)`,
+                        textShadow: "0 1px 16px rgb(0 0 0 / 0.4)",
+                      }
+                    : { textShadow: "0 1px 16px rgb(0 0 0 / 0.4)" }
+                }
               >
                 {active.subtitle}
               </p>
 
               <div
-                className="flex flex-wrap items-center gap-2.5 pt-0.5 sm:gap-3 will-change-transform transition-transform duration-700 ease-out"
-                style={{
-                  transform: `translate3d(${parallax.x * 4}px, ${parallax.y * 3}px, 0)`,
-                }}
+                className={cn(
+                  "flex flex-wrap items-center gap-2.5 pt-0.5 sm:gap-3",
+                  allowParallax && "will-change-transform transition-transform duration-700 ease-out",
+                )}
+                style={
+                  allowParallax
+                    ? {
+                        transform: `translate3d(${px * 4}px, ${py * 3}px, 0)`,
+                      }
+                    : undefined
+                }
               >
                 <Link
                   href={active.ctaHref}

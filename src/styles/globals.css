@@ -28,6 +28,8 @@
   --nav-h: 4.25rem;
   --promo-h: 2.35rem;
   --page-pad: 1rem;
+  /* Shared horizontal inset: top bar shell + hero content (one system) */
+  --shell-gutter: 1rem;
 }
 
 @theme inline {
@@ -69,6 +71,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body {
@@ -84,6 +88,9 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+  max-width: 100%;
+  position: relative;
 }
 
 /*
@@ -728,6 +735,9 @@ body {
 /* Subtle film grain — premium feel, almost invisible */
 .app-grain {
   position: relative;
+  overflow-x: clip;
+  max-width: 100%;
+  width: 100%;
 }
 
 .app-grain::before {
@@ -739,6 +749,74 @@ body {
   opacity: 0.035;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Mobile performance: cut continuous / scroll motion, keep icon taps ── */
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  .app-grain::before {
+    display: none; /* film grain is pure cost on mobile GPU */
+  }
+
+  .hero-kenburns,
+  .hero-line,
+  .hero-line--delay,
+  .display-aura-core,
+  .display-title-accent,
+  .display-eyebrow-label,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .stagger > *,
+  .animate-star-spin,
+  .animate-price-pop {
+    animation: none !important;
+  }
+
+  .reveal,
+  .reveal .display-eyebrow,
+  .reveal .display-title,
+  .reveal .display-lead {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+
+  .card-soft,
+  .img-zoom,
+  .hero-slide {
+    transition: none !important;
+  }
+
+  .card-soft:hover,
+  .product-card:hover,
+  .product-card.is-active {
+    transform: none;
+  }
+
+  .group:hover .img-zoom {
+    transform: none;
+  }
+
+  .display-aura {
+    inset: 0 auto auto 0;
+    width: 70%;
+    height: 4.5rem;
+    max-height: 4.5rem;
+    overflow: hidden;
+  }
+
+  .display-aura-core {
+    filter: none;
+    transform: none;
+    opacity: 0.55;
+  }
+
+  /* Keep nav utility icon motion (hover/tap feel) */
 }
 
 ::selection {
@@ -903,26 +981,24 @@ body {
 }
 
 /**
- * Floating chrome outer shell — explicit side gutters.
+ * Floating chrome outer shell — same --shell-gutter as hero content pad.
  * (Avoid Tailwind arbitrary max(env()) which can drop in build.)
  */
 .nav-outer {
-  padding-left: max(1rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-left: max(var(--shell-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--shell-gutter), env(safe-area-inset-right, 0px));
   box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .nav-outer {
-    padding-left: max(0.875rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.875rem, env(safe-area-inset-right, 0px));
+    --shell-gutter: 0.875rem;
   }
 }
 
 @media (min-width: 1024px) {
   .nav-outer {
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    --shell-gutter: 1rem;
   }
 }
 
