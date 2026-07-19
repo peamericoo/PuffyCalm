@@ -72,11 +72,43 @@ html {
 }
 
 body {
-  background: var(--background);
+  /* Layered ambient background — depth without competing with products */
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 10% -10%, rgb(126 184 212 / 0.22), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 95% 5%, rgb(232 244 250 / 0.95), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgb(126 184 212 / 0.1), transparent 55%),
+    linear-gradient(180deg, #f5fafc 0%, #eef6fa 45%, #f5fafc 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Soft stage: products sit on elevated white surface (figure-ground psychology) */
+.shop-stage {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.55) 0%, rgb(255 255 255 / 0.92) 18%, #ffffff 100%);
+  box-shadow:
+    0 -1px 0 rgb(255 255 255 / 0.8) inset,
+    0 24px 60px -40px rgb(26 35 50 / 0.12);
+}
+
+/* Subtle film grain — premium feel, almost invisible */
+.app-grain {
+  position: relative;
+}
+
+.app-grain::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 ::selection {
