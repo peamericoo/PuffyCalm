@@ -85,18 +85,167 @@ const shopCategories: ShopCategory[] = [
   },
 ];
 
+function CategoryRail({ className }: { className?: string }) {
+  return (
+    <aside
+      className={cn(
+        "glass-panel relative overflow-hidden rounded-[1.35rem] p-3 sm:p-3.5",
+        className,
+      )}
+    >
+      <span
+        className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-brand/25 blur-3xl"
+        aria-hidden
+      />
+      <span
+        className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-cta/10 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative mb-3 flex items-center justify-between px-1">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-deep/80">
+            Browse
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-foreground">
+            Shop by mood
+          </p>
+        </div>
+        <span className="glass-chip flex h-8 w-8 items-center justify-center rounded-full text-brand-deep">
+          <LayoutGrid className="h-3.5 w-3.5" />
+        </span>
+      </div>
+
+      <nav
+        className="relative flex flex-col gap-1.5"
+        aria-label="Shop categories"
+      >
+        {shopCategories.map((cat, i) => {
+          const Icon = cat.icon;
+          return (
+            <Link
+              key={cat.label}
+              href={cat.href}
+              className={cn(
+                "group/cat flex items-center gap-2.5 rounded-2xl p-1.5 pr-2.5 transition-all duration-300",
+                "hover:bg-white/55 hover:shadow-[0_8px_24px_-16px_rgb(26_35_50/0.25)]",
+                "active:scale-[0.99]",
+                i === 0 && "bg-white/40 ring-1 ring-white/60",
+              )}
+            >
+              <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 ring-white/70">
+                <Image
+                  src={cat.imageUrl}
+                  alt=""
+                  fill
+                  sizes="44px"
+                  className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
+                />
+                <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/35 to-transparent" />
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <Icon
+                    className="h-3.5 w-3.5 text-white drop-shadow-sm"
+                    strokeWidth={2.25}
+                  />
+                </span>
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-medium text-foreground">
+                    {cat.label}
+                  </span>
+                  <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
+                    {cat.count}
+                  </span>
+                </span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {cat.tagline}
+                </span>
+              </span>
+
+              <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-brand-deep/40 transition-all duration-300 group-hover/cat:translate-x-0.5 group-hover/cat:-translate-y-0.5 group-hover/cat:text-cta" />
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="relative mt-3 border-t border-white/40 pt-3">
+        <Link
+          href="/category/all"
+          className="pressable glass-btn-cta flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-sm font-medium text-white"
+        >
+          Shop the collection
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
+        <p className="mt-2 text-center text-[10px] text-muted-foreground">
+          Guest checkout · tracked shipping
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+/** Mobile-only compact horizontal mood scroller — doesn't steal first contact */
+function MobileMoodStrip() {
+  return (
+    <div className="lg:hidden">
+      <div className="mb-2.5 flex items-center justify-between px-0.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-deep">
+          Shop by mood
+        </p>
+        <Link
+          href="/category/all"
+          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          View all
+        </Link>
+      </div>
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 no-scrollbar">
+        {shopCategories.map((cat) => {
+          const Icon = cat.icon;
+          return (
+            <Link
+              key={cat.label}
+              href={cat.href}
+              className="group/mcat relative flex w-[4.75rem] shrink-0 flex-col items-center gap-1.5"
+            >
+              <span className="relative h-14 w-14 overflow-hidden rounded-2xl shadow-sm ring-1 ring-white/70">
+                <Image
+                  src={cat.imageUrl}
+                  alt=""
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                />
+                <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/45 to-transparent" />
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <Icon className="h-4 w-4 text-white" strokeWidth={2.25} />
+                </span>
+              </span>
+              <span className="w-full truncate text-center text-[11px] font-medium text-foreground">
+                {cat.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Premium shop stage:
- * left glass category rail · right compact equal-height product grid.
- * No hero column that leaves empty space. No hover layout shift.
+ * Desktop — glass category rail left + product grid.
+ * Mobile  — products first, compact mood strip after (no tall rail).
  */
 export function ShopNow() {
   const catalog = getConversionCatalog();
 
   return (
-    <section className="shop-stage relative border-y border-border/80 px-3 py-10 sm:px-5 sm:py-14">
+    <section className="shop-stage relative border-y border-border/80 px-3 py-9 sm:px-5 sm:py-14">
       <div className="mx-auto max-w-[1440px]">
-        <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-5 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
           <Reveal className="max-w-lg">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
               Shop
@@ -110,112 +259,36 @@ export function ShopNow() {
           </Reveal>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-5 xl:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
-          {/* ——— Left: glass category rail ——— */}
-          <Reveal delay={60} className="lg:sticky lg:top-[calc(var(--promo-h)+5.5rem)] lg:self-start">
-            <aside className="glass-panel relative overflow-hidden rounded-[1.35rem] p-3 sm:p-3.5">
-              {/* Soft light orbs */}
-              <span
-                className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-brand/25 blur-3xl"
-                aria-hidden
-              />
-              <span
-                className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-cta/10 blur-3xl"
-                aria-hidden
-              />
-
-              <div className="relative mb-3 flex items-center justify-between px-1">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-deep/80">
-                    Browse
-                  </p>
-                  <p className="mt-0.5 text-sm font-medium text-foreground">
-                    Shop by mood
-                  </p>
-                </div>
-                <span className="glass-chip flex h-8 w-8 items-center justify-center rounded-full text-brand-deep">
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </span>
-              </div>
-
-              <nav className="relative flex flex-col gap-1.5" aria-label="Shop categories">
-                {shopCategories.map((cat, i) => {
-                  const Icon = cat.icon;
-                  return (
-                    <Link
-                      key={cat.label}
-                      href={cat.href}
-                      className={cn(
-                        "group/cat flex items-center gap-2.5 rounded-2xl p-1.5 pr-2.5 transition-all duration-300",
-                        "hover:bg-white/55 hover:shadow-[0_8px_24px_-16px_rgb(26_35_50/0.25)]",
-                        "active:scale-[0.99]",
-                        i === 0 && "bg-white/40 ring-1 ring-white/60",
-                      )}
-                    >
-                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/70 shadow-sm">
-                        <Image
-                          src={cat.imageUrl}
-                          alt=""
-                          fill
-                          sizes="44px"
-                          className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
-                        />
-                        <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/35 to-transparent" />
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <Icon
-                            className="h-3.5 w-3.5 text-white drop-shadow-sm"
-                            strokeWidth={2.25}
-                          />
-                        </span>
-                      </span>
-
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[13px] font-medium text-foreground">
-                            {cat.label}
-                          </span>
-                          <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
-                            {cat.count}
-                          </span>
-                        </span>
-                        <span className="block truncate text-[11px] text-muted-foreground">
-                          {cat.tagline}
-                        </span>
-                      </span>
-
-                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-brand-deep/40 transition-all duration-300 group-hover/cat:translate-x-0.5 group-hover/cat:-translate-y-0.5 group-hover/cat:text-cta" />
-                    </Link>
-                  );
-                })}
-              </nav>
-
-              <div className="relative mt-3 border-t border-white/40 pt-3">
-                <Link
-                  href="/category/all"
-                  className="pressable glass-btn-cta flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-sm font-medium text-white"
-                >
-                  Shop the collection
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
-                <p className="mt-2 text-center text-[10px] text-muted-foreground">
-                  Guest checkout · tracked shipping
-                </p>
-              </div>
-            </aside>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-5 xl:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+          {/* Desktop rail only */}
+          <Reveal
+            delay={60}
+            className="hidden lg:sticky lg:top-[calc(var(--promo-h)+5.5rem)] lg:block lg:self-start"
+          >
+            <CategoryRail />
           </Reveal>
 
-          {/* ——— Right: compact equal product grid ——— */}
-          <div className="min-w-0">
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
+          {/* Products — first contact after title on mobile */}
+          <div className="min-w-0 order-1 lg:order-none">
+            <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
               {catalog.map((product, i) => (
                 <Reveal
                   key={product.id}
-                  delay={80 + i * 40}
+                  delay={60 + i * 35}
                   className="h-full min-h-0"
                 >
                   <ProductCard product={product} compact />
                 </Reveal>
               ))}
+            </div>
+
+            {/* Mobile mood strip after products */}
+            <div className="mt-6 lg:hidden">
+              <Reveal delay={120}>
+                <div className="glass-panel rounded-[1.25rem] px-3 py-3">
+                  <MobileMoodStrip />
+                </div>
+              </Reveal>
             </div>
           </div>
         </div>

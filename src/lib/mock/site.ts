@@ -122,19 +122,17 @@ export type HeroSlide = {
   imageAlt: string;
 };
 
-/** Large homepage hero carousel slides */
+/** Homepage campaign slides — short copy, commercial impact */
 export const heroSlides: HeroSlide[] = [
   {
     id: "slide_launch",
-    eyebrow: "Just launched",
+    eyebrow: "Launch offer",
     titleLine1: "Feel better",
-    titleLine2: "every single",
-    titleLine3: "day",
-    subtitle:
-      "Premium comfort & recovery essentials — curated to make work, rest, and real life lighter.",
-    ctaLabel: "Shop the launch sale",
+    titleLine2: "every day",
+    subtitle: "Premium comfort & recovery — free shipping over $75.",
+    ctaLabel: "Shop the sale",
     ctaHref: "/category/all",
-    secondaryLabel: "See bestsellers",
+    secondaryLabel: "Bestsellers",
     secondaryHref: "/category/recovery",
     imageUrl:
       "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1800&q=80",
@@ -142,27 +140,24 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "slide_recovery",
-    eyebrow: "Recovery edit",
+    eyebrow: "Recovery",
     titleLine1: "Tension out.",
     titleLine2: "Energy back.",
-    subtitle:
-      "Massage guns, heat therapy, and neck relief designed for desk-heavy days.",
+    subtitle: "Massage & heat therapy for desk-heavy days.",
     ctaLabel: "Shop recovery",
     ctaHref: "/category/recovery",
-    secondaryLabel: "How it works",
-    secondaryHref: "/about",
+    secondaryLabel: "View all",
+    secondaryHref: "/category/all",
     imageUrl:
       "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1800&q=80",
     imageAlt: "Yoga recovery stretch lifestyle",
   },
   {
     id: "slide_comfort",
-    eyebrow: "Comfort upgrade",
+    eyebrow: "Comfort",
     titleLine1: "Sit softer.",
     titleLine2: "Work longer.",
-    titleLine3: "Stress less.",
-    subtitle:
-      "Lumbar support, seat cushions, and wraps that turn long hours into better hours.",
+    subtitle: "Support that turns long hours into better hours.",
     ctaLabel: "Shop comfort",
     ctaHref: "/category/comfort",
     secondaryLabel: "View all",
@@ -173,14 +168,13 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "slide_everyday",
-    eyebrow: "Everyday essentials",
+    eyebrow: "Everyday",
     titleLine1: "Small upgrades.",
     titleLine2: "Big difference.",
-    subtitle:
-      "Smart tools for posture, focus, and the routines you repeat every day.",
+    subtitle: "Tools for posture, focus, and better routines.",
     ctaLabel: "Shop everyday",
     ctaHref: "/category/everyday",
-    secondaryLabel: "Explore collections",
+    secondaryLabel: "View all",
     secondaryHref: "/category/all",
     imageUrl:
       "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1800&q=80",
