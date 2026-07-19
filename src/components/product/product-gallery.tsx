@@ -21,8 +21,10 @@ interface ProductGalleryProps {
 }
 
 /**
- * Large square gallery + ambilight + fullscreen viewer.
- * Seoul Bird structure, YouTube-style static ambient glow per image.
+ * Contained square gallery:
+ * - Ambilight as a soft color frame (padded, clipped — never bleeds layout)
+ * - Fixed thumb sizes
+ * - Fullscreen lightbox
  */
 export function ProductGallery({
   images,
@@ -55,7 +57,6 @@ export function ProductGallery({
   const openLightbox = useCallback(() => setLightbox(true), []);
   const closeLightbox = useCallback(() => setLightbox(false), []);
 
-  /* Keyboard nav when lightbox open; Escape always closes */
   useEffect(() => {
     if (!lightbox) return;
     const onKey = (e: KeyboardEvent) => {
@@ -76,7 +77,6 @@ export function ProductGallery({
     return () => window.removeEventListener("keydown", onKey);
   }, [closeLightbox, lightbox, next, prev]);
 
-  /* Lock scroll in fullscreen */
   useEffect(() => {
     if (!lightbox) return;
     const prevOverflow = document.body.style.overflow;
@@ -101,16 +101,22 @@ export function ProductGallery({
 
   return (
     <>
-      <div className={cn("flex w-full flex-col gap-0", className)}>
-        {/* Stage + ambilight backplane */}
-        <div className="pdp-stage-wrap relative">
-          {/* Ambient light — blurred clone of active image, dissipates color */}
-          <div aria-hidden className="pdp-ambilight" key={`amb-${active}`}>
+      <div className={cn("flex w-full flex-col gap-3", className)}>
+        {/*
+          Shell: overflow clipped. Padding creates a glow frame;
+          ambilight fills the shell, photo sits inset so color rim shows.
+        */}
+        <div className="pdp-stage-wrap group relative w-full overflow-hidden bg-white p-2.5 sm:p-3.5">
+          <div
+            aria-hidden
+            className="pdp-ambilight"
+            key={`amb-${active}`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={active} alt="" className="pdp-ambilight-img" />
           </div>
 
-          <div className="pdp-stage group relative aspect-square w-full overflow-hidden bg-[#eef3f6] sm:aspect-[5/5.1] lg:aspect-square xl:min-h-[min(72vh,720px)]">
+          <div className="pdp-stage relative z-[1] aspect-square w-full overflow-hidden bg-[#eef3f6]">
             <button
               type="button"
               onClick={openLightbox}
@@ -126,11 +132,10 @@ export function ProductGallery({
               alt={alt}
               fill
               priority={priority}
-              sizes="(max-width: 1024px) 100vw, 62vw"
+              sizes="(max-width: 1024px) 100vw, 48vw"
               className="pointer-events-none object-cover object-center pdp-img-swap"
             />
 
-            {/* Expand control */}
             <button
               type="button"
               onClick={(e: MouseEvent) => {
@@ -140,19 +145,15 @@ export function ProductGallery({
               aria-label="Fullscreen"
               className={cn(
                 "pdp-icon pdp-icon--expand absolute right-3 top-3 z-[2]",
-                "flex h-10 w-10 items-center justify-center bg-white/90 text-foreground",
-                "border border-foreground/10 shadow-sm backdrop-blur-sm",
+                "flex h-9 w-9 items-center justify-center bg-white/90 text-foreground",
+                "border border-foreground/10 shadow-sm backdrop-blur-sm sm:h-10 sm:w-10",
                 "opacity-100 transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100",
                 "hover:bg-white focus-visible:opacity-100",
               )}
             >
-              <Maximize2
-                className="pdp-icon-svg h-4 w-4"
-                strokeWidth={2.1}
-              />
+              <Maximize2 className="pdp-icon-svg h-4 w-4" strokeWidth={2.1} />
             </button>
 
-            {/* Inline prev/next on desktop hover */}
             {multi ? (
               <>
                 <button
@@ -169,10 +170,7 @@ export function ProductGallery({
                     "opacity-0 transition-opacity duration-300 group-hover:opacity-100 focus-visible:opacity-100",
                   )}
                 >
-                  <ChevronLeft
-                    className="pdp-icon-svg h-5 w-5"
-                    strokeWidth={2}
-                  />
+                  <ChevronLeft className="pdp-icon-svg h-5 w-5" strokeWidth={2} />
                 </button>
                 <button
                   type="button"
@@ -188,10 +186,7 @@ export function ProductGallery({
                     "opacity-0 transition-opacity duration-300 group-hover:opacity-100 focus-visible:opacity-100",
                   )}
                 >
-                  <ChevronRight
-                    className="pdp-icon-svg h-5 w-5"
-                    strokeWidth={2}
-                  />
+                  <ChevronRight className="pdp-icon-svg h-5 w-5" strokeWidth={2} />
                 </button>
               </>
             ) : null}
@@ -204,34 +199,31 @@ export function ProductGallery({
           </div>
         </div>
 
-        {/* Thumbs — flush strip, no radius */}
+        {/* Fixed thumbs — small strip, not flex-1 giants */}
         {multi ? (
-          <ul className="mt-0 flex w-full border-t border-foreground/[0.06]">
+          <ul className="relative z-[1] flex gap-2 overflow-x-auto no-scrollbar sm:gap-2.5">
             {slides.map((src, i) => {
               const selected = i === index;
               return (
-                <li
-                  key={`${src}-${i}`}
-                  className="min-w-0 flex-1 border-r border-foreground/[0.06] last:border-r-0"
-                >
+                <li key={`${src}-${i}`} className="shrink-0">
                   <button
                     type="button"
                     onClick={() => go(i)}
                     aria-label={`View image ${i + 1}`}
                     aria-current={selected ? "true" : undefined}
                     className={cn(
-                      "relative block aspect-square w-full overflow-hidden bg-[#eef3f6]",
-                      "transition-[opacity,filter] duration-250 ease-out",
+                      "relative block h-16 w-16 overflow-hidden bg-[#eef3f6] sm:h-[4.5rem] sm:w-[4.5rem]",
+                      "border transition-[border-color,opacity] duration-200 ease-out",
                       selected
-                        ? "opacity-100 ring-2 ring-inset ring-foreground"
-                        : "opacity-55 hover:opacity-90",
+                        ? "border-foreground opacity-100"
+                        : "border-foreground/10 opacity-65 hover:opacity-100",
                     )}
                   >
                     <Image
                       src={src}
                       alt=""
                       fill
-                      sizes="120px"
+                      sizes="72px"
                       className="object-cover"
                     />
                   </button>
@@ -242,7 +234,6 @@ export function ProductGallery({
         ) : null}
       </div>
 
-      {/* Fullscreen lightbox — optimized viewing */}
       {lightbox ? (
         <div
           role="dialog"
@@ -250,8 +241,11 @@ export function ProductGallery({
           aria-label={`${alt} — fullscreen`}
           className="pdp-lightbox fixed inset-0 z-[80] flex flex-col bg-[#0a0e12]/[0.96]"
         >
-          {/* Ambient in dark room */}
-          <div aria-hidden className="pdp-lightbox-amb" key={`lb-amb-${active}`}>
+          <div
+            aria-hidden
+            className="pdp-lightbox-amb"
+            key={`lb-amb-${active}`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={active} alt="" />
           </div>
@@ -282,7 +276,7 @@ export function ProductGallery({
               </button>
             ) : null}
 
-            <div className="relative h-full max-h-[min(82vh,900px)] w-full max-w-[min(92vw,1100px)]">
+            <div className="relative h-full max-h-[min(82vh,900px)] w-full max-w-[min(92vw,1000px)]">
               <Image
                 key={`lb-${active}`}
                 src={active}
@@ -307,7 +301,7 @@ export function ProductGallery({
           </div>
 
           {multi ? (
-            <div className="relative z-[1] flex justify-center gap-0 overflow-x-auto px-4 pb-5 pt-3 no-scrollbar sm:pb-7">
+            <div className="relative z-[1] flex justify-center gap-2 overflow-x-auto px-4 pb-5 pt-3 no-scrollbar sm:pb-7">
               {slides.map((src, i) => {
                 const selected = i === index;
                 return (
@@ -318,10 +312,10 @@ export function ProductGallery({
                     aria-label={`Image ${i + 1}`}
                     aria-current={selected ? "true" : undefined}
                     className={cn(
-                      "relative h-14 w-14 shrink-0 overflow-hidden border border-transparent sm:h-16 sm:w-16",
+                      "relative h-14 w-14 shrink-0 overflow-hidden border sm:h-16 sm:w-16",
                       selected
                         ? "border-white opacity-100"
-                        : "opacity-40 hover:opacity-75",
+                        : "border-transparent opacity-40 hover:opacity-75",
                     )}
                   >
                     <Image

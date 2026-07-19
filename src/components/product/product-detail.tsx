@@ -35,7 +35,7 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
 
   return (
     <div className="bg-white">
-      <div className="mx-auto w-full max-w-[1520px] px-[var(--shell-gutter)] pb-20 pt-5 sm:px-8 sm:pb-24 sm:pt-7 lg:px-8 xl:px-12">
+      <div className="mx-auto w-full max-w-[1280px] px-[var(--shell-gutter)] pb-20 pt-5 sm:px-8 sm:pb-24 sm:pt-7 lg:px-10">
         <Reveal variant="fade" delay={0}>
           <nav
             aria-label="Breadcrumb"
@@ -59,8 +59,8 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
           </nav>
         </Reveal>
 
-        {/* Gallery dominates desktop — ~62% width */}
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:gap-10 xl:gap-12">
+        {/* Balanced 50/50 — image large but not devouring the page */}
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <div className="order-1 min-w-0 lg:order-2 lg:sticky lg:top-[calc(var(--nav-h)+0.75rem)]">
             <Reveal variant="scale" delay={40}>
               <ProductGallery
