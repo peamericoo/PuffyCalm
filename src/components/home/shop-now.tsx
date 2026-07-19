@@ -1,15 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import {
+  ArrowUpRight,
+  Cloud,
+  LayoutGrid,
+  Sparkles,
+  SunMedium,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
-import { ProductImageCarousel } from "@/components/product/product-image-carousel";
 import { Reveal } from "@/components/shared/reveal";
 import { products } from "@/lib/mock/products";
-import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
  * Conversion sort: sale first, then rating + volume.
- * (No bestseller badges in UI — still rank by quality signals.)
  */
 function getConversionCatalog() {
   return [...products]
@@ -19,177 +25,198 @@ function getConversionCatalog() {
       if (saleB !== saleA) return saleB - saleA;
       return b.rating - a.rating || b.reviewCount - a.reviewCount;
     })
-    .slice(0, 7);
+    .slice(0, 6);
 }
 
-const filters = [
-  { label: "Popular", href: "/category/all", active: true },
-  { label: "Recovery", href: "/category/recovery" },
-  { label: "Comfort", href: "/category/comfort" },
-  { label: "Under $50", href: "/category/all" },
-] as const;
+type ShopCategory = {
+  label: string;
+  href: string;
+  tagline: string;
+  icon: LucideIcon;
+  imageUrl: string;
+  count: string;
+};
+
+const shopCategories: ShopCategory[] = [
+  {
+    label: "Recovery",
+    href: "/category/recovery",
+    tagline: "Tension out",
+    icon: Sparkles,
+    imageUrl:
+      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=80",
+    count: "4",
+  },
+  {
+    label: "Comfort",
+    href: "/category/comfort",
+    tagline: "Soft support",
+    icon: Cloud,
+    imageUrl:
+      "https://images.unsplash.com/photo-1616628182501-df42145cf54d?auto=format&fit=crop&w=200&q=80",
+    count: "3",
+  },
+  {
+    label: "Everyday",
+    href: "/category/everyday",
+    tagline: "Small upgrades",
+    icon: SunMedium,
+    imageUrl:
+      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=200&q=80",
+    count: "2",
+  },
+  {
+    label: "Under $50",
+    href: "/category/all",
+    tagline: "Easy picks",
+    icon: Tag,
+    imageUrl:
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=200&q=80",
+    count: "5+",
+  },
+  {
+    label: "All products",
+    href: "/category/all",
+    tagline: "Full edit",
+    icon: LayoutGrid,
+    imageUrl:
+      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=200&q=80",
+    count: String(products.length),
+  },
+];
 
 /**
- * Floating product cards — no outer panel.
- * Coordinated slow image carousels across the grid.
+ * Premium shop stage:
+ * left glass category rail · right compact equal-height product grid.
+ * No hero column that leaves empty space. No hover layout shift.
  */
 export function ShopNow() {
   const catalog = getConversionCatalog();
-  const heroProduct = catalog[0];
-  const grid = catalog.slice(1, 7);
-  const heroPromo = Boolean(
-    heroProduct?.compareAtPrice &&
-      heroProduct.compareAtPrice > heroProduct.price,
-  );
-  const heroOff =
-    heroProduct?.compareAtPrice &&
-    heroProduct.compareAtPrice > heroProduct.price
-      ? Math.round(
-          ((heroProduct.compareAtPrice - heroProduct.price) /
-            heroProduct.compareAtPrice) *
-            100,
-        )
-      : null;
 
   return (
     <section className="shop-stage relative border-y border-border/80 px-3 py-10 sm:px-5 sm:py-14">
       <div className="mx-auto max-w-[1440px]">
-        <div className="mb-7 flex flex-col gap-4 lg:mb-9 lg:flex-row lg:items-end lg:justify-between">
-          <Reveal className="max-w-xl">
+        <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+          <Reveal className="max-w-lg">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
               Shop
             </p>
-            <h2 className="mt-1.5 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+            <h2 className="mt-1.5 font-display text-3xl font-medium tracking-tight text-foreground sm:text-[2.35rem]">
               What customers buy first
             </h2>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Curated picks — free shipping over $75.
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Curated picks · free shipping over $75
             </p>
-          </Reveal>
-
-          <Reveal delay={120} className="flex flex-wrap gap-1.5">
-            {filters.map((filter) => (
-              <Link
-                key={filter.label}
-                href={filter.href}
-                className={
-                  "active" in filter && filter.active
-                    ? "pressable rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-white"
-                    : "pressable rounded-full border border-border/80 bg-white/80 px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-brand hover:bg-brand-soft hover:text-brand-deep"
-                }
-              >
-                {filter.label}
-              </Link>
-            ))}
           </Reveal>
         </div>
 
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-12">
-          {heroProduct ? (
-            <Reveal
-              as="div"
-              className="lg:col-span-5"
-              delay={80}
-            >
-              <article className="group/card product-card relative overflow-hidden rounded-2xl bg-card">
-                <span
-                  className="product-card-glow pointer-events-none absolute inset-0 z-0"
-                  aria-hidden
-                />
-                <Link
-                  href={`/product/${heroProduct.slug}`}
-                  className="relative z-[1] block aspect-[4/5] overflow-hidden sm:aspect-[5/4] lg:min-h-[360px] lg:aspect-auto"
-                >
-                  <ProductImageCarousel
-                    images={heroProduct.images}
-                    imageUrl={heroProduct.imageUrl}
-                    alt={heroProduct.imageAlt}
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 40vw"
-                    className="absolute inset-0"
-                  />
-                  {heroOff ? (
-                    <span className="absolute left-3 top-3 z-[3] rounded-full bg-success px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
-                      −{heroOff}%
-                    </span>
-                  ) : null}
-                </Link>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-5 xl:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+          {/* ——— Left: glass category rail ——— */}
+          <Reveal delay={60} className="lg:sticky lg:top-[calc(var(--promo-h)+5.5rem)] lg:self-start">
+            <aside className="glass-panel relative overflow-hidden rounded-[1.35rem] p-3 sm:p-3.5">
+              {/* Soft light orbs */}
+              <span
+                className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-brand/25 blur-3xl"
+                aria-hidden
+              />
+              <span
+                className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-cta/10 blur-3xl"
+                aria-hidden
+              />
 
-                <div className="relative z-[1] space-y-3 p-4 sm:p-5">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 transition-transform duration-700 group-hover/card:animate-star-spin" />
-                    <span className="font-semibold text-foreground">
-                      {heroProduct.rating}
-                    </span>
-                    <span>({heroProduct.reviewCount})</span>
-                    {heroProduct.inStock ? (
-                      <>
-                        <span className="text-border">·</span>
-                        <span className="font-medium text-success">In stock</span>
-                      </>
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <h3 className="font-display text-xl font-medium tracking-tight text-foreground transition-colors duration-500 group-hover/card:text-brand-deep sm:text-2xl">
-                      <Link href={`/product/${heroProduct.slug}`}>
-                        {heroProduct.name}
-                      </Link>
-                    </h3>
-                    <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground transition-all duration-500 group-hover/card:text-foreground/75">
-                      {heroProduct.shortDescription}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-end gap-2">
-                    <span
-                      className={cn(
-                        "text-2xl font-semibold tracking-tight",
-                        heroPromo ? "text-success" : "text-brand-deep",
-                      )}
-                    >
-                      {formatMoney(heroProduct.price, heroProduct.currency)}
-                    </span>
-                    {heroPromo && heroProduct.compareAtPrice ? (
-                      <span className="pb-0.5 text-sm text-muted-foreground line-through">
-                        {formatMoney(
-                          heroProduct.compareAtPrice,
-                          heroProduct.currency,
-                        )}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Link
-                      href={`/cart?add=${heroProduct.slug}`}
-                      className={cn(
-                        "pressable inline-flex h-10 flex-1 items-center justify-center rounded-full text-sm font-medium transition-all duration-500",
-                        heroPromo
-                          ? "bg-success text-white hover:bg-success/90"
-                          : "bg-cta text-white hover:bg-cta-hover",
-                      )}
-                    >
-                      Add to cart
-                    </Link>
-                    <Link
-                      href={`/product/${heroProduct.slug}`}
-                      className="pressable inline-flex h-10 flex-1 items-center justify-center rounded-full border border-border bg-white text-sm font-medium text-foreground transition-colors hover:bg-brand-soft"
-                    >
-                      Details
-                    </Link>
-                  </div>
+              <div className="relative mb-3 flex items-center justify-between px-1">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-deep/80">
+                    Browse
+                  </p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">
+                    Shop by mood
+                  </p>
                 </div>
-              </article>
-            </Reveal>
-          ) : null}
+                <span className="glass-chip flex h-8 w-8 items-center justify-center rounded-full text-brand-deep">
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </span>
+              </div>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:col-span-7 xl:grid-cols-3">
-            {grid.map((product, i) => (
-              <Reveal key={product.id} delay={100 + i * 50} className="h-full">
-                <ProductCard product={product} />
-              </Reveal>
-            ))}
+              <nav className="relative flex flex-col gap-1.5" aria-label="Shop categories">
+                {shopCategories.map((cat, i) => {
+                  const Icon = cat.icon;
+                  return (
+                    <Link
+                      key={cat.label}
+                      href={cat.href}
+                      className={cn(
+                        "group/cat flex items-center gap-2.5 rounded-2xl p-1.5 pr-2.5 transition-all duration-300",
+                        "hover:bg-white/55 hover:shadow-[0_8px_24px_-16px_rgb(26_35_50/0.25)]",
+                        "active:scale-[0.99]",
+                        i === 0 && "bg-white/40 ring-1 ring-white/60",
+                      )}
+                    >
+                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/70 shadow-sm">
+                        <Image
+                          src={cat.imageUrl}
+                          alt=""
+                          fill
+                          sizes="44px"
+                          className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
+                        />
+                        <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/35 to-transparent" />
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <Icon
+                            className="h-3.5 w-3.5 text-white drop-shadow-sm"
+                            strokeWidth={2.25}
+                          />
+                        </span>
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="truncate text-[13px] font-medium text-foreground">
+                            {cat.label}
+                          </span>
+                          <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
+                            {cat.count}
+                          </span>
+                        </span>
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {cat.tagline}
+                        </span>
+                      </span>
+
+                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-brand-deep/40 transition-all duration-300 group-hover/cat:translate-x-0.5 group-hover/cat:-translate-y-0.5 group-hover/cat:text-cta" />
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="relative mt-3 border-t border-white/40 pt-3">
+                <Link
+                  href="/category/all"
+                  className="pressable glass-btn-cta flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-sm font-medium text-white"
+                >
+                  Shop the collection
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+                <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                  Guest checkout · tracked shipping
+                </p>
+              </div>
+            </aside>
+          </Reveal>
+
+          {/* ——— Right: compact equal product grid ——— */}
+          <div className="min-w-0">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
+              {catalog.map((product, i) => (
+                <Reveal
+                  key={product.id}
+                  delay={80 + i * 40}
+                  className="h-full min-h-0"
+                >
+                  <ProductCard product={product} compact />
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
       </div>
