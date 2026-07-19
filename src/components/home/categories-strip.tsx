@@ -60,9 +60,10 @@ export function CategoriesStrip() {
             title="Shop by mood"
             description="Three ways in — pick how you want to feel."
             accent="mood"
+            motion="slide"
             className="max-w-md"
           />
-          <Reveal delay={80} className="hidden sm:block">
+          <Reveal delay={80} variant="fade" once={false} className="hidden sm:block">
             <Link
               href="/category/all"
               className="pressable glass-btn inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-brand-deep"

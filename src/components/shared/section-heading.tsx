@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Reveal } from "@/components/shared/reveal";
+import { Reveal, type RevealVariant } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 
 type DisplaySize = "sm" | "md" | "lg";
@@ -19,14 +19,16 @@ interface DisplayStackProps {
   align?: DisplayAlign;
   /** Soft floating aura behind the block */
   aura?: boolean;
-  /** Draw underline mark under the title */
-  mark?: boolean;
   as?: "h1" | "h2" | "h3";
   className?: string;
+  /** Classes on the outer Reveal (grid col-span, max-width, etc.) */
+  wrapperClassName?: string;
   descriptionClassName?: string;
   /** Skip outer Reveal (when parent already reveals) */
   noReveal?: boolean;
   delay?: number;
+  /** Distinct entrance per section */
+  motion?: RevealVariant;
   href?: string;
   linkLabel?: string;
 }
@@ -74,8 +76,8 @@ function splitAccent(
 }
 
 /**
- * Global display typography — eyebrow, accented title, lead.
- * Use for every section heading so motion/color stay consistent.
+ * Global display typography — eyebrow, soft accent title, lead.
+ * Text-only (no decorative lines). Motion variants re-play on scroll re-entry.
  */
 export function DisplayStack({
   eyebrow,
@@ -87,12 +89,13 @@ export function DisplayStack({
   tone = "default",
   align = "left",
   aura = true,
-  mark = true,
   as: Tag = "h2",
   className,
+  wrapperClassName,
   descriptionClassName,
   noReveal = false,
   delay = 0,
+  motion = "rise",
   href,
   linkLabel = "See more",
 }: DisplayStackProps) {
@@ -117,7 +120,6 @@ export function DisplayStack({
 
       {eyebrow ? (
         <p className="display-eyebrow">
-          <span className="display-eyebrow-line" aria-hidden />
           <span className="display-eyebrow-label">{eyebrow}</span>
         </p>
       ) : null}
@@ -135,15 +137,9 @@ export function DisplayStack({
         {after}
       </Tag>
 
-      {mark ? <span className="display-mark" aria-hidden /> : null}
-
       {description ? (
         <p
-          className={cn(
-            "display-lead",
-            leadSize[size],
-            descriptionClassName,
-          )}
+          className={cn("display-lead", leadSize[size], descriptionClassName)}
         >
           {description}
         </p>
@@ -165,7 +161,12 @@ export function DisplayStack({
   if (noReveal) return stack;
 
   return (
-    <Reveal delay={delay} className={cn(align === "center" && "w-full")}>
+    <Reveal
+      delay={delay}
+      variant={motion}
+      once={false}
+      className={cn(align === "center" && "w-full", wrapperClassName)}
+    >
       {stack}
     </Reveal>
   );
@@ -196,6 +197,7 @@ export function SectionHeading({
       className={cn("mb-8 sm:mb-10", className)}
       align={align}
       size="md"
+      motion="soft"
     />
   );
 }

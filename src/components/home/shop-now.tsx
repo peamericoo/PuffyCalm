@@ -111,7 +111,6 @@ function CategoryRail({ className }: { className?: string }) {
           size="sm"
           accent="mood"
           aura
-          mark
           noReveal
           className="display-stack--compact"
         />
@@ -198,7 +197,6 @@ function MobileMoodStrip() {
           size="sm"
           accent="mood"
           aura={false}
-          mark={false}
           noReveal
           className="display-stack--compact min-w-0"
         />
@@ -260,6 +258,7 @@ export function ShopNow() {
             title="What customers buy first"
             description="Curated picks · free shipping over $75"
             accent="first"
+            motion="rise"
             className="max-w-xl"
           />
         </div>

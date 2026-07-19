@@ -14,10 +14,17 @@ export function LifestyleCollections() {
             eyebrow="Lifestyle"
             title="Designed around how you actually live"
             accent="live"
-            className="lg:col-span-7"
+            motion="soft"
+            wrapperClassName="min-w-0 lg:col-span-7"
+            className="max-w-2xl"
           />
-          <Reveal delay={100} className="lg:col-span-5">
-            <p className="display-lead text-sm leading-relaxed lg:text-right lg:ml-auto">
+          <Reveal
+            delay={100}
+            variant="slide"
+            once={false}
+            className="min-w-0 lg:col-span-5"
+          >
+            <p className="text-sm leading-relaxed text-muted-foreground lg:ml-auto lg:max-w-md lg:text-right">
               From desk reset to evening unwind — collections that fill the page
               with intent, not empty scroll.
             </p>

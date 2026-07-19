@@ -52,12 +52,13 @@ export function HeroCarousel() {
         - Desktop: cinematic but capped so shop is near
         Parent page wrapper provides continuous shop-stage sky (no seam).
       */}
-      <div className="relative mx-auto w-full max-w-[1760px] px-0 sm:px-3 lg:px-4">
+      {/* Wider than floating top bar (bar uses more side inset), still framed on large screens */}
+      <div className="relative mx-auto w-full max-w-[min(1920px,100%)] px-0 sm:px-1.5 lg:px-2">
         <div
           className={cn(
             "relative overflow-hidden",
             "h-[min(52dvh,420px)] min-h-[320px]",
-            "sm:h-[min(56dvh,480px)] sm:min-h-[380px] sm:rounded-[1.75rem]",
+            "sm:h-[min(56dvh,480px)] sm:min-h-[380px] sm:rounded-[1.85rem]",
             "lg:h-[min(58dvh,540px)] lg:min-h-[420px]",
           )}
         >
@@ -123,8 +124,6 @@ export function HeroCarousel() {
                   ) : null}
                 </span>
               </h1>
-
-              <span className="display-mark opacity-90" aria-hidden />
 
               <p className="display-lead mt-0 max-w-md text-[15px] leading-snug sm:max-w-lg sm:text-base lg:text-lg">
                 {active.subtitle}

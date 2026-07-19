@@ -184,22 +184,133 @@ body {
   transform: scale(0.98) translateY(0);
 }
 
-/* Scroll reveal — titles & section copy */
+/*
+ * Scroll reveal — fluid enter + reverse exit (when once=false).
+ * Each variant has a different resting pose so sections feel unique.
+ */
 .reveal {
   opacity: 0;
-  transform: translateY(22px);
-  filter: blur(4px);
-  transition:
-    opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 1s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform, filter;
+  transition:
+    opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.reveal-in {
+.reveal.reveal-in {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
   filter: blur(0);
+  transition:
+    opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Default / rise — lift with soft blur */
+.reveal-rise {
+  transform: translate3d(0, 26px, 0);
+  filter: blur(5px);
+}
+
+/* Soft — barely moves, calm breath */
+.reveal-soft {
+  transform: translate3d(0, 12px, 0);
+  filter: blur(2.5px);
+}
+
+/* Slide — from the left, editorial */
+.reveal-slide {
+  transform: translate3d(-22px, 10px, 0);
+  filter: blur(4px);
+}
+
+/* Scale — gentle bloom */
+.reveal-scale {
+  transform: translate3d(0, 14px, 0) scale(0.96);
+  filter: blur(3px);
+  transform-origin: left center;
+}
+
+/* Fade — pure mist settle */
+.reveal-fade {
+  transform: translate3d(0, 6px, 0);
+  filter: blur(7px);
+}
+
+/* Nested title/lead polish — CSS transitions so they reverse cleanly */
+.reveal .display-eyebrow {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+
+.reveal .display-title {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease,
+    letter-spacing 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  letter-spacing: 0.01em;
+}
+
+.reveal .display-lead {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+
+.reveal.reveal-in .display-eyebrow {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
+}
+
+.reveal.reveal-in .display-title {
+  opacity: 1;
+  transform: none;
+  letter-spacing: -0.02em;
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.1s,
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s,
+    letter-spacing 1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+}
+
+.reveal.reveal-in .display-lead {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.18s,
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.18s;
+}
+
+/* Per-variant nested accents */
+.reveal-slide .display-title {
+  transform: translateX(-10px);
+}
+.reveal-slide.reveal-in .display-title {
+  transform: none;
+}
+
+.reveal-scale .display-title {
+  transform: scale(0.97);
+  transform-origin: left center;
+}
+.reveal-scale.reveal-in .display-title {
+  transform: none;
+}
+
+.reveal-fade .display-eyebrow,
+.reveal-fade .display-title,
+.reveal-fade .display-lead {
+  transform: none;
 }
 
 /* ——— Global display typography (titles / eyebrows / leads) ——— */
@@ -282,29 +393,13 @@ body {
 }
 
 .display-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
+  display: inline-block;
   margin: 0;
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--display-accent-a);
-}
-
-.display-eyebrow-line {
-  display: inline-block;
-  width: 1.35rem;
-  height: 1.5px;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    var(--display-accent-a),
-    var(--display-accent-b)
-  );
-  transform-origin: left center;
-  box-shadow: 0 0 10px rgb(58 124 165 / 0.35);
 }
 
 .display-eyebrow-label {
@@ -360,36 +455,6 @@ body {
   filter: drop-shadow(0 0 18px rgb(184 217 236 / 0.35));
 }
 
-.display-mark {
-  display: block;
-  width: 3.25rem;
-  height: 3px;
-  margin-top: 0.7rem;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    var(--display-accent-a),
-    var(--display-accent-b),
-    transparent
-  );
-  transform: scaleX(0.25);
-  transform-origin: left center;
-  opacity: 0.55;
-  transition:
-    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.12s,
-    opacity 0.8s ease 0.12s;
-}
-
-.display-stack.text-center .display-mark {
-  margin-inline: auto;
-  transform-origin: center;
-}
-
-.display-stack.text-right .display-mark {
-  margin-left: auto;
-  transform-origin: right center;
-}
-
 .display-lead {
   margin: 0.65rem 0 0;
   max-width: 36rem;
@@ -406,63 +471,9 @@ body {
   margin-left: auto;
 }
 
-/* When parent Reveal lands, title pieces settle with extra polish */
-.reveal-in .display-eyebrow-line {
-  animation: display-line-draw 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.reveal-in .display-mark {
-  transform: scaleX(1);
-  opacity: 1;
-}
-
-.reveal-in .display-title {
-  animation: display-title-settle 1s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.reveal-in .display-lead {
-  animation: display-lead-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
-}
-
-@keyframes display-line-draw {
-  from {
-    transform: scaleX(0);
-    opacity: 0;
-  }
-  to {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-}
-
-@keyframes display-title-settle {
-  from {
-    letter-spacing: 0.01em;
-  }
-  to {
-    letter-spacing: -0.02em;
-  }
-}
-
-@keyframes display-lead-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Compact rail / inline display without full section scale */
 .display-stack--compact .display-title {
   margin-top: 0.25rem;
-}
-
-.display-stack--compact .display-mark {
-  width: 2.25rem;
-  margin-top: 0.45rem;
 }
 
 .display-stack--compact .display-aura {
@@ -846,22 +857,13 @@ body {
     animation: none !important;
   }
 
-  .reveal {
-    opacity: 1;
-    transform: none;
-    filter: none;
-    transition: none !important;
-  }
-
-  .reveal-in .display-eyebrow-line,
-  .reveal-in .display-title,
-  .reveal-in .display-lead {
-    animation: none !important;
-  }
-
-  .display-mark {
-    transform: scaleX(1) !important;
+  .reveal,
+  .reveal .display-eyebrow,
+  .reveal .display-title,
+  .reveal .display-lead {
     opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
     transition: none !important;
   }
 
