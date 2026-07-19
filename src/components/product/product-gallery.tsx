@@ -64,6 +64,9 @@ export function ProductGallery({
     <>
       <div className={cn("flex w-full flex-col gap-3", className)}>
         <div className="group relative aspect-square w-full overflow-hidden bg-[#f0f4f7]">
+          {/* Static stage light (behind + soft hit on top of photo) */}
+          <ProductSpotlight size="lg" />
+
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -80,11 +83,8 @@ export function ProductGallery({
             fill
             priority={priority}
             sizes="(max-width: 1024px) 100vw, 50vw"
-            className="pointer-events-none object-cover object-center animate-fade-in"
+            className="pointer-events-none z-[1] object-cover object-center animate-fade-in"
           />
-
-          {/* Stage light — isolated component + CSS module */}
-          <ProductSpotlight size="lg" />
 
           <button
             type="button"
