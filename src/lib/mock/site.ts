@@ -12,13 +12,67 @@ export const siteConfig = {
   },
 } as const;
 
-export const mainNav = [
-  { label: "Shop", href: "/category/all" },
-  { label: "Recovery", href: "/category/recovery" },
-  { label: "Comfort", href: "/category/comfort" },
-  { label: "Everyday", href: "/category/everyday" },
-  { label: "About", href: "/about" },
-] as const;
+export type NavChild = { label: string; href: string };
+
+export type NavItem = {
+  label: string;
+  href: string;
+  children?: NavChild[];
+};
+
+/** Primary nav — children power desktop hover + mobile expand */
+export const mainNav: NavItem[] = [
+  {
+    label: "Shop",
+    href: "/category/all",
+    children: [
+      { label: "All products", href: "/category/all" },
+      { label: "New arrivals", href: "/category/all" },
+      { label: "Sale", href: "/category/all" },
+      { label: "Under $50", href: "/category/all" },
+      { label: "Bestsellers", href: "/category/all" },
+    ],
+  },
+  {
+    label: "Recovery",
+    href: "/category/recovery",
+    children: [
+      { label: "Massage & tension", href: "/category/recovery" },
+      { label: "Heat therapy", href: "/category/recovery" },
+      { label: "Neck & shoulders", href: "/category/recovery" },
+      { label: "Travel recovery", href: "/category/recovery" },
+    ],
+  },
+  {
+    label: "Comfort",
+    href: "/category/comfort",
+    children: [
+      { label: "Lumbar support", href: "/category/comfort" },
+      { label: "Seat cushions", href: "/category/comfort" },
+      { label: "Wraps & warmth", href: "/category/comfort" },
+      { label: "Sleep support", href: "/category/comfort" },
+    ],
+  },
+  {
+    label: "Everyday",
+    href: "/category/everyday",
+    children: [
+      { label: "Desk essentials", href: "/category/everyday" },
+      { label: "Posture tools", href: "/category/everyday" },
+      { label: "Focus & routine", href: "/category/everyday" },
+    ],
+  },
+  {
+    label: "About",
+    href: "/about",
+    children: [
+      { label: "Our story", href: "/about" },
+      { label: "Shipping", href: "/help#shipping" },
+      { label: "Returns", href: "/returns" },
+      { label: "Help center", href: "/help" },
+    ],
+  },
+];
 
 export const footerNav = {
   shop: [

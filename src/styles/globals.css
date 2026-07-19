@@ -99,13 +99,13 @@ body {
     inset 0 -1px 0 rgb(58 124 165 / 0.06);
 }
 
-/* Star spin on card interaction */
+/* Star spin on card interaction — slow, elegant */
 @keyframes star-spin {
   0% {
     transform: rotate(0deg) scale(1);
   }
-  40% {
-    transform: rotate(-18deg) scale(1.15);
+  35% {
+    transform: rotate(-12deg) scale(1.12);
   }
   100% {
     transform: rotate(360deg) scale(1);
@@ -113,7 +113,96 @@ body {
 }
 
 .animate-star-spin {
-  animation: star-spin 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: star-spin 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Scroll reveal — titles & section copy */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Coordinated product carousel — slow crossfade */
+.carousel-slide {
+  transition:
+    opacity 1.45s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.carousel-slide-active {
+  opacity: 1;
+  z-index: 1;
+  transform: scale(1);
+}
+
+.carousel-slide-idle {
+  opacity: 0;
+  z-index: 0;
+  transform: scale(1.025);
+  pointer-events: none;
+}
+
+/* Compact product cards — soft special interaction */
+.product-card {
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.8) inset,
+    0 8px 28px -18px rgb(26 35 50 / 0.14);
+  outline: 1px solid rgb(212 226 236 / 0.7);
+  transition:
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    outline-color 0.65s ease;
+}
+
+.product-card-glow {
+  opacity: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    rgb(126 184 212 / 0.18),
+    transparent 70%
+  );
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover,
+.product-card.is-active,
+.product-card:focus-visible {
+  transform: translateY(-4px);
+  outline-color: rgb(126 184 212 / 0.45);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.9) inset,
+    0 22px 48px -26px rgb(26 35 50 / 0.28),
+    0 0 0 1px rgb(126 184 212 / 0.12);
+}
+
+.product-card:hover .product-card-glow,
+.product-card.is-active .product-card-glow,
+.product-card:focus-visible .product-card-glow {
+  opacity: 1;
+}
+
+.nav-dropdown {
+  animation: dropdown-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Subtle film grain — premium feel, almost invisible */
@@ -360,15 +449,29 @@ body {
   .animate-scale-in,
   .animate-marquee,
   .hero-kenburns,
-  .stagger > * {
+  .stagger > *,
+  .animate-star-spin {
     animation: none !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none !important;
   }
 
   .card-soft,
   .img-zoom,
   .pressable,
-  .hero-slide {
+  .hero-slide,
+  .carousel-slide,
+  .product-card {
     transition: none !important;
+  }
+
+  .product-card:hover,
+  .product-card.is-active {
+    transform: none;
   }
 }
 

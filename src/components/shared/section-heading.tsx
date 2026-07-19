@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Reveal } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 
 interface SectionHeadingProps {
@@ -19,7 +20,7 @@ export function SectionHeading({
   align = "center",
 }: SectionHeadingProps) {
   return (
-    <div
+    <Reveal
       className={cn(
         "mb-8 space-y-3 sm:mb-10",
         align === "center" && "mx-auto max-w-2xl text-center",
@@ -44,6 +45,6 @@ export function SectionHeading({
           </Link>
         </div>
       ) : null}
-    </div>
+    </Reveal>
   );
 }

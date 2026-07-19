@@ -5,16 +5,12 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import type { Product } from "@/types/product";
 import { ProductImageCarousel } from "@/components/product/product-image-carousel";
-import { Price } from "@/components/product/price";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
   className?: string;
-  socialProof?: string;
 }
 
 function percentOff(price: number, compareAt?: number) {
@@ -22,29 +18,17 @@ function percentOff(price: number, compareAt?: number) {
   return Math.round(((compareAt - price) / compareAt) * 100);
 }
 
-function isPromo(product: Product) {
-  return Boolean(
-    product.compareAtPrice && product.compareAtPrice > product.price,
-  ) || product.badges?.includes("sale");
-}
-
 /**
- * Interactive product card — hover (desktop) + tap/focus (mobile).
- * Image always uses ProductImageCarousel when gallery exists.
+ * Compact, minimal product card.
+ * Soft interaction layer (desktop hover + mobile tap/focus).
+ * No category tags / bestseller noise — price + product do the talking.
  */
-export function ProductCard({
-  product,
-  className,
-  socialProof,
-}: ProductCardProps) {
+export function ProductCard({ product, className }: ProductCardProps) {
   const [active, setActive] = useState(false);
   const off = percentOff(product.price, product.compareAtPrice);
-  const promo = isPromo(product);
-  const proof =
-    socialProof ??
-    (product.reviewCount >= 100
-      ? `${product.reviewCount}+ happy customers`
-      : `${product.reviewCount} verified reviews`);
+  const promo = Boolean(
+    product.compareAtPrice && product.compareAtPrice > product.price,
+  );
 
   return (
     <article
@@ -59,17 +43,20 @@ export function ProductCard({
       }}
       onTouchStart={() => setActive(true)}
       className={cn(
-        "group/card flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-card shadow-sm ring-1 ring-border/70 transition-all duration-300 outline-none",
-        "hover:-translate-y-1.5 hover:shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] hover:ring-brand/35",
-        "focus-visible:-translate-y-1.5 focus-visible:shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] focus-visible:ring-2 focus-visible:ring-brand/40",
-        active &&
-          "is-active/card -translate-y-1.5 shadow-[0_22px_48px_-28px_rgb(26_35_50/0.35)] ring-brand/35",
+        "group/card product-card relative flex h-full flex-col overflow-hidden rounded-2xl bg-card outline-none",
+        active && "is-active",
         className,
       )}
     >
+      {/* Soft ambient glow on interaction */}
+      <span
+        className="product-card-glow pointer-events-none absolute inset-0 z-0"
+        aria-hidden
+      />
+
       <Link
         href={`/product/${product.slug}`}
-        className="relative block aspect-[4/5] overflow-hidden sm:aspect-square"
+        className="relative z-[1] block aspect-[5/6] overflow-hidden sm:aspect-[4/5]"
       >
         <ProductImageCarousel
           images={product.images}
@@ -80,118 +67,91 @@ export function ProductCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
         />
 
-        <div className="absolute left-3 top-3 z-[3] flex flex-wrap gap-1.5">
-          {product.badges?.slice(0, 2).map((badge) => (
-            <Badge
-              key={badge}
-              variant={
-                badge === "sale"
-                  ? "sale"
-                  : badge === "new"
-                    ? "new"
-                    : badge === "bestseller"
-                      ? "soft"
-                      : "muted"
-              }
-              className="backdrop-blur-sm"
-            >
-              {badge === "bestseller"
-                ? "Bestseller"
-                : badge === "new"
-                  ? "New"
-                  : badge === "limited"
-                    ? "Limited"
-                    : "Sale"}
-            </Badge>
-          ))}
-          {off ? (
-            <Badge variant="sale" className="backdrop-blur-sm">
-              −{off}%
-            </Badge>
-          ) : null}
-        </div>
+        {off ? (
+          <span className="absolute left-2.5 top-2.5 z-[3] rounded-full bg-success px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white shadow-sm">
+            −{off}%
+          </span>
+        ) : null}
+
+        {/* Bottom fade so text never fights the photo */}
+        <span
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-16 bg-gradient-to-t from-black/25 to-transparent opacity-0 transition-opacity duration-700 group-hover/card:opacity-100 group-[.is-active]/card:opacity-100"
+          aria-hidden
+        />
       </Link>
 
-      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="relative z-[1] flex flex-1 flex-col gap-2 px-3.5 pb-3.5 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Star
               className={cn(
-                "h-3.5 w-3.5 fill-amber-400 text-amber-400 transition-transform duration-500",
+                "h-3 w-3 fill-amber-400 text-amber-400 transition-transform duration-700",
                 active && "animate-star-spin",
                 "group-hover/card:animate-star-spin",
               )}
             />
-            <span className="font-semibold text-foreground">
+            <span className="font-medium text-foreground/90">
               {product.rating}
             </span>
             <span className="text-border">·</span>
-            <span className="line-clamp-1">{proof}</span>
+            <span>{product.reviewCount}</span>
           </div>
-
-          {product.categoryLabel ? (
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-brand-deep/80">
-              {product.categoryLabel}
-            </p>
-          ) : null}
-
-          <h3 className="text-[15px] font-medium leading-snug tracking-tight text-foreground transition-colors group-hover/card:text-brand-deep">
-            <Link href={`/product/${product.slug}`}>{product.name}</Link>
-          </h3>
-
-          <p
-            className={cn(
-              "text-sm leading-relaxed text-muted-foreground transition-all duration-300 origin-top",
-              active || "line-clamp-2",
-              active && "line-clamp-none scale-[1.02] text-[0.9375rem] text-foreground/80",
-              "group-hover/card:line-clamp-none group-hover/card:scale-[1.02] group-hover/card:text-[0.9375rem] group-hover/card:text-foreground/80",
-            )}
-          >
-            {product.shortDescription}
-          </p>
-        </div>
-
-        <div className="flex items-end justify-between gap-2">
-          <Price
-            price={product.price}
-            compareAtPrice={product.compareAtPrice}
-            currency={product.currency}
-          />
-          {promo && product.compareAtPrice ? (
-            <span className="text-[11px] font-semibold text-success">
-              Save {formatMoney(product.compareAtPrice - product.price)}
+          {promo ? (
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-success">
+              Sale
             </span>
           ) : null}
         </div>
 
-        <div className="mt-auto space-y-2 pt-1">
-          <Button
-            asChild
-            variant={promo ? "soft" : "default"}
-            size="sm"
-            className={cn(
-              "pressable w-full transition-all duration-300",
-              promo &&
-                "bg-success text-white hover:bg-success/90 group-hover/card:bg-success group-hover/card:text-white",
-              !promo &&
-                "group-hover/card:bg-brand-deep group-hover/card:text-white",
-              active && promo && "bg-success text-white",
-              active && !promo && "bg-brand-deep text-white",
-            )}
-          >
-            <Link href={`/cart?add=${product.slug}`}>Add to cart</Link>
-          </Button>
-          <Link
-            href={`/product/${product.slug}`}
-            className={cn(
-              "block text-center text-xs font-medium transition-colors duration-300",
-              "text-brand-deep hover:text-foreground",
-              active && "text-foreground underline-offset-2",
-            )}
-          >
-            View details
-          </Link>
+        <h3 className="line-clamp-2 text-[13.5px] font-medium leading-snug tracking-tight text-foreground transition-colors duration-500 group-hover/card:text-brand-deep">
+          <Link href={`/product/${product.slug}`}>{product.name}</Link>
+        </h3>
+
+        {/* Description only peeks on interaction — keeps cards quiet at rest */}
+        <p
+          className={cn(
+            "text-[12px] leading-relaxed text-muted-foreground transition-all duration-500 ease-out",
+            "line-clamp-1 max-h-5 opacity-70",
+            "group-hover/card:line-clamp-2 group-hover/card:max-h-10 group-hover/card:opacity-100",
+            active && "line-clamp-2 max-h-10 opacity-100",
+          )}
+        >
+          {product.shortDescription}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-baseline gap-1.5">
+            <span
+              className={cn(
+                "text-[15px] font-semibold tracking-tight",
+                promo ? "text-success" : "text-foreground",
+              )}
+            >
+              {formatMoney(product.price, product.currency)}
+            </span>
+            {promo && product.compareAtPrice ? (
+              <span className="text-[11px] text-muted-foreground line-through">
+                {formatMoney(product.compareAtPrice, product.currency)}
+              </span>
+            ) : null}
+          </div>
         </div>
+
+        <Link
+          href={`/cart?add=${product.slug}`}
+          className={cn(
+            "product-card-cta pressable mt-0.5 flex h-9 w-full items-center justify-center rounded-full text-xs font-medium transition-all duration-500",
+            promo
+              ? "bg-success/10 text-success ring-1 ring-success/20 group-hover/card:bg-success group-hover/card:text-white group-hover/card:ring-success"
+              : "bg-foreground/[0.04] text-foreground ring-1 ring-border/80 group-hover/card:bg-brand-deep group-hover/card:text-white group-hover/card:ring-brand-deep",
+            active &&
+              (promo
+                ? "bg-success text-white ring-success"
+                : "bg-brand-deep text-white ring-brand-deep"),
+          )}
+        >
+          Add to cart
+        </Link>
       </div>
     </article>
   );

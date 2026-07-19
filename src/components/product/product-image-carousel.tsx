@@ -1,7 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  CAROUSEL_INTERVAL_MS,
+  useSyncedCarouselIndex,
+} from "@/lib/hooks/use-synced-carousel";
 import { getProductImages } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +15,7 @@ export interface ProductImageCarouselProps {
   imageUrl?: string;
   alt: string;
   className?: string;
-  /** Interval between slides (ms) */
+  /** Interval between slides (ms) — shared global clock */
   intervalMs?: number;
   /** Next/Image sizes attribute */
   sizes?: string;
@@ -24,7 +28,8 @@ export interface ProductImageCarouselProps {
 
 /**
  * Resilient product image carousel for mocks → real media later.
- * - Auto-rotates when 2+ images
+ * - All instances share one calm global clock (coordinated advances)
+ * - Slow crossfade (~1.4s) — premium, low anxiety
  * - Pauses on hover, focus, touch, or `paused` prop
  * - Works with 0/1/N images without crashing
  */
@@ -33,7 +38,7 @@ export function ProductImageCarousel({
   imageUrl,
   alt,
   className,
-  intervalMs = 3200,
+  intervalMs = CAROUSEL_INTERVAL_MS,
   sizes = "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw",
   priority = false,
   showDots = true,
@@ -43,31 +48,15 @@ export function ProductImageCarousel({
     () => getProductImages({ images, imageUrl }),
     [images, imageUrl],
   );
-  const [index, setIndex] = useState(0);
   const [localPaused, setLocalPaused] = useState(false);
   const multi = slides.length > 1;
   const paused = pausedExternal || localPaused || !multi;
 
-  const go = useCallback(
-    (next: number) => {
-      if (slides.length === 0) return;
-      setIndex(((next % slides.length) + slides.length) % slides.length);
-    },
-    [slides.length],
+  const { index, setManual } = useSyncedCarouselIndex(
+    slides.length,
+    paused,
+    intervalMs,
   );
-
-  useEffect(() => {
-    if (paused) return;
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length);
-    }, intervalMs);
-    return () => window.clearInterval(id);
-  }, [paused, intervalMs, slides.length]);
-
-  // Keep index valid if gallery length changes
-  useEffect(() => {
-    if (index >= slides.length) setIndex(0);
-  }, [slides.length, index]);
 
   if (slides.length === 0) {
     return (
@@ -84,7 +73,10 @@ export function ProductImageCarousel({
 
   return (
     <div
-      className={cn("relative h-full w-full overflow-hidden product-plate", className)}
+      className={cn(
+        "relative h-full w-full overflow-hidden product-plate",
+        className,
+      )}
       onMouseEnter={() => setLocalPaused(true)}
       onMouseLeave={() => setLocalPaused(false)}
       onFocusCapture={() => setLocalPaused(true)}
@@ -95,8 +87,7 @@ export function ProductImageCarousel({
       }}
       onTouchStart={() => setLocalPaused(true)}
       onTouchEnd={() => {
-        // brief pause after touch so user can look, then resume
-        window.setTimeout(() => setLocalPaused(false), 1600);
+        window.setTimeout(() => setLocalPaused(false), 2200);
       }}
       role={multi ? "group" : undefined}
       aria-roledescription={multi ? "carousel" : undefined}
@@ -108,8 +99,8 @@ export function ProductImageCarousel({
           <div
             key={`${src}-${i}`}
             className={cn(
-              "absolute inset-0 transition-opacity duration-700 ease-out",
-              active ? "opacity-100 z-[1]" : "opacity-0 z-0",
+              "absolute inset-0 carousel-slide",
+              active ? "carousel-slide-active" : "carousel-slide-idle",
             )}
             aria-hidden={!active}
           >
@@ -119,14 +110,14 @@ export function ProductImageCarousel({
               fill
               sizes={sizes}
               priority={priority && i === 0}
-              className="object-cover object-center transition-transform duration-[1200ms] ease-out group-hover/card:scale-[1.04]"
+              className="object-cover object-center transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:scale-[1.03]"
             />
           </div>
         );
       })}
 
       {multi && showDots ? (
-        <div className="absolute bottom-3 left-1/2 z-[2] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/25 px-2 py-1 backdrop-blur-sm">
+        <div className="absolute bottom-2.5 left-1/2 z-[2] flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/20 px-1.5 py-1 backdrop-blur-[6px]">
           {slides.map((_, i) => (
             <button
               key={i}
@@ -135,11 +126,11 @@ export function ProductImageCarousel({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                go(i);
+                setManual(i);
               }}
               className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
-                i === index ? "w-4 bg-white" : "w-1.5 bg-white/50",
+                "h-1 rounded-full transition-all duration-700 ease-out",
+                i === index ? "w-3.5 bg-white" : "w-1 bg-white/45",
               )}
             />
           ))}
