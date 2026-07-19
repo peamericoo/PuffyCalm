@@ -11,8 +11,8 @@ import { getMockCartItemCount } from "@/lib/mock/cart";
 import { cn } from "@/lib/utils";
 
 /**
- * Floating fixed top bar — same on every page.
- * Glass pill, elevated, always available.
+ * Floating fixed top bar — wider, glass pill, same on every page.
+ * Sits below the promo marquee.
  */
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,14 +40,14 @@ export function Header() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+      <div className="pointer-events-none fixed inset-x-0 top-[var(--promo-h)] z-50 px-2 pt-2.5 sm:px-4 sm:pt-3">
         <header
           className={cn(
-            "pointer-events-auto mx-auto flex h-[3.65rem] max-w-[1180px] items-center justify-between gap-3 rounded-full px-3 pl-4 sm:h-[4.1rem] sm:px-4 sm:pl-5 nav-float animate-fade-in",
+            "pointer-events-auto mx-auto flex h-[3.75rem] w-full max-w-[1440px] items-center justify-between gap-3 rounded-full px-3 pl-4 sm:h-[4.25rem] sm:px-5 sm:pl-6 nav-float animate-fade-in",
             scrolled && "is-scrolled",
           )}
         >
-          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
             <Button
               type="button"
               variant="ghost"
@@ -70,14 +70,14 @@ export function Header() {
             <Logo className="shrink-0" />
 
             <nav
-              className="ml-2 hidden items-center gap-0.5 lg:flex"
+              className="ml-1 hidden items-center gap-0.5 lg:flex xl:ml-4"
               aria-label="Primary"
             >
               {mainNav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="pressable rounded-full px-3.5 py-2 text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="pressable rounded-full px-3.5 py-2 text-[13px] font-medium text-muted-foreground hover:bg-brand-soft hover:text-brand-deep xl:px-4"
                 >
                   {item.label}
                 </Link>
@@ -123,7 +123,7 @@ export function Header() {
               <Link href="/cart" aria-label={`Cart, ${cartCount} items`}>
                 <ShoppingBag className="h-[18px] w-[18px]" />
                 {cartCount > 0 ? (
-                  <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
+                  <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-cta px-1 text-[10px] font-semibold text-white">
                     {cartCount}
                   </span>
                 ) : null}
@@ -135,22 +135,21 @@ export function Header() {
               size="sm"
               className="pressable ml-1 hidden md:inline-flex"
             >
-              <Link href="/category/all">Shop</Link>
+              <Link href="/category/all">Shop sale</Link>
             </Button>
           </div>
         </header>
       </div>
 
-      {/* Search panel */}
       <div
         className={cn(
-          "fixed inset-x-0 top-[4.6rem] z-40 px-3 transition-all duration-300 sm:top-[5.1rem] sm:px-5",
+          "fixed inset-x-0 top-[calc(var(--promo-h)+4.9rem)] z-40 px-2 transition-all duration-300 sm:top-[calc(var(--promo-h)+5.3rem)] sm:px-4",
           searchOpen
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-2 opacity-0",
         )}
       >
-        <div className="mx-auto max-w-[1180px] rounded-3xl border border-white/60 bg-white/90 p-3 shadow-xl backdrop-blur-xl sm:p-4">
+        <div className="mx-auto max-w-[1440px] rounded-3xl border border-border bg-white/95 p-3 shadow-xl backdrop-blur-xl sm:p-4">
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -172,7 +171,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
       <div
         className={cn(
           "fixed inset-0 z-40 transition-all duration-300 lg:hidden",
@@ -183,13 +181,13 @@ export function Header() {
       >
         <button
           type="button"
-          className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]"
+          className="absolute inset-0 bg-foreground/20 backdrop-blur-[2px]"
           aria-label="Close menu"
           onClick={() => setMobileOpen(false)}
         />
         <div
           className={cn(
-            "absolute inset-x-3 top-[4.6rem] rounded-3xl border border-white/70 bg-white/95 p-3 shadow-2xl backdrop-blur-xl transition-transform duration-300 sm:inset-x-5 sm:top-[5.1rem]",
+            "absolute inset-x-2 top-[calc(var(--promo-h)+4.9rem)] rounded-3xl border border-border bg-white/95 p-3 shadow-2xl backdrop-blur-xl transition-transform duration-300 sm:inset-x-4 sm:top-[calc(var(--promo-h)+5.3rem)]",
             mobileOpen ? "translate-y-0" : "-translate-y-3",
           )}
         >
@@ -199,7 +197,7 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-2xl px-4 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                className="rounded-2xl px-4 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-brand-soft"
               >
                 {item.label}
               </Link>
@@ -213,7 +211,7 @@ export function Header() {
             </Button>
             <Button asChild variant="default" className="w-full">
               <Link href="/category/all" onClick={() => setMobileOpen(false)}>
-                Shop now
+                Shop sale
               </Link>
             </Button>
           </div>

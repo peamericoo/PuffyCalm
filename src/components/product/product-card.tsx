@@ -86,7 +86,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <Button asChild variant="outline" size="sm" className="pressable w-full">
             <Link href={`/cart?add=${product.slug}`}>Add to Cart</Link>
           </Button>
-          <Button asChild variant="dark" size="sm" className="pressable w-full">
+          <Button asChild variant="default" size="sm" className="pressable w-full">
             <Link href={`/product/${product.slug}`}>Buy Now</Link>
           </Button>
         </div>

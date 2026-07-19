@@ -43,17 +43,96 @@ export const footerNav = {
   ],
 } as const;
 
-export const homepageHero = {
-  titleLine1: "Comfort That",
-  titleLine2: "Elevates Your",
-  titleLine3: "Every Day",
-  subtitle:
-    "Curated recovery tools, soft support, and practical upgrades for a lighter routine.",
-  primaryCta: { label: "Shop Now", href: "/category/all" },
-  imageUrl:
-    "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1400&q=80",
-  imageAlt: "Calm lifestyle wellness moment",
-} as const;
+/** Commercial rotating promo messages — top of site */
+export const promoMessages = [
+  "🎉 We just launched — welcome to PuffyEasy",
+  "🔥 Launch sale: up to 20% off bestsellers this week",
+  "🚚 Free tracked shipping on orders $75+",
+  "⏱️ Limited launch offer — comfort upgrades from $39",
+  "✨ Guest checkout · Ships to US, UK, AU & CA",
+  "💆 New drops: recovery tools that actually feel premium",
+] as const;
+
+export type HeroSlide = {
+  id: string;
+  eyebrow: string;
+  titleLine1: string;
+  titleLine2: string;
+  titleLine3?: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  imageUrl: string;
+  imageAlt: string;
+};
+
+/** Large homepage hero carousel slides */
+export const heroSlides: HeroSlide[] = [
+  {
+    id: "slide_launch",
+    eyebrow: "Just launched",
+    titleLine1: "Feel better",
+    titleLine2: "every single",
+    titleLine3: "day",
+    subtitle:
+      "Premium comfort & recovery essentials — curated to make work, rest, and real life lighter.",
+    ctaLabel: "Shop the launch sale",
+    ctaHref: "/category/all",
+    secondaryLabel: "See bestsellers",
+    secondaryHref: "/category/recovery",
+    imageUrl:
+      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1800&q=80",
+    imageAlt: "Calm wellness lifestyle",
+  },
+  {
+    id: "slide_recovery",
+    eyebrow: "Recovery edit",
+    titleLine1: "Tension out.",
+    titleLine2: "Energy back.",
+    subtitle:
+      "Massage guns, heat therapy, and neck relief designed for desk-heavy days.",
+    ctaLabel: "Shop recovery",
+    ctaHref: "/category/recovery",
+    secondaryLabel: "How it works",
+    secondaryHref: "/about",
+    imageUrl:
+      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1800&q=80",
+    imageAlt: "Yoga recovery stretch lifestyle",
+  },
+  {
+    id: "slide_comfort",
+    eyebrow: "Comfort upgrade",
+    titleLine1: "Sit softer.",
+    titleLine2: "Work longer.",
+    titleLine3: "Stress less.",
+    subtitle:
+      "Lumbar support, seat cushions, and wraps that turn long hours into better hours.",
+    ctaLabel: "Shop comfort",
+    ctaHref: "/category/comfort",
+    secondaryLabel: "View all",
+    secondaryHref: "/category/all",
+    imageUrl:
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1800&q=80",
+    imageAlt: "Modern workspace comfort",
+  },
+  {
+    id: "slide_everyday",
+    eyebrow: "Everyday essentials",
+    titleLine1: "Small upgrades.",
+    titleLine2: "Big difference.",
+    subtitle:
+      "Smart tools for posture, focus, and the routines you repeat every day.",
+    ctaLabel: "Shop everyday",
+    ctaHref: "/category/everyday",
+    secondaryLabel: "Explore collections",
+    secondaryHref: "/category/all",
+    imageUrl:
+      "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1800&q=80",
+    imageAlt: "Productive everyday desk setup",
+  },
+];
 
 export const lifestyleCollections = [
   {

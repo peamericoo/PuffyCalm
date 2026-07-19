@@ -1,15 +1,15 @@
 import { CategoriesStrip } from "@/components/home/categories-strip";
 import { CtaBand } from "@/components/home/cta-band";
 import { FeaturedProducts } from "@/components/home/featured-products";
-import { Hero } from "@/components/home/hero";
+import { HeroCarousel } from "@/components/home/hero-carousel";
 import { LifestyleCollections } from "@/components/home/lifestyle-collections";
-import { MarqueeStrip } from "@/components/home/marquee-strip";
+import { HomeBento } from "@/components/home/home-bento";
 
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <MarqueeStrip />
+      <HeroCarousel />
+      <HomeBento />
       <FeaturedProducts />
       <CategoriesStrip />
       <LifestyleCollections />
