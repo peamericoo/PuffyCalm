@@ -16,7 +16,7 @@ const FALLBACK_ALL: Category = {
   id: "cat_all",
   slug: "all",
   name: "All products",
-  description: "The full PuffyEasy collection of life-improving essentials.",
+  description: "The full PuffCalm collection of life-improving essentials.",
   tagline: "Everything we love right now",
   imageUrl:
     "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1200&q=80",

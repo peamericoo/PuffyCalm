@@ -1,4 +1,4 @@
-# AGENTS.md — PuffyEasy / PuffyCalm
+# AGENTS.md — PuffCalm
 
 Documento mestre para agentes de IA (VibeCoding). Contém contexto de negócio, stack, telas, prioridades e **credenciais reais de infraestrutura** para operar Railway, Postgres, Redis, GitHub e Google Cloud sem atrito.
 
@@ -10,31 +10,31 @@ Documento mestre para agentes de IA (VibeCoding). Contém contexto de negócio, 
 
 | Camada | Nome | Notas |
 |--------|------|--------|
-| **Marca / produto** | **PuffyEasy** | Nome comercial oficial, branding, copy do site |
-| **Domínio** | **PuffyEasy.com** (ou domínio ativo da marca) | Site em inglês |
-| **Repo GitHub** | **peamericoo/PuffyCalm** | Nome técnico do repositório — **não** é a marca |
+| **Marca / produto** | **PuffCalm** | Nome comercial oficial, branding, copy do site |
+| **Domínio** | **puffcalm.com** (ou domínio ativo da marca) | Site em inglês |
+| **Repo GitHub** | **peamericoo/PuffyCalm** | Remote técnico (nome histórico do repo) |
 | **GCP project name** | **PuffCalm** | Project ID: `easypuff-502919` |
-| **Railway project** | slug interno ainda `divine-consideration` | Owner quer nome **PuffyCalm** — renomear no dashboard se ainda não refletiu |
+| **Railway project** | slug interno ainda `divine-consideration` | Owner quer nome **PuffCalm** — renomear no dashboard se ainda não refletiu |
 | **Pasta local** | `~/Documents/Projects/PuffCalm` | Worktree local do projeto |
 
 **URL GitHub:** https://github.com/peamericoo/PuffyCalm  
 **Workdir local:** `/Users/paletotcode/Documents/Projects/PuffCalm`
 
-Quando o usuário disser “projeto”, “PuffyCalm”, “PuffCalm” ou **“PuffyEasy”**, é o mesmo produto: storefront + admin de e-commerce dropshipping da marca **PuffyEasy**.
+Quando o usuário disser “projeto” ou **“PuffCalm”**, é este storefront + admin de e-commerce (marca **PuffCalm**).
 
 | Termo | Significado |
 |-------|-------------|
-| **PuffyEasy** | Marca / produto (sempre na UI, marketing, copy) |
-| **PuffyCalm** | Repo GitHub + nome operacional preferido |
-| **PuffCalm** / `easypuff-502919` | Nomes técnicos GCP (infra) |
+| **PuffCalm** | Marca / produto (UI, marketing, copy, package) |
+| **PuffyCalm** | Nome histórico do repositório GitHub |
+| `easypuff-502919` | Project ID GCP |
 | `divine-consideration` | Slug Railway (infra) |
 
 ---
 
 ## 1. Marca
 
-- **Nome oficial:** **PuffyEasy**  
-- **Domínio:** PuffyEasy.com (ou o domínio ativo configurado na Cloudflare)  
+- **Nome oficial:** **PuffCalm**  
+- **Domínio:** PuffCalm.com (ou o domínio ativo configurado na Cloudflare)  
 - **Visão:** Marca de **produtos selecionados que melhoram a vida das pessoas** — torna o cotidiano mais leve, prático, confortável e agradável. Inclui conforto/recovery, gadgets úteis, produtos virais e soluções práticas do dia a dia.  
 - **Logo (conceito atual):** Gato azul clarinho, gordo e fofo, deitado de barriga pra cima em um puff, com máscara de dormir nos olhos e segurando uma pistola massageadora. Estilo **minimalista e clean**.  
 - **Tom da marca:** clean, premium, calmo, confiável, inteligente e moderno.  
@@ -374,7 +374,7 @@ Hoje o login de usuário CLI está ok; ADC pode não estar configurado.
 | Campo | Valor |
 |-------|--------|
 | Workspace | Pedro Américo Paletot's Projects |
-| Project name (API) | `divine-consideration` (alias desejado: **PuffyCalm**) |
+| Project name (API) | `divine-consideration` (alias desejado: **PuffCalm**) |
 | Project ID | `7d5e7670-fa5c-4400-9273-cc49ce2a0a8f` |
 | Environment | `production` |
 | Environment ID | `ea251d60-9d4e-410d-bf77-b02342c78c17` |
@@ -529,7 +529,7 @@ gcloud services enable <api>.googleapis.com --project=easypuff-502919
 | Campo | Valor |
 |-------|--------|
 | Owner | `peamericoo` |
-| Repo | `PuffyCalm` |
+| Repo | `PuffCalm` |
 | URL | https://github.com/peamericoo/PuffyCalm |
 | Visibilidade (criação) | public (revisar se secrets neste AGENTS.md forem commitados) |
 | Conta CLI | `peamericoo` |
@@ -551,8 +551,8 @@ Criar `.env.local` / Railway variables com pelo menos:
 ```bash
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_NAME=PuffyEasy
-NEXT_PUBLIC_DOMAIN=PuffyEasy.com
+NEXT_PUBLIC_SITE_NAME=PuffCalm
+NEXT_PUBLIC_DOMAIN=PuffCalm.com
 
 # Database (local dev → public proxy)
 DATABASE_URL=postgresql://postgres:eDqFAuuniiAlgUdpxEtRjeCOXfAhDcWB@thomas.proxy.rlwy.net:53008/railway
@@ -596,7 +596,7 @@ Quando o owner fornecer, **anexar neste AGENTS.md** na seção 11 (ou atualizar 
 - [ ] Cloudflare (API token / zone EasyPuff.com)  
 - [ ] Provider de e-mail (vendas + rastreio)  
 - [ ] CJ Dropshipping / AliExpress (se API)  
-- [ ] Renomear Railway project para PuffyCalm no dashboard (se ainda `divine-consideration`)  
+- [ ] Renomear Railway project para PuffCalm no dashboard (se ainda `divine-consideration`)  
 - [ ] Avaliar se o GitHub deve ser **private** por causa deste arquivo  
 
 ---
@@ -605,7 +605,7 @@ Quando o owner fornecer, **anexar neste AGENTS.md** na seção 11 (ou atualizar 
 
 1. **Ler este arquivo** no início de qualquer sessão neste repo.  
 2. **Seguir a stack frontend §4.2 à risca** (Next.js App Router, React 19, TS strict, Tailwind v4, shadcn, etc.).  
-3. **Marca = EasyPuff**; código/repo/ops podem usar PuffyCalm/PuffCalm — não renomear a marca do cliente.  
+3. **Marca = PuffCalm**; código/repo/ops podem usar PuffCalm/PuffCalm — não renomear a marca do cliente.  
 4. Site em **inglês**; comentários de código podem ser PT ou EN; copy de UI em EN.  
 5. **Mobile-first**, UI clean/premium alinhada ao logo (azul claro, fofo, minimal).  
 6. Ordem de entrega: **mock UI completo → fluxos reais → produtos → vendas**.  
@@ -684,7 +684,7 @@ Stack de dados (fase real): **Drizzle ORM** + Postgres; Redis para sessão/cache
 ## 14. Histórico rápido da conversa (setup)
 
 1. Conta GitHub CLI: `peamericoo`  
-2. Repo criado e depois nomeado **PuffyCalm** (marca **PuffyEasy**)  
+2. Repo criado e depois nomeado **PuffCalm** (marca **PuffCalm**)  
 3. Workdir local: `Documents/Projects/PuffCalm`  
 4. Briefing completo de negócio/produto/telas  
 5. Stack fixada (Next.js, Railway, Postgres, Cloudflare, Auth.js, Stripe, PayPal)  
@@ -706,4 +706,4 @@ Em dúvida de produto/prioridade: **mock storefront vendável e primeiras vendas
 
 ---
 
-*Última atualização: 2026-07-19 — marca PuffyEasy + estrutura frontend mock + stack §4.2 + infra.*
+*Última atualização: 2026-07-19 — marca PuffCalm + estrutura frontend mock + stack §4.2 + infra.*
