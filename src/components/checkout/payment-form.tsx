@@ -6,6 +6,7 @@ import {
   PaymentElement,
   useCheckout,
 } from "@stripe/react-stripe-js/checkout";
+import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
@@ -21,17 +22,20 @@ interface PaymentFormProps {
   className?: string;
 }
 
-type ConfirmResult = Awaited<
-  ReturnType<
-    NonNullable<
-      Extract<ReturnType<typeof useCheckout>, { type: "success" }>["checkout"]
-    >["confirm"]
-  >
+type CheckoutActions = NonNullable<
+  Extract<ReturnType<typeof useCheckout>, { type: "success" }>["checkout"]
 >;
+
+type ConfirmResult = Awaited<ReturnType<CheckoutActions["confirm"]>>;
 
 function stripeErrorMessage(result: ConfirmResult | null, fallback: string): string {
   if (result && result.type === "error") {
-    return result.error.message || fallback;
+    const msg = result.error.message || fallback;
+    // Sandbox only accepts Stripe test cards / test wallets — real cards always fail.
+    if (/test mode|test card|4242/i.test(msg)) {
+      return `${msg} Use test card 4242 4242 4242 4242 (any future expiry, any CVC).`;
+    }
+    return msg;
   }
   return fallback;
 }
@@ -41,9 +45,11 @@ function stripeErrorMessage(result: ConfirmResult | null, fallback: string): str
  *
  * Contract (do not break):
  * - Email is set server-side as `customer_email` — never pass email to confirm().
- * - `return_url` is set on Session.create — never pass returnUrl to confirm()
- *   or Stripe rejects with "You cannot provide returnUrl to confirm()…".
- * - Only pass redirect: "if_required" so card stays on-page; wallets/Link may redirect.
+ * - `return_url` is set on Session.create — never pass returnUrl to confirm().
+ * - Express Checkout (Link / Apple Pay / Google Pay) MUST pass
+ *   `expressCheckoutConfirmEvent` from onConfirm, or Stripe rejects with
+ *   "Invalid confirm() call…".
+ * - Card / Link tabs use Payment Element + plain confirm({ redirect }).
  */
 export function PaymentForm({
   orderId,
@@ -76,30 +82,41 @@ export function PaymentForm({
 
   const checkout = checkoutState.checkout;
 
-  const runConfirm = async () => {
-    // return_url + customer_email already on the Session — pass neither here.
+  const runConfirm = async (
+    opts?: Parameters<CheckoutActions["confirm"]>[0],
+  ) => {
     return checkout.confirm({
       redirect: "if_required",
+      ...opts,
     });
   };
 
-  const finishConfirm = async () => {
+  const finishConfirm = async (
+    opts?: Parameters<CheckoutActions["confirm"]>[0],
+  ) => {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
     try {
-      const result = await runConfirm();
+      const result = await runConfirm(opts);
       if (result.type === "error") {
         setError(stripeErrorMessage(result, "Payment failed"));
         setSubmitting(false);
         return;
       }
-      // Card success without redirect. Link/wallets may navigate away first.
+      // Card success without redirect. Wallets/Link may navigate away first.
       onPaid(orderId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Payment failed");
       setSubmitting(false);
     }
+  };
+
+  const onExpressConfirm = (
+    event: StripeExpressCheckoutElementConfirmEvent,
+  ) => {
+    // Required by Custom Checkout + Express Checkout Element (Link / wallets).
+    void finishConfirm({ expressCheckoutConfirmEvent: event });
   };
 
   return (
@@ -110,11 +127,7 @@ export function PaymentForm({
       </p>
 
       <div className="rounded-2xl border border-border/70 bg-white p-1 sm:p-2">
-        <ExpressCheckoutElement
-          onConfirm={() => {
-            void finishConfirm();
-          }}
-        />
+        <ExpressCheckoutElement onConfirm={onExpressConfirm} />
       </div>
 
       <div className="relative py-0.5">
@@ -130,7 +143,6 @@ export function PaymentForm({
         <PaymentElement
           options={{
             layout: "tabs",
-            // Billing email field is redundant — locked on the Session.
             fields: {
               billingDetails: {
                 email: "never",
@@ -168,7 +180,8 @@ export function PaymentForm({
       </Button>
 
       <p className="text-center text-[11px] text-muted-foreground">
-        Secured by Stripe · Guest checkout
+        Secured by Stripe · Test mode: use card{" "}
+        <span className="font-mono text-foreground/80">4242 4242 4242 4242</span>
       </p>
     </div>
   );
