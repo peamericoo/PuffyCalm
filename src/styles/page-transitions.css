@@ -1,0 +1,227 @@
+/**
+ * Product-page transitions — View Transitions API + lightweight CSS enter.
+ * GPU-friendly only (opacity + transform). No layout thrash, no heavy blur.
+ * Respects prefers-reduced-motion. Safe fallback when VT unsupported.
+ */
+
+:root {
+  --vt-exit: 140ms;
+  --vt-enter: 280ms;
+  --vt-morph: 360ms;
+  --vt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --vt-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* —— Shared product media morph (card → PDP gallery) —— */
+::view-transition-group(.product-morph) {
+  animation-duration: var(--vt-morph);
+  animation-timing-function: var(--vt-ease);
+  z-index: 20;
+}
+
+::view-transition-image-pair(.product-morph) {
+  isolation: isolate;
+}
+
+/* —— Soft page handoff into PDP —— */
+::view-transition-old(.pdp-shell) {
+  animation: var(--vt-exit) ease-in both vt-fade-out;
+}
+
+::view-transition-new(.pdp-shell) {
+  animation: var(--vt-enter) var(--vt-ease-out) both vt-fade-in;
+}
+
+/* —— Copy column rise (text emerging) —— */
+::view-transition-new(.pdp-copy) {
+  animation:
+    var(--vt-enter) var(--vt-ease-out) both vt-fade-in,
+    calc(var(--vt-enter) + 40ms) var(--vt-ease-out) both vt-rise;
+}
+
+::view-transition-old(.pdp-copy) {
+  animation: var(--vt-exit) ease-in both vt-fade-out;
+}
+
+/* —— Directional (optional nav-forward / nav-back) —— */
+::view-transition-old(.nav-forward) {
+  --slide: -28px;
+  animation:
+    var(--vt-exit) ease-in both vt-fade-out,
+    var(--vt-morph) var(--vt-ease) both vt-slide reverse;
+}
+
+::view-transition-new(.nav-forward) {
+  --slide: 28px;
+  animation:
+    var(--vt-enter) var(--vt-ease-out) calc(var(--vt-exit) * 0.5) both vt-fade-in,
+    var(--vt-morph) var(--vt-ease) both vt-slide;
+}
+
+::view-transition-old(.nav-back) {
+  --slide: 28px;
+  animation:
+    var(--vt-exit) ease-in both vt-fade-out,
+    var(--vt-morph) var(--vt-ease) both vt-slide reverse;
+}
+
+::view-transition-new(.nav-back) {
+  --slide: -28px;
+  animation:
+    var(--vt-enter) var(--vt-ease-out) calc(var(--vt-exit) * 0.5) both vt-fade-in,
+    var(--vt-morph) var(--vt-ease) both vt-slide;
+}
+
+/* Anchor chrome — header stays put */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+
+::view-transition-old(site-header) {
+  display: none;
+}
+
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+/* Keyframes — transform + opacity only */
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vt-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-rise {
+  from {
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vt-slide {
+  from {
+    transform: translate3d(var(--slide, 24px), 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/**
+ * Fallback / reinforcement: staggered copy on PDP mount.
+ * Uses CSS animation only — no JS observers, no continuous work.
+ * animation-fill-mode: both; ends at rest so no permanent will-change.
+ */
+.pdp-stagger > * {
+  animation: pdp-item-in 0.42s var(--vt-ease-out) both;
+}
+
+.pdp-stagger > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.pdp-stagger > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+.pdp-stagger > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+.pdp-stagger > *:nth-child(4) {
+  animation-delay: 130ms;
+}
+.pdp-stagger > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+.pdp-stagger > *:nth-child(6) {
+  animation-delay: 190ms;
+}
+.pdp-stagger > *:nth-child(7) {
+  animation-delay: 220ms;
+}
+.pdp-stagger > *:nth-child(8) {
+  animation-delay: 250ms;
+}
+.pdp-stagger > *:nth-child(n + 9) {
+  animation-delay: 280ms;
+}
+
+@keyframes pdp-item-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Deep-dive / related soft delayed entrance */
+.pdp-later {
+  animation: pdp-item-in 0.45s var(--vt-ease-out) 220ms both;
+}
+
+/* Mobile: shorter travel, faster — less paint cost */
+@media (max-width: 767px) {
+  :root {
+    --vt-exit: 100ms;
+    --vt-enter: 220ms;
+    --vt-morph: 280ms;
+  }
+
+  .pdp-stagger > * {
+    animation-duration: 0.32s;
+  }
+
+  @keyframes pdp-item-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 6px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes vt-rise {
+    from {
+      transform: translate3d(0, 8px, 0);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+}
+
+/* Reduced motion: hard cut, zero animation cost */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+
+  .pdp-stagger > *,
+  .pdp-later {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

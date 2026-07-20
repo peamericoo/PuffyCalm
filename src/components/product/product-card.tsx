@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ShoppingBag, Star } from "lucide-react";
+import { ProductLink } from "@/components/motion/product-link";
+import { ProductMediaTransition } from "@/components/motion/product-media-transition";
 import type { Product } from "@/types/product";
 import { ProductImageCarousel } from "@/components/product/product-image-carousel";
 import { formatMoney } from "@/lib/format";
@@ -59,22 +61,26 @@ export function ProductCard({
       )}
     >
       {/* Image alone clips — body stays overflow-visible so CTA never vanishes */}
-      <Link
-        href={`/product/${product.slug}`}
+      <ProductLink
+        slug={product.slug}
         className={cn(
           "relative z-[1] block overflow-hidden rounded-t-[1.2rem]",
           compact ? "aspect-[1/1.02]" : "aspect-[4/5]",
         )}
       >
-        <ProductImageCarousel
-          images={product.images}
-          imageUrl={product.imageUrl}
-          alt={product.imageAlt}
-          paused={active}
-          className="absolute inset-0"
-          sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-          showDots={!compact}
-        />
+        <ProductMediaTransition productId={product.id}>
+          <div className="absolute inset-0">
+            <ProductImageCarousel
+              images={product.images}
+              imageUrl={product.imageUrl}
+              alt={product.imageAlt}
+              paused={active}
+              className="absolute inset-0"
+              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              showDots={!compact}
+            />
+          </div>
+        </ProductMediaTransition>
 
         {off ? (
           <span className="absolute left-2 top-2 z-[3] flex flex-col items-start gap-0.5 sm:left-2.5 sm:top-2.5">
@@ -88,7 +94,7 @@ export function ProductCard({
             ) : null}
           </span>
         ) : null}
-      </Link>
+      </ProductLink>
 
       <div
         className={cn(
@@ -119,7 +125,7 @@ export function ProductCard({
               : "min-h-[2.75rem] text-[16px] sm:text-[17px]",
           )}
         >
-          <Link href={`/product/${product.slug}`}>{product.name}</Link>
+          <ProductLink slug={product.slug}>{product.name}</ProductLink>
         </h3>
 
         <div className="mt-auto flex flex-wrap items-end gap-x-2 gap-y-0.5 pt-1">

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./page-transitions.css";
 
 /* PuffyEasy — Sky Calm Commerce + Coral Soft CTA */
 :root {

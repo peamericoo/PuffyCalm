@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ProductMediaTransition } from "@/components/motion/product-media-transition";
 import { ProductLightbox } from "@/components/product/product-lightbox";
 import { ProductSpotlight } from "@/components/product/product-spotlight";
 import { getProductImages } from "@/types/product";
@@ -10,6 +11,8 @@ import iconStyles from "./product-icons.module.css";
 import { cn } from "@/lib/utils";
 
 interface ProductGalleryProps {
+  /** Enables shared-element morph from product cards */
+  productId?: string;
   images?: string[];
   imageUrl?: string;
   alt: string;
@@ -21,6 +24,7 @@ interface ProductGalleryProps {
  * PDP gallery stage + thumbs. Fullscreen zoom lives in ProductLightbox.
  */
 export function ProductGallery({
+  productId,
   images,
   imageUrl,
   alt,
@@ -60,89 +64,99 @@ export function ProductGallery({
     );
   }
 
-  return (
-    <>
-      <div className={cn("flex w-full flex-col gap-3", className)}>
-        <div className="group relative aspect-square w-full overflow-hidden bg-[#f0f4f7]">
-          {/* Static stage light (behind + soft hit on top of photo) */}
-          <ProductSpotlight size="lg" />
+  const stage = (
+    <div className="group relative aspect-square w-full overflow-hidden bg-[#f0f4f7]">
+      {/* Static stage light (behind + soft hit on top of photo) */}
+      <ProductSpotlight size="lg" />
 
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="absolute inset-0 z-[1] cursor-zoom-in"
+        aria-label="Open zoom viewer"
+      >
+        <span className="sr-only">Open zoom viewer</span>
+      </button>
+
+      <Image
+        key={active}
+        src={active}
+        alt={alt}
+        fill
+        priority={priority}
+        sizes="(max-width: 1024px) 100vw, 50vw"
+        className="pointer-events-none z-[1] object-cover object-center"
+      />
+
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Zoom"
+        className={cn(
+          iconStyles.expand,
+          "absolute right-3 top-3 z-[3] flex h-9 w-9 items-center justify-center",
+          "border border-foreground/10 bg-white/95 text-foreground shadow-sm",
+          "opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100",
+        )}
+      >
+        <Maximize2
+          className={cn(iconStyles.iconSvg, "h-4 w-4")}
+          strokeWidth={2}
+        />
+      </button>
+
+      {multi ? (
+        <>
           <button
             type="button"
-            onClick={() => setOpen(true)}
-            className="absolute inset-0 z-[1] cursor-zoom-in"
-            aria-label="Open zoom viewer"
-          >
-            <span className="sr-only">Open zoom viewer</span>
-          </button>
-
-          <Image
-            key={active}
-            src={active}
-            alt={alt}
-            fill
-            priority={priority}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="pointer-events-none z-[1] object-cover object-center animate-fade-in"
-          />
-
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Zoom"
+            onClick={prev}
+            aria-label="Previous image"
             className={cn(
-              iconStyles.expand,
-              "absolute right-3 top-3 z-[3] flex h-9 w-9 items-center justify-center",
-              "border border-foreground/10 bg-white/95 text-foreground shadow-sm",
-              "opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100",
+              iconStyles.prev,
+              "absolute left-3 top-1/2 z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
+              "border border-foreground/10 bg-white/95 text-foreground shadow-sm lg:flex",
+              "opacity-0 transition-opacity group-hover:opacity-100",
             )}
           >
-            <Maximize2
-              className={cn(iconStyles.iconSvg, "h-4 w-4")}
+            <ChevronLeft
+              className={cn(iconStyles.iconSvg, "h-5 w-5")}
               strokeWidth={2}
             />
           </button>
+          <button
+            type="button"
+            onClick={next}
+            aria-label="Next image"
+            className={cn(
+              iconStyles.next,
+              "absolute right-3 top-1/2 z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
+              "border border-foreground/10 bg-white/95 text-foreground shadow-sm lg:flex",
+              "opacity-0 transition-opacity group-hover:opacity-100",
+            )}
+          >
+            <ChevronRight
+              className={cn(iconStyles.iconSvg, "h-5 w-5")}
+              strokeWidth={2}
+            />
+          </button>
+          <span className="pointer-events-none absolute bottom-3 right-3 z-[3] bg-black/50 px-2 py-0.5 text-[11px] font-medium tabular-nums text-white">
+            {index + 1}/{slides.length}
+          </span>
+        </>
+      ) : null}
+    </div>
+  );
 
-          {multi ? (
-            <>
-              <button
-                type="button"
-                onClick={prev}
-                aria-label="Previous image"
-                className={cn(
-                  iconStyles.prev,
-                  "absolute left-3 top-1/2 z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
-                  "border border-foreground/10 bg-white/95 text-foreground shadow-sm lg:flex",
-                  "opacity-0 transition-opacity group-hover:opacity-100",
-                )}
-              >
-                <ChevronLeft
-                  className={cn(iconStyles.iconSvg, "h-5 w-5")}
-                  strokeWidth={2}
-                />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                aria-label="Next image"
-                className={cn(
-                  iconStyles.next,
-                  "absolute right-3 top-1/2 z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center",
-                  "border border-foreground/10 bg-white/95 text-foreground shadow-sm lg:flex",
-                  "opacity-0 transition-opacity group-hover:opacity-100",
-                )}
-              >
-                <ChevronRight
-                  className={cn(iconStyles.iconSvg, "h-5 w-5")}
-                  strokeWidth={2}
-                />
-              </button>
-              <span className="pointer-events-none absolute bottom-3 right-3 z-[3] bg-black/50 px-2 py-0.5 text-[11px] font-medium tabular-nums text-white">
-                {index + 1}/{slides.length}
-              </span>
-            </>
-          ) : null}
-        </div>
+  return (
+    <>
+      <div className={cn("flex w-full flex-col gap-3", className)}>
+        {productId ? (
+          <ProductMediaTransition productId={productId}>
+            {stage}
+          </ProductMediaTransition>
+        ) : (
+          stage
+        )}
 
         {multi ? (
           <ul className="flex gap-2 overflow-x-auto no-scrollbar">

@@ -106,6 +106,7 @@ export function Header() {
       {/* CSS gutters — not Tailwind arbitrary max() (unreliable in prod) */}
       <div className="nav-outer pointer-events-none fixed inset-x-0 top-[var(--promo-h)] z-50 pt-2 sm:pt-2.5">
         <header
+          style={{ viewTransitionName: "site-header" }}
           className={cn(
             "pointer-events-auto mx-auto flex h-14 w-full max-w-[min(1760px,100%)] items-center justify-between gap-2",
             "rounded-full px-2.5 pl-3 sm:h-16 sm:gap-3 sm:px-4 sm:pl-5",

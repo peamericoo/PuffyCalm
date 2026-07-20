@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ProductLink } from "@/components/motion/product-link";
+import { ProductMediaTransition } from "@/components/motion/product-media-transition";
 import { formatMoney } from "@/lib/format";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
@@ -53,18 +55,22 @@ export function RelatedProducts({ products, className }: RelatedProductsProps) {
 
           return (
             <article key={p.id} className="group/rel flex flex-col">
-              <Link
-                href={`/product/${p.slug}`}
+              <ProductLink
+                slug={p.slug}
                 className="relative block aspect-square w-full overflow-hidden bg-[#f0f4f7]"
               >
-                <Image
-                  src={p.imageUrl}
-                  alt={p.imageAlt}
-                  fill
-                  sizes="(max-width: 640px) 50vw, 25vw"
-                  className="object-cover object-center transition-transform duration-500 group-hover/rel:scale-[1.03]"
-                />
-              </Link>
+                <ProductMediaTransition productId={p.id}>
+                  <span className="absolute inset-0 block">
+                    <Image
+                      src={p.imageUrl}
+                      alt={p.imageAlt}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-cover object-center transition-transform duration-500 group-hover/rel:scale-[1.03]"
+                    />
+                  </span>
+                </ProductMediaTransition>
+              </ProductLink>
               <div className="flex flex-1 flex-col gap-1 pt-3">
                 {p.categoryLabel ? (
                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -72,7 +78,7 @@ export function RelatedProducts({ products, className }: RelatedProductsProps) {
                   </p>
                 ) : null}
                 <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug text-foreground transition-colors group-hover/rel:text-brand-deep sm:text-[15px]">
-                  <Link href={`/product/${p.slug}`}>{p.name}</Link>
+                  <ProductLink slug={p.slug}>{p.name}</ProductLink>
                 </h3>
                 <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
                   <span className="text-[16px] font-bold tracking-tight text-brand-deep">

@@ -164,6 +164,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       >
                         <Link
                           href={`/product/${product.slug}`}
+                          transitionTypes={["nav-forward"]}
                           onClick={onClose}
                           className={cn(
                             "group flex items-center gap-3 rounded-2xl p-2.5 sm:gap-3.5 sm:p-3",
