@@ -9,26 +9,14 @@ export function LifestyleCollections() {
   return (
     <section className="px-3 py-8 sm:px-5 sm:py-12">
       <div className="mx-auto max-w-[1400px]">
-        <div className="mb-6 grid items-end gap-4 lg:mb-8 lg:grid-cols-12">
+        <div className="mb-6 lg:mb-8">
           <DisplayStack
             eyebrow="Lifestyle"
             title="Made for real days"
             accent="days"
             motion="soft"
-            wrapperClassName="min-w-0 lg:col-span-7"
             className="max-w-2xl"
           />
-          <Reveal
-            delay={100}
-            variant="slide"
-            once={false}
-            className="min-w-0 lg:col-span-5"
-          >
-            <p className="text-sm leading-relaxed text-muted-foreground lg:ml-auto lg:max-w-md lg:text-right">
-              From desk reset to evening unwind — collections that fill the page
-              with intent, not empty scroll.
-            </p>
-          </Reveal>
         </div>
 
         <div className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[200px] sm:gap-4 lg:auto-rows-[220px] lg:grid-cols-4">
