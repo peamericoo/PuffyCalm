@@ -277,6 +277,37 @@ export const products: Product[] = [
     inStock: true,
     featured: true,
   },
+  {
+    // Stripe USD minimum is $0.50 — smoke-test SKU only
+    id: "prod_009",
+    slug: "stripe-min-test-charge",
+    name: "Stripe Min Test Charge ($0.50)",
+    shortDescription:
+      "Internal smoke-test SKU at Stripe's USD minimum. Not a retail product.",
+    description:
+      "One-time $0.50 catalog item so you can run a full card payment end-to-end. Stripe rejects amounts below $0.50 USD.",
+    price: 0.5,
+    currency: "USD",
+    categorySlugs: ["everyday", "all"],
+    categoryLabel: "Everyday",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=900&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=900&q=80",
+    ],
+    imageAlt: "Card payment test charge placeholder",
+    rating: 5.0,
+    reviewCount: 1,
+    badges: ["new"],
+    features: ["Stripe USD minimum", "$0.50 only", "Payment smoke test"],
+    specs: [
+      { label: "Price", value: "$0.50 USD (Stripe minimum)" },
+      { label: "Purpose", value: "End-to-end checkout verification" },
+      { label: "Note", value: "sk_test does not pay out real bank funds" },
+    ],
+    inStock: true,
+    featured: true,
+  },
 ];
 
 export function getFeaturedProducts(): Product[] {

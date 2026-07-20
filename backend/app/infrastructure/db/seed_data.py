@@ -381,6 +381,45 @@ PRODUCTS: list[dict[str, Any]] = [
         "in_stock": True,
         "featured": True,
     },
+    {
+        # Stripe USD minimum charge is $0.50 — use for live/test payment smoke only.
+        "id": "prod_009",
+        "slug": "stripe-min-test-charge",
+        "name": "Stripe Min Test Charge ($0.50)",
+        "short_description": (
+            "Internal smoke-test SKU at Stripe's USD minimum. Not a retail product."
+        ),
+        "description": (
+            "One-time $0.50 catalog item so you can run a full card payment end-to-end. "
+            "Stripe rejects amounts below $0.50 USD. Prefer free shipping when testing "
+            "this SKU alone so the charged total stays at the minimum."
+        ),
+        "price": Decimal("0.50"),
+        "compare_at_price": None,
+        "currency": "USD",
+        "category_slugs": ["everyday"],
+        "category_label": "Everyday",
+        "image_url": (
+            "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d"
+            "?auto=format&fit=crop&w=900&q=80"
+        ),
+        "images": [
+            "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=900&q=80",
+        ],
+        "image_alt": "Card payment test charge placeholder",
+        "rating": Decimal("5.00"),
+        "review_count": 1,
+        "badges": ["new"],
+        "features": ["Stripe USD minimum", "$0.50 only", "Payment smoke test"],
+        "specs": [
+            {"label": "Price", "value": "$0.50 USD (Stripe minimum)"},
+            {"label": "Purpose", "value": "End-to-end checkout verification"},
+            {"label": "Shipping", "value": "Use free shipping threshold 0 for min total"},
+            {"label": "Note", "value": "sk_test does not pay out real bank funds"},
+        ],
+        "in_stock": True,
+        "featured": True,
+    },
 ]
 
 # Base review seeds (same copy as frontend mock) — attached to every product
