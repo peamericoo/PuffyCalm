@@ -1,13 +1,18 @@
+import { buildFacets, filterProducts } from "@/lib/catalog/filter";
 import { sortProducts } from "@/lib/catalog/sort";
-import type { CatalogPage, CatalogQuery, CatalogSort } from "@/lib/catalog/types";
+import type {
+  CatalogPage,
+  CatalogQuery,
+  CatalogSort,
+  StockFilter,
+} from "@/lib/catalog/types";
 import { categories, getCategoryBySlug } from "@/lib/mock/categories";
 import { getProductsByCategory } from "@/lib/mock/products";
 import type { Category } from "@/types/product";
 
 /**
  * Catalog data access.
- * Today: mock fixtures. Tomorrow: fetch(`/api/catalog?...`) — same return shape.
- * UI imports only this module (or types), never `lib/mock/*` directly.
+ * Today: mock. Tomorrow: API with same CatalogPage shape.
  */
 
 const FALLBACK_ALL: Category = {
@@ -22,43 +27,53 @@ const FALLBACK_ALL: Category = {
   productCount: 0,
 };
 
+function normalizeTypes(types: string[] | undefined): string[] {
+  if (!types?.length) return [];
+  const unique = [...new Set(types.map((t) => t.trim().toLowerCase()))];
+  return unique.filter((t) => t && t !== "all");
+}
+
 export async function getCatalogPage(
   query: CatalogQuery,
 ): Promise<CatalogPage | null> {
   const slug = query.categorySlug.trim().toLowerCase() || "all";
   const sort: CatalogSort = query.sort ?? "featured";
+  const stock: StockFilter = query.stock ?? "all";
+  const types = normalizeTypes(query.types);
+  const sale = Boolean(query.sale);
 
-  const category = getCategoryBySlug(slug) ?? (slug === "all" ? FALLBACK_ALL : null);
+  const category =
+    getCategoryBySlug(slug) ?? (slug === "all" ? FALLBACK_ALL : null);
   if (!category) return null;
 
-  // Future:
-  // const res = await fetch(`/api/catalog?slug=${slug}&sort=${sort}`);
-  // if (res.status === 404) return null;
-  // return res.json();
+  const pool = getProductsByCategory(slug);
+  const facets = buildFacets(
+    pool,
+    categories.map((c) => ({ slug: c.slug, name: c.name })),
+  );
 
-  const raw = getProductsByCategory(slug);
-  const products = sortProducts(raw, sort);
-
-  const liveCount = products.length;
-  const resolved: Category = {
-    ...category,
-    productCount: liveCount,
-  };
+  const filtered = filterProducts(pool, { stock, types, sale });
+  const products = sortProducts(filtered, sort);
 
   const siblings = categories.map((c) => ({
     ...c,
-    productCount:
-      c.slug === slug
-        ? liveCount
-        : getProductsByCategory(c.slug).length,
+    productCount: getProductsByCategory(c.slug).length,
   }));
 
   return {
-    category: resolved,
+    category: {
+      ...category,
+      productCount: products.length,
+    },
     products,
     siblings,
     sort,
-    total: liveCount,
+    stock,
+    types,
+    sale,
+    total: products.length,
+    poolTotal: pool.length,
+    facets,
   };
 }
 

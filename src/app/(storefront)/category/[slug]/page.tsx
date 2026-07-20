@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CategoryView } from "@/components/category";
 import { getCatalogPage, listCatalogSlugs } from "@/lib/catalog/service";
-import { isCatalogSort } from "@/lib/catalog/types";
+import {
+  isCatalogSort,
+  isStockFilter,
+} from "@/lib/catalog/types";
+import { parseTypesParam } from "@/lib/catalog/url";
 import { siteConfig } from "@/lib/mock/site";
 
 export async function generateStaticParams() {
@@ -10,15 +14,20 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 
+type PageProps = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    stock?: string;
+    types?: string;
+    sale?: string;
+  }>;
+};
+
 export async function generateMetadata({
   params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string }>;
-}): Promise<Metadata> {
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  await searchParams;
   const data = await getCatalogPage({ categorySlug: slug });
   if (!data) {
     return { title: "Collection not found" };
@@ -36,18 +45,22 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string }>;
-}) {
+export default async function CategoryPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const sp = await searchParams;
-  const sort = isCatalogSort(sp.sort) ? sp.sort : "featured";
 
-  const data = await getCatalogPage({ categorySlug: slug, sort });
+  const sort = isCatalogSort(sp.sort) ? sp.sort : "featured";
+  const stock = isStockFilter(sp.stock) ? sp.stock : "all";
+  const types = parseTypesParam(sp.types);
+  const sale = sp.sale === "1" || sp.sale === "true";
+
+  const data = await getCatalogPage({
+    categorySlug: slug,
+    sort,
+    stock,
+    types,
+    sale,
+  });
   if (!data) notFound();
 
   return <CategoryView data={data} />;

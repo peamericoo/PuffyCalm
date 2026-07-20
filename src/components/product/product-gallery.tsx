@@ -151,7 +151,10 @@ export function ProductGallery({
     <>
       <div className={cn("flex w-full flex-col gap-3", className)}>
         {productId ? (
-          <ProductMediaTransition productId={productId}>
+          <ProductMediaTransition
+            productId={productId}
+            className="relative block w-full"
+          >
             {stage}
           </ProductMediaTransition>
         ) : (

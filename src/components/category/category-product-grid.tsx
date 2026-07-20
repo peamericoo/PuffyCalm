@@ -8,8 +8,7 @@ interface CategoryProductGridProps {
 }
 
 /**
- * Category shelf grid — denser on mobile, 3–4 cols on large screens.
- * Reuses ProductCard so PDP transitions stay consistent.
+ * 2-col mobile · 3-col desktop beside filters (Estore shelf).
  */
 export function CategoryProductGrid({
   products,
@@ -18,7 +17,7 @@ export function CategoryProductGrid({
   return (
     <ul
       className={cn(
-        "grid list-none grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-4",
+        "grid list-none grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3",
         className,
       )}
     >

@@ -69,17 +69,15 @@ export function ProductCard({
         )}
       >
         <ProductMediaTransition productId={product.id}>
-          <div className="absolute inset-0">
-            <ProductImageCarousel
-              images={product.images}
-              imageUrl={product.imageUrl}
-              alt={product.imageAlt}
-              paused={active}
-              className="absolute inset-0"
-              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-              showDots={!compact}
-            />
-          </div>
+          <ProductImageCarousel
+            images={product.images}
+            imageUrl={product.imageUrl}
+            alt={product.imageAlt}
+            paused={active}
+            className="absolute inset-0 h-full w-full"
+            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            showDots={!compact}
+          />
         </ProductMediaTransition>
 
         {off ? (

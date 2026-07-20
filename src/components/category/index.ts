@@ -1,6 +1,9 @@
+export { CategoryActiveChips } from "./category-active-chips";
 export { CategoryEmpty } from "./category-empty";
-export { CategoryHero } from "./category-hero";
-export { CategoryNav } from "./category-nav";
+export { CategoryFilters } from "./category-filters";
+export { CategoryHeader } from "./category-header";
+export { CategoryMobileFilters } from "./category-mobile-filters";
+export { CategoryMoodRail } from "./category-mood-rail";
 export { CategoryProductGrid } from "./category-product-grid";
 export { CategoryToolbar } from "./category-toolbar";
 export { CategoryView } from "./category-view";

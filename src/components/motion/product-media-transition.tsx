@@ -4,19 +4,24 @@ import type { ReactNode } from "react";
 interface ProductMediaTransitionProps {
   productId: string;
   children: ReactNode;
+  className?: string;
 }
 
 /**
  * Shared-element identity for product photography (card → PDP gallery).
- * Same `name` on both ends → browser morphs position/size natively.
+ * Fills parent (`absolute inset-0`) so ViewTransition wrappers never collapse
+ * card/gallery aspect boxes.
  */
 export function ProductMediaTransition({
   productId,
   children,
+  className,
 }: ProductMediaTransitionProps) {
   return (
     <ViewTransition name={`product-media-${productId}`} share="product-morph">
-      {children}
+      <div className={className ?? "absolute inset-0 h-full w-full"}>
+        {children}
+      </div>
     </ViewTransition>
   );
 }

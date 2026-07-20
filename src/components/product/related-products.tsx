@@ -60,15 +60,13 @@ export function RelatedProducts({ products, className }: RelatedProductsProps) {
                 className="relative block aspect-square w-full overflow-hidden bg-[#f0f4f7]"
               >
                 <ProductMediaTransition productId={p.id}>
-                  <span className="absolute inset-0 block">
-                    <Image
-                      src={p.imageUrl}
-                      alt={p.imageAlt}
-                      fill
-                      sizes="(max-width: 640px) 50vw, 25vw"
-                      className="object-cover object-center transition-transform duration-500 group-hover/rel:scale-[1.03]"
-                    />
-                  </span>
+                  <Image
+                    src={p.imageUrl}
+                    alt={p.imageAlt}
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-cover object-center transition-transform duration-500 group-hover/rel:scale-[1.03]"
+                  />
                 </ProductMediaTransition>
               </ProductLink>
               <div className="flex flex-1 flex-col gap-1 pt-3">
