@@ -1,0 +1,98 @@
+/* Payment processing → confirmed */
+
+.ring {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.ringTrack {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 3px solid color-mix(in oklab, var(--brand) 28%, transparent);
+}
+
+.ringSpin {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  border-top-color: var(--brand-deep);
+  border-right-color: color-mix(in oklab, var(--brand) 55%, transparent);
+  animation: ring-spin 0.85s linear infinite;
+}
+
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.checkPop {
+  animation: check-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.stepIn {
+  animation: step-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progressBar {
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--border) 90%, transparent);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-deep), var(--success));
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pulseDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--brand-deep);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
