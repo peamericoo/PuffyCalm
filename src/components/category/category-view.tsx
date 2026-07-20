@@ -1,5 +1,8 @@
+"use client";
+
+import { Suspense, useEffect, useMemo } from "react";
 import { ViewTransition } from "react";
-import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { CategoryActiveChips } from "@/components/category/category-active-chips";
 import { CategoryEmpty } from "@/components/category/category-empty";
 import { CategoryFilters } from "@/components/category/category-filters";
@@ -7,6 +10,7 @@ import { CategoryHeader } from "@/components/category/category-header";
 import { CategoryMobileFilters } from "@/components/category/category-mobile-filters";
 import { CategoryProductGrid } from "@/components/category/category-product-grid";
 import { CategoryToolbar } from "@/components/category/category-toolbar";
+import { useCatalogDerived } from "@/components/category/use-catalog-derived";
 import type { CatalogPage } from "@/lib/catalog/types";
 import { cn } from "@/lib/utils";
 
@@ -17,66 +21,83 @@ interface CategoryViewProps {
 
 function FiltersFallback() {
   return (
-    <div className="hidden w-[17.5rem] shrink-0 lg:block xl:w-[18.5rem]">
-      <div className="glass-panel h-[28rem] animate-pulse rounded-[1.5rem]" />
+    <div
+      className="hidden lg:block"
+      style={{ viewTransitionName: "catalog-filters" }}
+      aria-hidden
+    >
+      <div className="h-[22rem] rounded-[1.5rem] bg-white/45" />
     </div>
   );
 }
 
 /**
- * Premium catalog layout (Sky Calm):
- * shop-stage stage → compact header → glass filter panel + product shelf.
- * Product cards stay as-is; everything else is conversion-forward.
+ * Premium catalog — aligned grid shell, client filter/sort, light native VT.
+ * Product cards unchanged. No full-page morph (avoids glass snapshot freezes).
  */
 export function CategoryView({ data, className }: CategoryViewProps) {
-  const { category, products, siblings, total, poolTotal, facets } = data;
+  const { category, siblings, facets } = data;
+  const { products, total, poolTotal, pending, sort, stock, types, sale } =
+    useCatalogDerived(data);
+  const router = useRouter();
+
+  // Warm sibling routes so category switches stay instant
+  useEffect(() => {
+    for (const s of siblings) {
+      router.prefetch(`/category/${s.slug}`);
+    }
+  }, [router, siblings]);
+
+  const shelfKey = useMemo(
+    () =>
+      `${category.slug}:${sort}:${stock}:${types.join(",")}:${sale ? 1 : 0}`,
+    [category.slug, sale, sort, stock, types],
+  );
 
   return (
-    <ViewTransition
-      enter={{
-        "nav-forward": "pdp-shell",
-        "nav-back": "pdp-shell",
-        default: "pdp-shell",
-      }}
-      default="none"
-    >
-      <div className={cn("shop-stage relative min-h-[70vh]", className)}>
-        {/* Soft ambient blobs — figure-ground for white cards */}
-        <span
-          className="pointer-events-none absolute -left-20 top-24 h-64 w-64 rounded-full bg-brand/20 blur-3xl"
-          aria-hidden
-        />
-        <span
-          className="pointer-events-none absolute -right-16 top-10 h-56 w-56 rounded-full bg-white/50 blur-3xl"
-          aria-hidden
-        />
-        <span
-          className="pointer-events-none absolute bottom-20 left-1/3 h-48 w-48 rounded-full bg-cta/8 blur-3xl"
-          aria-hidden
-        />
+    <div className={cn("shop-stage relative min-h-[70vh]", className)}>
+      {/* Cheap ambient — no blur-3xl (paint thrash during nav) */}
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_80%_70%_at_50%_-10%,rgb(255_255_255/0.55),transparent_70%)]"
+        aria-hidden
+      />
 
-        <div className="relative mx-auto w-full max-w-[1400px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-5 sm:pb-20 sm:pt-6 lg:px-6">
+      <div className="relative mx-auto w-full max-w-[1400px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-5 sm:pb-20 sm:pt-5 lg:px-6">
+        <ViewTransition
+          update={{ catalog: "catalog-header", default: "none" }}
+          default="none"
+        >
           <CategoryHeader category={category} total={poolTotal} />
+        </ViewTransition>
 
-          <div className="mt-7 flex flex-col gap-5 sm:mt-9 lg:mt-10 lg:flex-row lg:items-start lg:gap-7 xl:gap-8">
-            <Suspense fallback={<FiltersFallback />}>
+        <div
+          className={cn(
+            "mt-6 grid grid-cols-1 gap-5 sm:mt-7 sm:gap-6",
+            "lg:mt-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start lg:gap-7",
+            "xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-8",
+          )}
+        >
+          {/* Filters — stable named VT group (no morph thrash) */}
+          <Suspense fallback={<FiltersFallback />}>
+            <ViewTransition name="catalog-filters" default="none">
               <CategoryFilters
                 facets={facets}
                 siblings={siblings}
                 activeSlug={category.slug}
               />
-            </Suspense>
+            </ViewTransition>
+          </Suspense>
 
-            <div className="min-w-0 flex-1">
-              <Suspense
-                fallback={
-                  <div className="mb-4 h-10 w-full rounded-full bg-white/40" />
-                }
-              >
+          <div className="min-w-0">
+            <Suspense
+              fallback={
+                <div className="mb-4 h-10 w-full rounded-full bg-white/40" />
+              }
+            >
+              <div className="mb-3.5 flex flex-col gap-2.5 sm:mb-4">
                 <CategoryToolbar
                   total={total}
                   poolTotal={poolTotal}
-                  className="mb-3.5"
                   trailing={
                     <CategoryMobileFilters
                       facets={facets}
@@ -86,18 +107,29 @@ export function CategoryView({ data, className }: CategoryViewProps) {
                     />
                   }
                 />
-                <CategoryActiveChips facets={facets} className="mb-4" />
-              </Suspense>
+                <CategoryActiveChips facets={facets} />
+              </div>
+            </Suspense>
 
-              {products.length === 0 ? (
-                <CategoryEmpty categoryName={category.name} />
-              ) : (
-                <CategoryProductGrid products={products} />
-              )}
-            </div>
+            {/* Shelf only crossfades — GPU opacity/transform, not whole page */}
+            <ViewTransition update="catalog-shelf" default="none">
+              <div
+                key={shelfKey}
+                className={cn(
+                  "catalog-shelf",
+                  pending && "opacity-80 transition-opacity duration-150",
+                )}
+              >
+                {products.length === 0 ? (
+                  <CategoryEmpty categoryName={category.name} />
+                ) : (
+                  <CategoryProductGrid products={products} />
+                )}
+              </div>
+            </ViewTransition>
           </div>
         </div>
       </div>
-    </ViewTransition>
+    </div>
   );
 }

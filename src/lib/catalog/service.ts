@@ -1,11 +1,5 @@
-import { buildFacets, filterProducts } from "@/lib/catalog/filter";
-import { sortProducts } from "@/lib/catalog/sort";
-import type {
-  CatalogPage,
-  CatalogQuery,
-  CatalogSort,
-  StockFilter,
-} from "@/lib/catalog/types";
+import { buildFacets } from "@/lib/catalog/filter";
+import type { CatalogPage } from "@/lib/catalog/types";
 import { categories, getCategoryBySlug } from "@/lib/mock/categories";
 import { getProductsByCategory } from "@/lib/mock/products";
 import type { Category } from "@/types/product";
@@ -13,6 +7,9 @@ import type { Category } from "@/types/product";
 /**
  * Catalog data access.
  * Today: mock. Tomorrow: API with same CatalogPage shape.
+ *
+ * Returns the unfiltered category pool. Sort/filter run on the client
+ * so URL query changes never re-run RSC (no freezes).
  */
 
 const FALLBACK_ALL: Category = {
@@ -27,20 +24,10 @@ const FALLBACK_ALL: Category = {
   productCount: 0,
 };
 
-function normalizeTypes(types: string[] | undefined): string[] {
-  if (!types?.length) return [];
-  const unique = [...new Set(types.map((t) => t.trim().toLowerCase()))];
-  return unique.filter((t) => t && t !== "all");
-}
-
 export async function getCatalogPage(
-  query: CatalogQuery,
+  categorySlug: string,
 ): Promise<CatalogPage | null> {
-  const slug = query.categorySlug.trim().toLowerCase() || "all";
-  const sort: CatalogSort = query.sort ?? "featured";
-  const stock: StockFilter = query.stock ?? "all";
-  const types = normalizeTypes(query.types);
-  const sale = Boolean(query.sale);
+  const slug = categorySlug.trim().toLowerCase() || "all";
 
   const category =
     getCategoryBySlug(slug) ?? (slug === "all" ? FALLBACK_ALL : null);
@@ -52,9 +39,6 @@ export async function getCatalogPage(
     categories.map((c) => ({ slug: c.slug, name: c.name })),
   );
 
-  const filtered = filterProducts(pool, { stock, types, sale });
-  const products = sortProducts(filtered, sort);
-
   const siblings = categories.map((c) => ({
     ...c,
     productCount: getProductsByCategory(c.slug).length,
@@ -63,15 +47,16 @@ export async function getCatalogPage(
   return {
     category: {
       ...category,
-      productCount: products.length,
+      productCount: pool.length,
     },
-    products,
+    /** Unfiltered pool — client applies sort/filter */
+    products: pool,
     siblings,
-    sort,
-    stock,
-    types,
-    sale,
-    total: products.length,
+    sort: "featured",
+    stock: "all",
+    types: [],
+    sale: false,
+    total: pool.length,
     poolTotal: pool.length,
     facets,
   };

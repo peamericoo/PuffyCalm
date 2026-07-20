@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CategoryView } from "@/components/category";
 import { getCatalogPage, listCatalogSlugs } from "@/lib/catalog/service";
-import {
-  isCatalogSort,
-  isStockFilter,
-} from "@/lib/catalog/types";
-import { parseTypesParam } from "@/lib/catalog/url";
 import { siteConfig } from "@/lib/mock/site";
 
+/**
+ * Static category shells — no searchParams on the server.
+ * Filters/sort live in the URL but are applied client-side only,
+ * so changing them never re-runs RSC (keeps the UI fluid).
+ */
 export async function generateStaticParams() {
   const slugs = await listCatalogSlugs();
   return slugs.map((slug) => ({ slug }));
@@ -16,19 +17,13 @@ export async function generateStaticParams() {
 
 type PageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{
-    sort?: string;
-    stock?: string;
-    types?: string;
-    sale?: string;
-  }>;
 };
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const data = await getCatalogPage({ categorySlug: slug });
+  const data = await getCatalogPage(slug);
   if (!data) {
     return { title: "Collection not found" };
   }
@@ -45,23 +40,36 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({ params, searchParams }: PageProps) {
+function CategoryFallback() {
+  return (
+    <div className="shop-stage min-h-[70vh] px-[var(--shell-gutter)] pt-6 sm:px-5">
+      <div className="mx-auto max-w-[1400px]">
+        <div className="mb-6 h-8 w-40 rounded-full bg-white/50" />
+        <div className="mb-8 h-12 w-64 rounded-2xl bg-white/55" />
+        <div className="grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
+          <div className="hidden h-80 rounded-[1.5rem] bg-white/50 lg:block" />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-[4/5] rounded-[1.2rem] bg-white/55"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params;
-  const sp = await searchParams;
-
-  const sort = isCatalogSort(sp.sort) ? sp.sort : "featured";
-  const stock = isStockFilter(sp.stock) ? sp.stock : "all";
-  const types = parseTypesParam(sp.types);
-  const sale = sp.sale === "1" || sp.sale === "true";
-
-  const data = await getCatalogPage({
-    categorySlug: slug,
-    sort,
-    stock,
-    types,
-    sale,
-  });
+  const data = await getCatalogPage(slug);
   if (!data) notFound();
 
-  return <CategoryView data={data} />;
+  return (
+    <Suspense fallback={<CategoryFallback />}>
+      <CategoryView data={data} />
+    </Suspense>
+  );
 }

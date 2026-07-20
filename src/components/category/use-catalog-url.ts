@@ -79,13 +79,20 @@ export function useCatalogUrl() {
   );
 
   const clearAll = useCallback(() => {
+    // Keep current sort; only drop filter params
     startTransition(() => {
-      router.replace(pathname, { scroll: false });
+      const qs = catalogSearchParams({
+        sort,
+        stock: "all",
+        types: [],
+        sale: false,
+      });
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     });
-  }, [pathname, router]);
+  }, [pathname, router, sort]);
 
-  const hasActive =
-    sort !== "featured" || stock !== "all" || types.length > 0 || sale;
+  // Filters only (sort is separate control — Reset shouldn't clear sort)
+  const hasActive = stock !== "all" || types.length > 0 || sale;
 
   return {
     sort,

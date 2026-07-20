@@ -19,7 +19,7 @@ interface CategoryFiltersProps {
 }
 
 /**
- * Desktop sticky glass filter panel — fully encapsulated.
+ * Desktop sticky filter panel — lighter glass (less paint cost).
  */
 export function CategoryFilters({
   facets,
@@ -33,8 +33,8 @@ export function CategoryFilters({
   return (
     <aside
       className={cn(
-        "hidden w-[17.5rem] shrink-0 lg:block xl:w-[18.5rem]",
-        "lg:sticky lg:top-[calc(var(--promo-h)+5.25rem)] lg:self-start",
+        "hidden w-full lg:block",
+        "lg:sticky lg:top-[calc(var(--promo-h)+5rem)] lg:self-start",
         className,
       )}
       aria-label="Filters"
@@ -46,7 +46,10 @@ export function CategoryFilters({
         <div className={styles.panelInner}>
           <div className={styles.panelHead}>
             <p className={styles.panelTitle}>
-              <SlidersHorizontal className="h-4 w-4 text-brand-deep" strokeWidth={2.25} />
+              <SlidersHorizontal
+                className="h-4 w-4 text-brand-deep"
+                strokeWidth={2.25}
+              />
               Filters
               {activeCount > 0 ? (
                 <span className={styles.badge}>{activeCount}</span>

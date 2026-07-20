@@ -1,3 +1,4 @@
+export { CatalogLink } from "./catalog-link";
 export { CategoryActiveChips } from "./category-active-chips";
 export { CategoryEmpty } from "./category-empty";
 export { CategoryFilterBody } from "./category-filter-body";
@@ -5,5 +6,6 @@ export { CategoryFilters } from "./category-filters";
 export { CategoryHeader } from "./category-header";
 export { CategoryMobileFilters } from "./category-mobile-filters";
 export { CategoryProductGrid } from "./category-product-grid";
+export { CategorySortDropdown } from "./category-sort-dropdown";
 export { CategoryToolbar } from "./category-toolbar";
 export { CategoryView } from "./category-view";

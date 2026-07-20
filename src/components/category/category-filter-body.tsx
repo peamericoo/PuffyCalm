@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Check } from "lucide-react";
 import type { CatalogFacets, StockFilter } from "@/lib/catalog/types";
 import type { Category } from "@/types/product";
+import { CatalogLink } from "@/components/category/catalog-link";
 import { useCatalogUrl } from "@/components/category/use-catalog-url";
 import { cn } from "@/lib/utils";
 import styles from "./category-filters.module.css";
@@ -162,9 +162,9 @@ export function CategoryFilterBody({
             {collections.map((c) => {
               const active = c.slug === activeSlug;
               return (
-                <Link
+                <CatalogLink
                   key={c.id}
-                  href={`/category/${c.slug}`}
+                  slug={c.slug}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     styles.moodItem,
@@ -189,7 +189,7 @@ export function CategoryFilterBody({
                     </span>
                   </span>
                   {active ? <span className={styles.moodDot} /> : null}
-                </Link>
+                </CatalogLink>
               );
             })}
           </nav>

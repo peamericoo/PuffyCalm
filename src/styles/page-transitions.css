@@ -86,6 +86,63 @@
   animation: none;
 }
 
+/* —— Catalog (category) — light handoff, filters never morph —— */
+::view-transition-group(catalog-filters) {
+  animation: none;
+  z-index: 5;
+}
+
+::view-transition-old(catalog-filters),
+::view-transition-new(catalog-filters) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Shelf crossfade only — opacity + tiny rise (GPU) */
+::view-transition-old(.catalog-shelf) {
+  animation: 120ms ease-in both vt-fade-out;
+}
+
+::view-transition-new(.catalog-shelf) {
+  animation:
+    220ms var(--vt-ease-out) 40ms both vt-fade-in,
+    240ms var(--vt-ease-out) 40ms both vt-rise-soft;
+}
+
+::view-transition-old(.catalog-header) {
+  animation: 100ms ease-in both vt-fade-out;
+}
+
+::view-transition-new(.catalog-header) {
+  animation: 200ms var(--vt-ease-out) 30ms both vt-fade-in;
+}
+
+/* Catalog-type navigations skip heavy default page morph */
+html:active-view-transition-type(catalog) {
+  /* Prefer short shelf/header transitions only */
+}
+
+@keyframes vt-rise-soft {
+  from {
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Sort dropdown menu enter — CSS only, no JS library */
+@keyframes catalog-menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 /* Keyframes — transform + opacity only */
 @keyframes vt-fade-in {
   from {
@@ -223,5 +280,16 @@
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  @keyframes catalog-menu-in {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 }
