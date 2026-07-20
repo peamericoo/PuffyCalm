@@ -1,6 +1,6 @@
-# PuffCalm (repo: PuffCalm)
+# PuffyCalm (repo: PuffyCalm)
 
-Premium storefront mock for **PuffCalm** — products that make everyday life better.
+Premium storefront mock for **PuffyCalm** — products that make everyday life better.
 
 ## Stack
 

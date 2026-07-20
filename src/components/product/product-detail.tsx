@@ -88,7 +88,7 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
             <ViewTransition enter="pdp-copy" default="none">
               <div className="pdp-stagger order-2 flex min-w-0 flex-col lg:order-1 lg:pt-1">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-[11px] sm:tracking-[0.18em]">
-                  {product.categoryLabel ?? "PuffCalm"}
+                  {product.categoryLabel ?? "PuffyCalm"}
                 </p>
 
                 <h1 className="mt-1.5 font-display text-[1.65rem] font-medium leading-[1.1] tracking-tight text-foreground sm:mt-2 sm:text-[2.5rem] lg:text-[2.75rem]">

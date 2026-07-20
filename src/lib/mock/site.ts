@@ -1,14 +1,14 @@
 export const siteConfig = {
-  name: "PuffCalm",
+  name: "PuffyCalm",
   tagline: "Products that make everyday life better",
   description:
     "Curated comfort, recovery, and smart everyday essentials — designed to feel calm, premium, and effortless.",
-  url: "https://puffcalm.com",
-  email: "hello@puffcalm.com",
-  supportEmail: "support@puffcalm.com",
+  url: "https://puffycalm.com",
+  email: "hello@puffycalm.com",
+  supportEmail: "support@puffycalm.com",
   social: {
-    tiktok: "https://www.tiktok.com/@puffcalm",
-    instagram: "https://www.instagram.com/puffcalm",
+    tiktok: "https://www.tiktok.com/@puffycalm",
+    instagram: "https://www.instagram.com/puffycalm",
   },
 } as const;
 
@@ -175,7 +175,7 @@ export const mainNav: NavItem[] = [
         label: "Our story",
         href: "/about",
         icon: "book",
-        blurb: "Why PuffCalm exists",
+        blurb: "Why PuffyCalm exists",
       },
       {
         label: "Shipping",
@@ -215,7 +215,7 @@ export const footerNav = {
     { label: "Track order", href: "/account/orders" },
   ],
   company: [
-    { label: "About PuffCalm", href: "/about" },
+    { label: "About PuffyCalm", href: "/about" },
     { label: "Privacy policy", href: "/privacy" },
     { label: "Terms of service", href: "/terms" },
     { label: "Account", href: "/account" },
@@ -224,7 +224,7 @@ export const footerNav = {
 
 /** Commercial rotating promo messages — top of site */
 export const promoMessages = [
-  "🎉 We just launched — welcome to PuffCalm",
+  "🎉 We just launched — welcome to PuffyCalm",
   "🔥 Launch sale: up to 20% off bestsellers this week",
   "🚚 Free tracked shipping on orders $75+",
   "⏱️ Limited launch offer — comfort upgrades from $39",
