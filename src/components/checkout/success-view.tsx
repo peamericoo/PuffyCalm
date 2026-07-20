@@ -7,7 +7,6 @@ import {
   Check,
   CheckCircle2,
   CreditCard,
-  Gift,
   Loader2,
   Mail,
   Package,
@@ -58,10 +57,9 @@ export function SuccessView() {
   const params = useSearchParams();
   const order = params.get("order") ?? "PC-DEMO";
   const email = params.get("email");
-  const hasReward = params.get("reward") === "1";
 
-  const processSteps = useMemo<ProcessStep[]>(() => {
-    const base: ProcessStep[] = [
+  const processSteps = useMemo<ProcessStep[]>(
+    () => [
       {
         id: "validate",
         label: "Validating payment details",
@@ -80,23 +78,15 @@ export function SuccessView() {
         detail: `Order ${order}`,
         icon: Package,
       },
-    ];
-    if (hasReward) {
-      base.push({
-        id: "pack",
-        label: "Applying Calm Packing",
-        detail: "Care note + priority hand-off",
-        icon: Gift,
-      });
-    }
-    base.push({
-      id: "receipt",
-      label: "Sending your receipt",
-      detail: email ? email : "To your inbox",
-      icon: Mail,
-    });
-    return base;
-  }, [order, email, hasReward]);
+      {
+        id: "receipt",
+        label: "Sending your receipt",
+        detail: email ? email : "To your inbox",
+        icon: Mail,
+      },
+    ],
+    [order, email],
+  );
 
   const [phase, setPhase] = useState<Phase>("processing");
   /** Index of the step currently running; completed = all < activeCompleted */
@@ -322,12 +312,6 @@ export function SuccessView() {
               </li>
             ))}
           </ul>
-          {hasReward ? (
-            <p className="mt-3 flex items-center gap-2 rounded-xl bg-brand-soft/80 px-3 py-2 text-[12px] font-medium text-brand-deep ring-1 ring-brand/10">
-              <Gift className="h-3.5 w-3.5 shrink-0" />
-              Calm Packing included with this order
-            </p>
-          ) : null}
         </div>
 
         <div className="mt-5 rounded-[1.25rem] border border-brand/20 bg-brand-soft/60 px-5 py-5 text-left ring-1 ring-brand/10">
