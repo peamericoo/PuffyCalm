@@ -239,7 +239,9 @@ async def create_checkout_session(
 
         configure_stripe(settings)
 
-        # Embedded checkout UI (Payment Element on our FE)
+        # Custom Checkout (ui_mode=custom) + Payment Element on the storefront.
+        # customer_email is the single source of truth for the buyer email —
+        # the FE must NOT pass email to checkout.confirm() / updateEmail().
         # https://docs.stripe.com/checkout/custom/quickstart
         checkout_session = stripe.checkout.Session.create(
             mode="payment",
@@ -247,22 +249,35 @@ async def create_checkout_session(
             line_items=stripe_line_items,
             customer_email=email_norm,
             return_url=return_url,
+            # Retry-safe if the client double-posts the same order id.
+            idempotency_key=f"checkout_order_{order.id}",
             metadata={
                 "order_id": order.id,
                 "public_code": order.public_code,
+                "buyer_email": email_norm,
             },
             payment_intent_data={
                 "metadata": {
                     "order_id": order.id,
                     "public_code": order.public_code,
+                    "buyer_email": email_norm,
                 },
             },
             # Omit payment_method_types → dynamic payment methods
         )
     except stripe.StripeError as exc:
-        log.exception("stripe_session_create_failed", order_id=order.id)
+        # Surface a safe, actionable message (no secrets).
+        user_msg = getattr(exc, "user_message", None) or str(exc) or "Stripe error"
+        if len(user_msg) > 280:
+            user_msg = user_msg[:277] + "…"
+        log.exception(
+            "stripe_session_create_failed",
+            order_id=order.id,
+            stripe_code=getattr(exc, "code", None),
+            stripe_type=getattr(exc, "type", None),
+        )
         raise CheckoutError(
-            "Could not start payment with Stripe",
+            f"Could not start payment: {user_msg}",
             code="stripe_error",
         ) from exc
 

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface PaymentFormProps {
   orderId: string;
+  /** Receipt / success redirect only — already locked on the Checkout Session. */
   email: string;
   totalCents: number;
   currency?: string;
@@ -21,8 +22,27 @@ interface PaymentFormProps {
   className?: string;
 }
 
+type ConfirmResult = Awaited<
+  ReturnType<
+    NonNullable<
+      Extract<ReturnType<typeof useCheckout>, { type: "success" }>["checkout"]
+    >["confirm"]
+  >
+>;
+
+function stripeErrorMessage(result: ConfirmResult | null, fallback: string): string {
+  if (result && result.type === "error") {
+    return result.error.message || fallback;
+  }
+  return fallback;
+}
+
 /**
  * Stripe Custom Checkout form — confirm via checkout.confirm (session clientSecret).
+ *
+ * Email is set server-side as `customer_email` on Session.create. Do NOT pass
+ * `email` to confirm() / updateEmail() or Stripe rejects with:
+ * "You cannot update the email because a customer_email … is already set".
  */
 export function PaymentForm({
   orderId,
@@ -56,22 +76,25 @@ export function PaymentForm({
 
   const checkout = checkoutState.checkout;
 
+  const runConfirm = async () => {
+    // Intentionally omit `email` — session already has customer_email.
+    return checkout.confirm({
+      returnUrl,
+      redirect: "if_required",
+    });
+  };
+
   const handlePay = async () => {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
     try {
-      const result = await checkout.confirm({
-        returnUrl,
-        email,
-        redirect: "if_required",
-      });
+      const result = await runConfirm();
       if (result.type === "error") {
-        setError(result.error.message || "Payment failed");
+        setError(stripeErrorMessage(result, "Payment failed"));
         setSubmitting(false);
         return;
       }
-      // Session confirmed without full-page redirect
       onPaid(orderId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Payment failed");
@@ -81,19 +104,20 @@ export function PaymentForm({
 
   return (
     <div className={cn("space-y-4", className)}>
+      <p className="text-[12px] text-muted-foreground">
+        Receipt email:{" "}
+        <span className="font-medium text-foreground">{email}</span>
+      </p>
+
       <div className="rounded-2xl border border-border/70 bg-white p-1 sm:p-2">
         <ExpressCheckoutElement
           onConfirm={async () => {
             setSubmitting(true);
             setError(null);
             try {
-              const result = await checkout.confirm({
-                returnUrl,
-                email,
-                redirect: "if_required",
-              });
+              const result = await runConfirm();
               if (result.type === "error") {
-                setError(result.error.message || "Payment failed");
+                setError(stripeErrorMessage(result, "Payment failed"));
                 setSubmitting(false);
                 return;
               }
@@ -119,6 +143,12 @@ export function PaymentForm({
         <PaymentElement
           options={{
             layout: "tabs",
+            // Billing email field is redundant — locked on the Session.
+            fields: {
+              billingDetails: {
+                email: "never",
+              },
+            },
           }}
         />
       </div>
@@ -151,7 +181,7 @@ export function PaymentForm({
       </Button>
 
       <p className="text-center text-[11px] text-muted-foreground">
-        Secured by Stripe · Test mode · Guest checkout
+        Secured by Stripe · Guest checkout
       </p>
     </div>
   );

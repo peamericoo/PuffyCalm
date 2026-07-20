@@ -163,9 +163,8 @@ function StripePaymentInner({
         options={{
           clientSecret: session.clientSecret,
           elementsOptions: { appearance },
-          defaultValues: {
-            email: contact.email,
-          },
+          // Do NOT set defaultValues.email — Session was created with
+          // customer_email; re-setting it triggers Stripe update_email errors.
         }}
       >
         <PaymentForm
