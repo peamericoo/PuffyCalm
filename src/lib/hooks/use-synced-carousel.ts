@@ -53,8 +53,8 @@ function getServerSnapshot() {
 
 /**
  * Returns a slide index synced to the global clock.
- * When `paused` is true, freezes on the current slide (hover / touch control).
- * `setManual` pins a slide (and keeps pin while paused; clears on resume).
+ * When `paused` is true, freezes on the current slide and **unsubscribes**
+ * from the global clock (no re-renders every tick while idle/off-screen).
  */
 export function useSyncedCarouselIndex(
   slideCount: number,
@@ -62,14 +62,21 @@ export function useSyncedCarouselIndex(
   intervalMs: number = DEFAULT_INTERVAL_MS,
 ) {
   const globalTick = useSyncExternalStore(
-    subscribe,
+    useCallback(
+      (onStoreChange: () => void) => {
+        // Paused carousels must not re-render on every global tick.
+        if (paused) return () => {};
+        return subscribe(onStoreChange);
+      },
+      [paused],
+    ),
     getSnapshot,
     getServerSnapshot,
   );
 
   useEffect(() => {
-    startTimer(intervalMs);
-  }, [intervalMs]);
+    if (!paused) startTimer(intervalMs);
+  }, [intervalMs, paused]);
 
   const liveIndex =
     slideCount > 0 ? ((globalTick % slideCount) + slideCount) % slideCount : 0;

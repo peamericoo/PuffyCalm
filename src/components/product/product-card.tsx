@@ -16,6 +16,8 @@ interface ProductCardProps {
   className?: string;
   /** Dense shop-grid card — still readable & conversion-forward */
   compact?: boolean;
+  /** LCP: only first visible cards on the homepage grid */
+  priority?: boolean;
 }
 
 function percentOff(price: number, compareAt?: number) {
@@ -32,6 +34,7 @@ export function ProductCard({
   product,
   className,
   compact = false,
+  priority = false,
 }: ProductCardProps) {
   const [active, setActive] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
@@ -79,8 +82,14 @@ export function ProductCard({
               imageUrl={product.imageUrl}
               alt={product.imageAlt}
               paused={active}
+              priority={priority}
+              quality={compact ? 72 : 75}
               className="absolute inset-0 h-full w-full"
-              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              sizes={
+                compact
+                  ? "(max-width: 640px) 48vw, (max-width: 1024px) 30vw, 280px"
+                  : "(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              }
               showDots={!compact}
             />
           </ProductMediaTransition>

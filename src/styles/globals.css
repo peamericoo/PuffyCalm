@@ -508,9 +508,52 @@ body {
   pointer-events: none;
 }
 
+/*
+ * Shop-now product grid: stagger matches former per-card Reveal delays
+ * without 6 IntersectionObservers. Parent Reveal is visual-neutral
+ * (only drives data-reveal); children own the rise/blur entrance.
+ */
+.reveal.shop-now-grid {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  will-change: auto;
+  transition: none;
+}
+
+.shop-now-grid .shop-now-grid__item {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  filter: blur(5px);
+  will-change: opacity, transform, filter;
+  transition:
+    opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shop-now-grid[data-reveal="in"] .shop-now-grid__item {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .shop-now-grid .shop-now-grid__item {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    will-change: auto;
+    transition: none;
+  }
+}
+
 /* Compact product cards — overflow visible on body so CTA never clips */
 .product-card {
   overflow: visible;
+  /* Skip paint for off-screen cards in long grids (no visual change when on-screen) */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
   box-shadow:
     0 1px 0 rgb(255 255 255 / 0.85) inset,
     0 6px 22px -16px rgb(26 35 50 / 0.16);

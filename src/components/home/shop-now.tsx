@@ -17,17 +17,16 @@ import { cn } from "@/lib/utils";
 
 /**
  * Conversion sort: sale first, then rating + volume.
+ * Module-level — sorted once, not on every render.
  */
-function getConversionCatalog() {
-  return [...products]
-    .sort((a, b) => {
-      const saleA = a.compareAtPrice ? 1 : 0;
-      const saleB = b.compareAtPrice ? 1 : 0;
-      if (saleB !== saleA) return saleB - saleA;
-      return b.rating - a.rating || b.reviewCount - a.reviewCount;
-    })
-    .slice(0, 6);
-}
+const conversionCatalog = [...products]
+  .sort((a, b) => {
+    const saleA = a.compareAtPrice ? 1 : 0;
+    const saleB = b.compareAtPrice ? 1 : 0;
+    if (saleB !== saleA) return saleB - saleA;
+    return b.rating - a.rating || b.reviewCount - a.reviewCount;
+  })
+  .slice(0, 6);
 
 type ShopCategory = {
   label: string;
@@ -45,7 +44,7 @@ const shopCategories: ShopCategory[] = [
     tagline: "Tension out",
     icon: Sparkles,
     imageUrl:
-      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=80",
+      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=70",
     count: "4",
   },
   {
@@ -53,8 +52,9 @@ const shopCategories: ShopCategory[] = [
     href: "/category/comfort",
     tagline: "Soft support",
     icon: Cloud,
+    // Stable Unsplash id (previous 161662818… returned 404 and stalled decode)
     imageUrl:
-      "https://images.unsplash.com/photo-1616628182501-df42145cf54d?auto=format&fit=crop&w=200&q=80",
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=200&q=70",
     count: "3",
   },
   {
@@ -63,7 +63,7 @@ const shopCategories: ShopCategory[] = [
     tagline: "Small upgrades",
     icon: SunMedium,
     imageUrl:
-      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=200&q=80",
+      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=200&q=70",
     count: "2",
   },
   {
@@ -72,7 +72,7 @@ const shopCategories: ShopCategory[] = [
     tagline: "Easy picks",
     icon: Tag,
     imageUrl:
-      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=200&q=80",
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=200&q=70",
     count: "5+",
   },
   {
@@ -81,7 +81,7 @@ const shopCategories: ShopCategory[] = [
     tagline: "Full edit",
     icon: LayoutGrid,
     imageUrl:
-      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=200&q=80",
+      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=200&q=70",
     count: String(products.length),
   },
 ];
@@ -139,6 +139,8 @@ function CategoryRail({ className }: { className?: string }) {
                   alt=""
                   fill
                   sizes="56px"
+                  quality={65}
+                  loading="lazy"
                   className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
                 />
                 <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/40 to-transparent" />
@@ -222,6 +224,8 @@ function MobileMoodStrip() {
                   alt=""
                   fill
                   sizes="64px"
+                  quality={65}
+                  loading="lazy"
                   className="object-cover"
                 />
                 <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/45 to-transparent" />
@@ -244,11 +248,11 @@ function MobileMoodStrip() {
  * Premium shop stage:
  * Desktop — glass category rail left + product grid.
  * Mobile  — products first, compact mood strip after (no tall rail).
- * Background comes from page-level continuous shop-stage wrapper.
+ *
+ * Perf: one Reveal for the grid (stagger via CSS), precomputed catalog,
+ * carousel mounts ≤2 images + pauses off-screen (see ProductImageCarousel).
  */
 export function ShopNow() {
-  const catalog = getConversionCatalog();
-
   return (
     <section className="relative overflow-x-clip px-[var(--shell-gutter)] pb-10 pt-2 sm:px-5 sm:pb-14 sm:pt-4">
       <div className="mx-auto max-w-[1440px]">
@@ -274,17 +278,27 @@ export function ShopNow() {
 
           {/* Products — first contact after title on mobile */}
           <div className="min-w-0 order-1 lg:order-none">
-            <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
-              {catalog.map((product, i) => (
-                <Reveal
-                  key={product.id}
-                  delay={60 + i * 35}
-                  className="h-full min-h-0"
-                >
-                  <ProductCard product={product} compact />
-                </Reveal>
-              ))}
-            </div>
+            {/*
+              Single Reveal + CSS stagger keeps the same rise/blur entrance
+              without 6 IntersectionObservers + 6 client Reveal islands.
+            */}
+            <Reveal delay={60} className="shop-now-grid">
+              <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
+                {conversionCatalog.map((product, i) => (
+                  <div
+                    key={product.id}
+                    className="shop-now-grid__item h-full min-h-0"
+                    style={{ transitionDelay: `${60 + i * 35}ms` }}
+                  >
+                    <ProductCard
+                      product={product}
+                      compact
+                      priority={i < 2}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Reveal>
 
             {/* Mobile mood strip after products */}
             <div className="mt-6 lg:hidden">
