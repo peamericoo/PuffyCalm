@@ -12,8 +12,8 @@ export function LifestyleCollections() {
         <div className="mb-6 grid items-end gap-4 lg:mb-8 lg:grid-cols-12">
           <DisplayStack
             eyebrow="Lifestyle"
-            title="Designed around how you actually live"
-            accent="live"
+            title="Made for real days"
+            accent="days"
             motion="soft"
             wrapperClassName="min-w-0 lg:col-span-7"
             className="max-w-2xl"
