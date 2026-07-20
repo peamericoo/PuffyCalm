@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CAROUSEL_INTERVAL_MS,
   useSyncedCarouselIndex,
@@ -28,12 +28,23 @@ export interface ProductImageCarouselProps {
   quality?: number;
 }
 
+/** Slides that must be decoded for seamless crossfade (current + neighbors). */
+function neighborIndexes(index: number, count: number): number[] {
+  if (count <= 0) return [];
+  if (count === 1) return [0];
+  const prev = (index - 1 + count) % count;
+  const next = (index + 1) % count;
+  return Array.from(new Set([index, prev, next]));
+}
+
 /**
- * Resilient product image carousel for mocks → real media later.
- * - Shared global clock when visible
- * - Only mounts active + previous slides (crossfade without N full images)
- * - Pauses + unsubscribes when off-screen (no tick re-renders)
- * - Slow crossfade (~1.4s) — premium, low anxiety
+ * Product image carousel — full CSS crossfade kept intact.
+ *
+ * Performance without killing motion:
+ * - All slide *layers* stay mounted so opacity/transform transitions run
+ * - Only current + neighbors get a real <Image> decode (window of ≤3)
+ * - Off-screen: pause clock subscription (no tick re-renders), keep last frame
+ * - Hover/focus/touch still freeze like before
  */
 export function ProductImageCarousel({
   images,
@@ -55,6 +66,10 @@ export function ProductImageCarousel({
   );
   const [localPaused, setLocalPaused] = useState(false);
   const multi = slides.length > 1;
+
+  // Grow-only set of decoded slides — once loaded, keep DOM Image for smooth re-entry
+  const [decoded, setDecoded] = useState(() => new Set([0]));
+
   const paused =
     pausedExternal || localPaused || !multi || !inView;
 
@@ -64,31 +79,42 @@ export function ProductImageCarousel({
     intervalMs,
   );
 
-  // Keep previous slide mounted for CSS crossfade only (max 2 layers).
-  const prevIndexRef = useRef(index);
-  const [layerA, setLayerA] = useState(index);
-  const [layerB, setLayerB] = useState<number | null>(null);
-
+  // Ensure neighbors are decoded *before* they become active (no hard cut).
   useEffect(() => {
-    if (index === prevIndexRef.current) return;
-    setLayerB(prevIndexRef.current);
-    setLayerA(index);
-    prevIndexRef.current = index;
-    // Drop outgoing layer after crossfade completes (~1.5s)
-    const t = window.setTimeout(() => setLayerB(null), 1600);
-    return () => window.clearTimeout(t);
-  }, [index]);
+    const need = neighborIndexes(index, slides.length);
+    setDecoded((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const i of need) {
+        if (!next.has(i)) {
+          next.add(i);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [index, slides.length]);
 
-  // Observe visibility — off-screen carousels stay frozen and lightweight.
-  useEffect(() => {
+  // Initial + ongoing visibility (layout for first paint above the fold).
+  useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return;
+
+    const update = (visible: boolean) => setInView(visible);
+
+    // Sync first paint if already on screen
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight || 0;
+    if (rect.bottom > -40 && rect.top < vh + 80) {
+      update(true);
+    }
+
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry) return;
-        setInView(entry.isIntersecting && entry.intersectionRatio > 0.08);
+        update(entry.isIntersecting);
       },
-      { rootMargin: "80px 0px", threshold: [0, 0.08, 0.2] },
+      { rootMargin: "120px 0px", threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -106,11 +132,6 @@ export function ProductImageCarousel({
       </div>
     );
   }
-
-  const mountedIndexes =
-    layerB === null || layerB === layerA
-      ? [layerA]
-      : [layerA, layerB];
 
   return (
     <div
@@ -135,10 +156,9 @@ export function ProductImageCarousel({
       aria-roledescription={multi ? "carousel" : undefined}
       aria-label={multi ? `${alt} gallery` : undefined}
     >
-      {mountedIndexes.map((i) => {
-        const src = slides[i];
-        if (!src) return null;
+      {slides.map((src, i) => {
         const active = i === index;
+        const shouldDecode = decoded.has(i);
         return (
           <div
             key={`${src}-${i}`}
@@ -148,16 +168,24 @@ export function ProductImageCarousel({
             )}
             aria-hidden={!active}
           >
-            <Image
-              src={src}
-              alt={active ? alt : ""}
-              fill
-              sizes={sizes}
-              quality={quality}
-              priority={priority && i === 0}
-              loading={priority && i === 0 ? "eager" : "lazy"}
-              className="object-cover object-center transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:scale-[1.03]"
-            />
+            {shouldDecode ? (
+              <Image
+                src={src}
+                alt={active ? alt : ""}
+                fill
+                sizes={sizes}
+                quality={quality}
+                priority={priority && i === 0}
+                loading={priority && i === 0 ? "eager" : "lazy"}
+                className="object-cover object-center transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:scale-[1.03]"
+              />
+            ) : (
+              /* Placeholder keeps layer geometry for CSS; no decode cost */
+              <div
+                className="absolute inset-0 bg-brand-soft/40"
+                aria-hidden
+              />
+            )}
           </div>
         );
       })}
