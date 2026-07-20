@@ -2,22 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   Heart,
   Pin,
-  Share2,
   ShoppingBag,
   Sparkles,
-  Tag,
   Trash2,
   Zap,
 } from "lucide-react";
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart/store";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/cart/constants";
 import { getFeaturedProducts } from "@/lib/mock/products";
 import {
   sortWishlistItems,
@@ -30,14 +29,17 @@ import styles from "./wishlist.module.css";
 
 type Filter = "all" | "sale" | "stock" | "pinned";
 
+const PAGE_SIZE = 6;
+
 function isOnSale(item: WishlistItem) {
   return Boolean(item.compareAtPrice && item.compareAtPrice > item.price);
 }
 
 /**
- * Calm List — mood-board wishlist with pin, filters, add-all, share mock.
+ * Wishlist page — uniform cards, fluid filter transitions, pagination.
  */
 export function WishlistView() {
+  const router = useRouter();
   const rawItems = useWishlistStore((s) => s.items);
   const hasHydrated = useWishlistStore((s) => s.hasHydrated);
   const remove = useWishlistStore((s) => s.remove);
@@ -47,7 +49,8 @@ export function WishlistView() {
   const addItemQuiet = useCartStore((s) => s.addItemQuiet);
 
   const [filter, setFilter] = useState<Filter>("all");
-  const [shareNote, setShareNote] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [listKey, setListKey] = useState(0);
   const [movedId, setMovedId] = useState<string | null>(null);
 
   const items = useMemo(() => sortWishlistItems(rawItems), [rawItems]);
@@ -64,6 +67,14 @@ export function WishlistView() {
         return items;
     }
   }, [items, filter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+
+  const pageItems = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safePage]);
 
   const totalValue = items.reduce((s, i) => s + i.price, 0);
   const savings = items.reduce((s, i) => {
@@ -103,26 +114,27 @@ export function WishlistView() {
   const buyNow = (item: WishlistItem) => {
     if (!item.inStock) return;
     addItemQuiet(toCartProduct(item), 1);
-    window.location.href = "/checkout";
+    router.push("/checkout");
   };
 
   const addAllToBag = () => {
-    const stocked = items.filter((i) => i.inStock);
-    stocked.forEach((item) => addItem(toCartProduct(item), 1));
+    items.filter((i) => i.inStock).forEach((item) => addItem(toCartProduct(item), 1));
   };
 
-  const shareList = async () => {
-    const text = `My PuffyCalm calm list (${items.length} pieces) — ${items.map((i) => i.name).join(", ")}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "My Calm List · PuffyCalm", text });
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-        setShareNote("List copied");
-        window.setTimeout(() => setShareNote(null), 2000);
-      }
-    } catch {
-      /* user cancelled share */
+  const changeFilter = (next: Filter) => {
+    if (next === filter) return;
+    setFilter(next);
+    setPage(1);
+    setListKey((k) => k + 1);
+  };
+
+  const goPage = (p: number) => {
+    const clamped = Math.max(1, Math.min(totalPages, p));
+    if (clamped === safePage) return;
+    setPage(clamped);
+    setListKey((k) => k + 1);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -130,7 +142,7 @@ export function WishlistView() {
     return (
       <section className="px-3 py-16 sm:px-5">
         <Container className="max-w-lg text-center text-sm text-muted-foreground">
-          Loading your calm list…
+          Loading your list…
         </Container>
       </section>
     );
@@ -138,7 +150,9 @@ export function WishlistView() {
 
   if (items.length === 0) {
     return (
-      <section className={cn(styles.heroGlow, "px-3 pb-20 pt-6 sm:px-5 sm:pb-24 sm:pt-8")}>
+      <section
+        className={cn(styles.heroGlow, "px-3 pb-20 pt-6 sm:px-5 sm:pb-24 sm:pt-8")}
+      >
         <Container className="animate-fade-up">
           <EmptyWishlist suggestions={suggestions} />
         </Container>
@@ -146,114 +160,63 @@ export function WishlistView() {
     );
   }
 
-  const [hero, ...rest] = filtered;
-  const mosaic = items.slice(0, 5);
-
   return (
-    <section className={cn(styles.heroGlow, "px-3 pb-24 pt-5 sm:px-5 sm:pb-28 sm:pt-7")}>
-      <Container className="animate-fade-up max-w-[1180px]">
-        {/* Header */}
-        <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+    <section
+      className={cn(
+        styles.heroGlow,
+        "px-3 pb-20 pt-5 sm:px-5 sm:pb-24 sm:pt-7",
+      )}
+    >
+      <Container className="animate-fade-up max-w-[1100px]">
+        {/* Clean header — no Calm list / Share noise */}
+        <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cta">
-              <Heart className="h-3 w-3 fill-current" />
-              Calm list
-            </p>
-            <h1 className="mt-1 font-display text-[1.65rem] font-semibold tracking-[-0.03em] text-foreground sm:text-3xl">
+            <h1 className="font-display text-[1.55rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.85rem]">
               Saved for your real days
             </h1>
-            <p className="mt-1.5 max-w-md text-[13.5px] text-muted-foreground sm:text-[14.5px]">
+            <p className="mt-1 text-[13px] text-muted-foreground sm:text-[14px]">
               {items.length} piece{items.length === 1 ? "" : "s"}
-              {savings > 0 ? (
-                <>
-                  {" "}
-                  · up to{" "}
-                  <span className="font-semibold text-brand-deep">
-                    {formatMoney(savings)}
-                  </span>{" "}
-                  in list savings
-                </>
-              ) : null}
               {totalValue > 0 ? (
                 <>
                   {" "}
                   ·{" "}
                   <span className="font-semibold tabular-nums text-foreground">
                     {formatMoney(totalValue)}
-                  </span>{" "}
-                  total
+                  </span>
+                </>
+              ) : null}
+              {savings > 0 ? (
+                <>
+                  {" "}
+                  · save up to{" "}
+                  <span className="font-semibold text-brand-deep">
+                    {formatMoney(savings)}
+                  </span>
                 </>
               ) : null}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          {inStockCount > 0 ? (
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
-              className="pressable"
-              onClick={() => void shareList()}
+              className="pressable shrink-0 self-start sm:self-auto"
+              onClick={addAllToBag}
             >
-              <Share2 className="h-3.5 w-3.5" />
-              {shareNote ?? "Share list"}
+              <ShoppingBag className="h-3.5 w-3.5" />
+              Add all to bag
             </Button>
-            {inStockCount > 0 ? (
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                className="pressable"
-                onClick={addAllToBag}
-              >
-                <ShoppingBag className="h-3.5 w-3.5" />
-                Add all ({inStockCount})
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
         </header>
 
-        {/* Living mosaic — visual identity of the list */}
-        {mosaic.length >= 2 ? (
-          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-8 sm:gap-3">
-            {mosaic.map((item, i) => (
-              <Link
-                key={item.productId}
-                href={`/product/${item.slug}`}
-                className={cn(
-                  styles.mosaicFloat,
-                  "relative shrink-0 overflow-hidden rounded-2xl bg-brand-soft shadow-sm ring-1 ring-white/80",
-                  i === 0 ? "h-20 w-20 sm:h-24 sm:w-24" : "h-16 w-16 sm:h-20 sm:w-20",
-                )}
-                style={
-                  {
-                    animationDelay: `${i * 0.35}s`,
-                    "--rot": `${(i % 2 === 0 ? -1 : 1) * (2 + i)}deg`,
-                  } as CSSProperties
-                }
-              >
-                <Image
-                  src={item.imageUrl}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              </Link>
-            ))}
-            <div className="ml-1 flex shrink-0 flex-col justify-center pl-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Your board
-              </p>
-              <p className="text-[13px] font-semibold text-foreground">
-                {items.length} saved
-              </p>
-            </div>
-          </div>
-        ) : null}
-
         {/* Filters */}
-        <div className="mb-5 flex flex-wrap gap-1.5 sm:mb-6">
+        <div
+          className="mb-5 flex flex-wrap gap-1.5 sm:mb-6"
+          role="tablist"
+          aria-label="Filter saved items"
+        >
           {(
             [
               { id: "all" as const, label: "All" },
@@ -265,9 +228,12 @@ export function WishlistView() {
             <button
               key={f.id}
               type="button"
-              onClick={() => setFilter(f.id)}
+              role="tab"
+              aria-selected={filter === f.id}
+              onClick={() => changeFilter(f.id)}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors",
+                styles.filterPill,
+                "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold",
                 filter === f.id
                   ? "bg-brand-deep text-white shadow-sm"
                   : "bg-white/90 text-muted-foreground ring-1 ring-border/70 hover:bg-brand-soft hover:text-brand-deep",
@@ -279,41 +245,35 @@ export function WishlistView() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="rounded-[1.35rem] border border-border/70 bg-white/90 px-5 py-12 text-center shadow-sm">
+          <div
+            key={listKey}
+            className={cn(
+              styles.gridEnter,
+              "rounded-[1.25rem] border border-border/70 bg-white/90 px-5 py-12 text-center shadow-sm",
+            )}
+          >
             <p className="text-[15px] font-semibold text-foreground">
               Nothing in this filter
             </p>
             <button
               type="button"
               className="mt-2 text-[13px] font-semibold text-brand-deep"
-              onClick={() => setFilter("all")}
+              onClick={() => changeFilter("all")}
             >
               Show all
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
-            {/* Featured / first pin */}
-            {hero ? (
-              <WishlistHeroCard
-                item={hero}
-                className="lg:col-span-7"
-                onRemove={() => remove(hero.productId)}
-                onPin={() => pin(hero.productId)}
-                onBag={() => moveToBag(hero)}
-                onBuy={() => buyNow(hero)}
-                justMoved={movedId === hero.productId}
-              />
-            ) : null}
-
+          <>
             <div
+              key={`${listKey}-${safePage}`}
               className={cn(
-                "grid gap-4 sm:grid-cols-2",
-                hero ? "lg:col-span-5 lg:grid-cols-1" : "lg:col-span-12 lg:grid-cols-3",
+                styles.gridEnter,
+                "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3",
               )}
             >
-              {(hero ? rest : filtered).map((item, i) => (
-                <WishlistRowCard
+              {pageItems.map((item, i) => (
+                <WishlistCard
                   key={item.productId}
                   item={item}
                   index={i}
@@ -325,25 +285,75 @@ export function WishlistView() {
                 />
               ))}
             </div>
-          </div>
+
+            {/* Pagination */}
+            {totalPages > 1 ? (
+              <nav
+                className="mt-8 flex flex-wrap items-center justify-center gap-2"
+                aria-label="Wishlist pages"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-10 rounded-full px-0"
+                  disabled={safePage <= 1}
+                  onClick={() => goPage(safePage - 1)}
+                  aria-label="Previous page"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => goPage(p)}
+                        aria-label={`Page ${p}`}
+                        aria-current={p === safePage ? "page" : undefined}
+                        className={cn(
+                          styles.filterPill,
+                          "flex h-10 min-w-10 items-center justify-center rounded-full px-2.5 text-[13px] font-semibold",
+                          p === safePage
+                            ? "bg-brand-deep text-white shadow-sm"
+                            : "bg-white text-muted-foreground ring-1 ring-border/70 hover:bg-brand-soft hover:text-brand-deep",
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-10 rounded-full px-0"
+                  disabled={safePage >= totalPages}
+                  onClick={() => goPage(safePage + 1)}
+                  aria-label="Next page"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+
+                <p className="w-full text-center text-[12px] text-muted-foreground sm:w-auto sm:pl-2">
+                  {safePage} of {totalPages}
+                  <span className="mx-1 opacity-40">·</span>
+                  {filtered.length} items
+                </p>
+              </nav>
+            ) : (
+              <p className="mt-6 text-center text-[12px] text-muted-foreground">
+                {filtered.length} item{filtered.length === 1 ? "" : "s"}
+              </p>
+            )}
+          </>
         )}
 
-        {/* Free shipping nudge if list value is near threshold */}
-        {totalValue > 0 && totalValue < FREE_SHIPPING_THRESHOLD ? (
-          <p className="mt-6 rounded-2xl bg-brand-soft/80 px-4 py-3 text-center text-[13px] text-foreground/90 ring-1 ring-brand/10">
-            Add{" "}
-            <span className="font-semibold text-brand-deep">
-              {formatMoney(FREE_SHIPPING_THRESHOLD - totalValue)}
-            </span>{" "}
-            more from your list to unlock free shipping on checkout.
-          </p>
-        ) : totalValue >= FREE_SHIPPING_THRESHOLD ? (
-          <p className="mt-6 rounded-2xl bg-success/10 px-4 py-3 text-center text-[13px] font-medium text-success ring-1 ring-success/20">
-            Your list already clears free shipping — nice.
-          </p>
-        ) : null}
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-6">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-5">
           <Button asChild variant="outline" size="sm">
             <Link href="/category/all">
               Keep browsing
@@ -353,7 +363,7 @@ export function WishlistView() {
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("Clear your entire calm list?")) clear();
+              if (window.confirm("Clear your entire list?")) clear();
             }}
             className="text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-cta"
           >
@@ -383,11 +393,11 @@ function EmptyWishlist({
         <Heart className="h-7 w-7" strokeWidth={1.7} />
       </span>
       <h1 className="mt-5 font-display text-[1.75rem] font-semibold tracking-[-0.03em] text-foreground sm:text-3xl">
-        Your calm list is empty
+        Nothing saved yet
       </h1>
       <p className="mx-auto mt-2 max-w-md text-[14.5px] leading-relaxed text-muted-foreground">
-        Tap the heart on anything you love — we’ll keep it here for softer
-        days, sales, and one-tap checkout.
+        Tap the heart on anything you love — we’ll keep it here until you’re
+        ready.
       </p>
       <Button asChild variant="default" className="pressable mt-7">
         <Link href="/category/all">
@@ -447,131 +457,7 @@ function EmptyWishlist({
   );
 }
 
-function WishlistHeroCard({
-  item,
-  className,
-  onRemove,
-  onPin,
-  onBag,
-  onBuy,
-  justMoved,
-}: {
-  item: WishlistItem;
-  className?: string;
-  onRemove: () => void;
-  onPin: () => void;
-  onBag: () => void;
-  onBuy: () => void;
-  justMoved: boolean;
-}) {
-  const sale = isOnSale(item);
-  return (
-    <article
-      className={cn(
-        styles.itemIn,
-        "relative overflow-hidden rounded-[1.35rem] border border-border/70 bg-white shadow-sm ring-1 ring-white/70",
-        className,
-      )}
-    >
-      <div className="grid sm:grid-cols-[1.1fr_1fr]">
-        <Link
-          href={`/product/${item.slug}`}
-          className="relative aspect-[4/5] sm:aspect-auto sm:min-h-[22rem]"
-        >
-          <Image
-            src={item.imageUrl}
-            alt={item.imageAlt}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, 50vw"
-            priority
-          />
-          {sale ? (
-            <span className="absolute left-3 top-3 rounded-full bg-brand-deep px-2.5 py-1 text-[11px] font-bold text-white">
-              Sale
-            </span>
-          ) : null}
-          {item.pinned ? (
-            <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm">
-              Pinned
-            </span>
-          ) : null}
-        </Link>
-
-        <div className="flex flex-col p-5 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {item.categoryLabel ?? "Saved"}
-          </p>
-          <h2 className="mt-1 font-display text-[1.35rem] font-semibold leading-snug tracking-[-0.02em] text-foreground sm:text-[1.5rem]">
-            <Link
-              href={`/product/${item.slug}`}
-              className="transition-colors hover:text-brand-deep"
-            >
-              {item.name}
-            </Link>
-          </h2>
-          <div className="mt-2 flex flex-wrap items-baseline gap-2">
-            <span className="text-[1.35rem] font-bold tabular-nums text-brand-deep">
-              {formatMoney(item.price, item.currency)}
-            </span>
-            {sale && item.compareAtPrice ? (
-              <span className="text-sm text-muted-foreground line-through">
-                {formatMoney(item.compareAtPrice, item.currency)}
-              </span>
-            ) : null}
-          </div>
-          <p
-            className={cn(
-              "mt-2 text-[12.5px] font-medium",
-              item.inStock ? "text-success" : "text-cta",
-            )}
-          >
-            {item.inStock ? "In stock — ready when you are" : "Currently out of stock"}
-          </p>
-
-          <div className="mt-auto flex flex-col gap-2 pt-6">
-            <Button
-              type="button"
-              variant="default"
-              className="pressable w-full"
-              disabled={!item.inStock}
-              onClick={onBag}
-            >
-              <ShoppingBag className="h-4 w-4" />
-              {justMoved ? "Added to bag" : "Move to bag"}
-            </Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={!item.inStock}
-                onClick={onBuy}
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Buy now
-              </Button>
-              <Button type="button" variant="soft" className="w-full" onClick={onPin}>
-                <Pin className={cn("h-3.5 w-3.5", item.pinned && "fill-current")} />
-                {item.pinned ? "Unpin" : "Pin"}
-              </Button>
-            </div>
-            <button
-              type="button"
-              onClick={onRemove}
-              className="mt-1 inline-flex items-center justify-center gap-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:text-cta"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Remove from list
-            </button>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function WishlistRowCard({
+function WishlistCard({
   item,
   index,
   onRemove,
@@ -589,61 +475,48 @@ function WishlistRowCard({
   justMoved: boolean;
 }) {
   const sale = isOnSale(item);
+
   return (
     <article
       className={cn(
         styles.itemIn,
-        "flex gap-3 overflow-hidden rounded-[1.2rem] border border-border/70 bg-white/95 p-2.5 shadow-sm ring-1 ring-white/70 sm:p-3",
+        "flex h-full flex-col overflow-hidden rounded-[1.2rem] border border-border/70 bg-white shadow-sm ring-1 ring-white/70",
       )}
-      style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
-      <Link
-        href={`/product/${item.slug}`}
-        className="relative h-[5.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-xl bg-brand-soft sm:h-28 sm:w-28"
-      >
-        <Image
-          src={item.imageUrl}
-          alt={item.imageAlt}
-          fill
-          className="object-cover"
-          sizes="112px"
-        />
-        {sale ? (
-          <span className="absolute left-1.5 top-1.5 rounded-full bg-brand-deep px-1.5 py-0.5 text-[9px] font-bold text-white">
-            <Tag className="inline h-2.5 w-2.5" /> Sale
-          </span>
-        ) : null}
-      </Link>
+      <div className="relative aspect-[4/3.4] overflow-hidden bg-brand-soft">
+        <Link href={`/product/${item.slug}`} className="absolute inset-0 block">
+          <Image
+            src={item.imageUrl}
+            alt={item.imageAlt}
+            fill
+            className="object-cover transition-transform duration-500 hover:scale-[1.03]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </Link>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-foreground sm:text-[14.5px]">
-              <Link
-                href={`/product/${item.slug}`}
-                className="hover:text-brand-deep"
-              >
-                {item.name}
-              </Link>
-            </h3>
-            <p className="mt-0.5 text-[14px] font-bold tabular-nums text-brand-deep">
-              {formatMoney(item.price, item.currency)}
-              {sale && item.compareAtPrice ? (
-                <span className="ml-1.5 text-[12px] font-medium text-muted-foreground line-through">
-                  {formatMoney(item.compareAtPrice, item.currency)}
-                </span>
-              ) : null}
-            </p>
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-2.5">
+          <div className="flex flex-wrap gap-1">
+            {sale ? (
+              <span className="rounded-full bg-brand-deep px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                Sale
+              </span>
+            ) : null}
+            {item.pinned ? (
+              <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-foreground shadow-sm">
+                Pinned
+              </span>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={onPin}
             aria-label={item.pinned ? "Unpin" : "Pin"}
             className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
+              "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full shadow-sm transition-colors",
               item.pinned
-                ? "bg-brand-soft text-brand-deep"
-                : "text-muted-foreground hover:bg-muted",
+                ? "bg-brand-soft text-brand-deep ring-1 ring-brand/20"
+                : "bg-white/95 text-muted-foreground ring-1 ring-border/50 hover:text-brand-deep",
             )}
           >
             <Pin
@@ -652,37 +525,73 @@ function WishlistRowCard({
             />
           </button>
         </div>
+      </div>
 
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2">
+      <div className="flex flex-1 flex-col gap-2.5 p-3.5 sm:p-4">
+        {item.categoryLabel ? (
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            {item.categoryLabel}
+          </p>
+        ) : null}
+
+        <h2 className="line-clamp-2 text-[14.5px] font-semibold leading-snug tracking-tight text-foreground sm:text-[15px]">
+          <Link
+            href={`/product/${item.slug}`}
+            className="transition-colors hover:text-brand-deep"
+          >
+            {item.name}
+          </Link>
+        </h2>
+
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-[1.15rem] font-bold tabular-nums text-brand-deep">
+            {formatMoney(item.price, item.currency)}
+          </span>
+          {sale && item.compareAtPrice ? (
+            <span className="text-[13px] font-medium text-muted-foreground line-through">
+              {formatMoney(item.compareAtPrice, item.currency)}
+            </span>
+          ) : null}
+        </div>
+
+        <p
+          className={cn(
+            "text-[12px] font-medium",
+            item.inStock ? "text-success" : "text-cta",
+          )}
+        >
+          {item.inStock ? "In stock" : "Out of stock"}
+        </p>
+
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-1">
           <button
             type="button"
             disabled={!item.inStock}
             onClick={onBag}
-            className={cn(
-              "inline-flex h-8 items-center gap-1 rounded-full bg-foreground px-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-success disabled:opacity-40",
-            )}
+            className="pressable inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-foreground text-[12px] font-semibold text-white transition-colors hover:bg-success disabled:opacity-40"
           >
-            <ShoppingBag className="h-3 w-3" />
+            <ShoppingBag className="h-3.5 w-3.5" />
             {justMoved ? "Added" : "Bag"}
           </button>
           <button
             type="button"
             disabled={!item.inStock}
             onClick={onBuy}
-            className="inline-flex h-8 items-center gap-1 rounded-full bg-cta px-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-cta-hover disabled:opacity-40"
+            className="pressable inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-cta text-[12px] font-semibold text-white transition-colors hover:bg-cta-hover disabled:opacity-40"
           >
-            <Zap className="h-3 w-3" />
+            <Zap className="h-3.5 w-3.5" />
             Buy
           </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label="Remove"
-            className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-cta/10 hover:text-cta"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onRemove}
+          className="inline-flex items-center justify-center gap-1.5 pt-0.5 text-[11.5px] font-medium text-muted-foreground transition-colors hover:text-cta"
+        >
+          <Trash2 className="h-3 w-3" />
+          Remove
+        </button>
       </div>
     </article>
   );
