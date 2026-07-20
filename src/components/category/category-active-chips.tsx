@@ -11,7 +11,8 @@ interface CategoryActiveChipsProps {
 }
 
 /**
- * Active filter chips + Clear all (Estore toolbar row).
+ * Compact active filter chips under toolbar (desktop mirror of panel chips).
+ * Hidden when no filters — panel already shows chips on desktop.
  */
 export function CategoryActiveChips({
   facets,
@@ -62,12 +63,13 @@ export function CategoryActiveChips({
     });
   }
 
+  // Sort-only active doesn't need chips row
   if (chips.length === 0) return null;
 
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-1.5 sm:gap-2",
+        "flex flex-wrap items-center gap-1.5 sm:gap-2 lg:hidden",
         className,
       )}
     >
@@ -76,16 +78,21 @@ export function CategoryActiveChips({
           key={c.key}
           type="button"
           onClick={c.onRemove}
-          className="inline-flex items-center gap-1 border border-border/80 bg-white px-2.5 py-1 text-[11.5px] font-medium text-foreground transition hover:border-foreground/30"
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold",
+            "bg-white/70 text-brand-deep border border-white/70",
+            "shadow-[0_1px_0_rgb(255_255_255/0.8)_inset]",
+            "transition hover:border-brand-deep/40 hover:text-foreground",
+          )}
         >
           {c.label}
-          <X className="h-3 w-3 opacity-50" strokeWidth={2} />
+          <X className="h-3 w-3 opacity-50" strokeWidth={2.25} />
         </button>
       ))}
       <button
         type="button"
         onClick={clearAll}
-        className="px-1.5 text-[12px] font-medium text-brand-deep transition hover:text-foreground"
+        className="px-1.5 text-[12px] font-semibold text-brand-deep transition hover:text-foreground"
       >
         Clear all
       </button>

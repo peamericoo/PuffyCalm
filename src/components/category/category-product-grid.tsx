@@ -8,7 +8,8 @@ interface CategoryProductGridProps {
 }
 
 /**
- * 2-col mobile · 3-col desktop beside filters (Estore shelf).
+ * Product shelf — cards unchanged.
+ * 2-col mobile · 3-col desktop beside filters.
  */
 export function CategoryProductGrid({
   products,
@@ -17,7 +18,7 @@ export function CategoryProductGrid({
   return (
     <ul
       className={cn(
-        "grid list-none grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3",
+        "grid list-none grid-cols-2 gap-3 sm:gap-3.5 lg:grid-cols-3 lg:gap-4",
         className,
       )}
     >
