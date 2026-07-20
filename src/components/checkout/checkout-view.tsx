@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -66,6 +67,7 @@ function GoogleMark({ className }: { className?: string }) {
  */
 export function CheckoutView() {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
   const items = useCartStore((s) => s.items);
   const totals = useCartTotals();
 
@@ -73,6 +75,7 @@ export function CheckoutView() {
   const [dir, setDir] = useState<Direction>("forward");
   const [animKey, setAnimKey] = useState(0);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -85,6 +88,7 @@ export function CheckoutView() {
 
   const countryMeta = getCountryMeta(country);
   const regionList = regionOptions(country);
+  const signedIn = sessionStatus === "authenticated" && !!session?.user;
 
   const goTo = (next: Step, direction: Direction) => {
     setDir(direction);
@@ -98,9 +102,28 @@ export function CheckoutView() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
-  const prefillGoogle = () => {
-    setEmail((e) => e || "alex@gmail.com");
-    setFullName((n) => n || "Alex Rivera");
+  // Prefill contact from Google session after real OAuth return
+  useEffect(() => {
+    if (!session?.user) return;
+    if (session.user.email) {
+      setEmail((prev) => prev || session.user.email || "");
+    }
+    if (session.user.name) {
+      setFullName((prev) => prev || session.user.name || "");
+    }
+  }, [session?.user]);
+
+  const continueWithGoogle = async () => {
+    setGoogleLoading(true);
+    try {
+      await signIn("google", {
+        callbackUrl: "/checkout",
+        redirect: true,
+      });
+    } finally {
+      // redirect usually navigates away; reset if it fails silently
+      setGoogleLoading(false);
+    }
   };
 
   const validateStep1 = () => {
@@ -213,11 +236,13 @@ export function CheckoutView() {
         type="button"
         variant="default"
         size="lg"
-        className="pressable h-12 w-full flex-1 text-[14px] sm:h-12 sm:min-w-[11rem] sm:flex-none"
+        className="pressable h-12 min-w-0 max-w-full flex-1 gap-1.5 overflow-hidden px-4 text-[13px] sm:h-12 sm:flex-none sm:px-6 sm:text-[14px]"
         onClick={goNext}
       >
-        {step === 1 ? "Continue" : "Continue to payment"}
-        <ArrowRight className="h-4 w-4" />
+        <span className="truncate">
+          {step === 1 ? "Continue" : "Continue to payment"}
+        </span>
+        <ArrowRight className="h-4 w-4 shrink-0" />
       </Button>
     ) : null;
 
@@ -429,17 +454,55 @@ export function CheckoutView() {
               {step === 1 ? (
                 <div className="space-y-4 sm:space-y-5">
                   <p className="text-[13px] leading-snug text-muted-foreground sm:text-[13.5px]">
-                    Receipt email — no account required.
+                    Receipt email — no account required. Guest checkout always
+                    works.
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={prefillGoogle}
-                    className="pressable flex h-11 w-full items-center justify-center gap-2 rounded-full border border-border bg-white text-[13px] font-semibold text-foreground shadow-sm transition-colors hover:bg-brand-soft sm:h-12 sm:text-[13.5px]"
-                  >
-                    <GoogleMark className="h-4 w-4" />
-                    Continue with Google
-                  </button>
+                  {signedIn ? (
+                    <div className="flex items-center gap-3 rounded-2xl border border-brand/25 bg-brand-soft/50 px-3.5 py-3">
+                      {session?.user?.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={session.user.image}
+                          alt=""
+                          className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-deep text-xs font-bold text-white">
+                          {(session?.user?.name ?? "G").slice(0, 1)}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-semibold text-foreground">
+                          Signed in with Google
+                        </p>
+                        <p className="truncate text-[12px] text-muted-foreground">
+                          {session?.user?.email}
+                        </p>
+                      </div>
+                      <Link
+                        href="/account"
+                        className="shrink-0 text-[12px] font-semibold text-brand-deep underline-offset-2 hover:underline"
+                      >
+                        Account
+                      </Link>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={continueWithGoogle}
+                      disabled={googleLoading || sessionStatus === "loading"}
+                      className="pressable flex h-11 w-full max-w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-border bg-white px-3 text-[13px] font-semibold text-foreground shadow-sm transition-colors hover:bg-brand-soft disabled:opacity-60 sm:h-12 sm:text-[13.5px]"
+                    >
+                      <GoogleMark className="h-4 w-4 shrink-0" />
+                      <span className="truncate">
+                        {googleLoading
+                          ? "Opening Google…"
+                          : "Continue with Google"}
+                      </span>
+                    </button>
+                  )}
 
                   <div className="relative py-0.5">
                     <div
@@ -449,7 +512,7 @@ export function CheckoutView() {
                       <div className="w-full border-t border-border/70" />
                     </div>
                     <p className="relative mx-auto w-fit bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      or email
+                      {signedIn ? "confirm email" : "or guest email"}
                     </p>
                   </div>
 
@@ -802,7 +865,7 @@ export function CheckoutView() {
       {/* Mobile sticky CTA — steps 1–2 only (Pay lives in Stripe form) */}
       {step < 3 ? (
         <div className={styles.stickyBar}>
-          <div className="mx-auto flex max-w-[1120px] items-center gap-2">
+          <div className="mx-auto flex w-full max-w-[1120px] items-center gap-2 overflow-hidden">
             {step > 1 ? (
               <Button
                 type="button"
@@ -830,11 +893,11 @@ export function CheckoutView() {
         </div>
       ) : (
         <div className={styles.stickyBar}>
-          <div className="mx-auto flex max-w-[1120px] items-center gap-2">
+          <div className="mx-auto flex w-full max-w-[1120px] items-center gap-2 overflow-hidden">
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-full"
+              className="h-12 min-w-0 w-full"
               onClick={goBack}
             >
               <ArrowLeft className="h-4 w-4" />

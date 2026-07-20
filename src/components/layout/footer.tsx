@@ -42,6 +42,12 @@ export function Footer() {
             © {year} {siteConfig.name}. Products that make everyday life better.
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <Link href="/login" className="hover:text-foreground">
+              Sign in
+            </Link>
+            <Link href="/register" className="hover:text-foreground">
+              Create account
+            </Link>
             <Link href="/privacy" className="hover:text-foreground">
               Privacy
             </Link>

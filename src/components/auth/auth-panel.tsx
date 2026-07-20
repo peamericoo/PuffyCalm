@@ -110,6 +110,16 @@ export function AuthPanel({ mode, error, callbackUrl = "/account" }: AuthPanelPr
               {c.alt.label}
             </Link>
           </p>
+
+          <p className="mt-4 text-center text-[11px] text-muted-foreground">
+            Store staff?{" "}
+            <Link
+              href="/admin"
+              className="font-medium text-foreground underline-offset-2 hover:underline"
+            >
+              Admin sign-in
+            </Link>
+          </p>
         </div>
       </Container>
     </section>

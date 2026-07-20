@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** Header account icon — routes to account when signed in, login otherwise. */
+/** Header account control — icon + “Sign in” label on desktop. */
 export function HeaderAccountButton({ className }: { className?: string }) {
   const { data: session, status } = useSession();
   const signedIn = status === "authenticated" && !!session?.user;
@@ -19,8 +19,11 @@ export function HeaderAccountButton({ className }: { className?: string }) {
     <Button
       asChild
       variant="ghost"
-      size="icon"
-      className={cn("nav-icon nav-icon--user pressable h-9 w-9", className)}
+      size="sm"
+      className={cn(
+        "nav-icon nav-icon--user pressable h-9 gap-1.5 rounded-full px-2 sm:px-2.5",
+        className,
+      )}
     >
       <Link href={href} aria-label={label} title={label}>
         {signedIn && session.user?.image ? (
@@ -34,6 +37,9 @@ export function HeaderAccountButton({ className }: { className?: string }) {
         ) : (
           <User className="nav-icon-svg h-[17px] w-[17px]" />
         )}
+        <span className="hidden text-[12.5px] font-semibold md:inline">
+          {signedIn ? "Account" : "Sign in"}
+        </span>
       </Link>
     </Button>
   );
