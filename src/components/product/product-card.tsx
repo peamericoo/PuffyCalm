@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { ShoppingBag, Star } from "lucide-react";
 import { ProductLink } from "@/components/motion/product-link";
 import { ProductMediaTransition } from "@/components/motion/product-media-transition";
 import type { Product } from "@/types/product";
 import { ProductImageCarousel } from "@/components/product/product-image-carousel";
+import { useCartStore } from "@/lib/cart/store";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,7 @@ export function ProductCard({
   compact = false,
 }: ProductCardProps) {
   const [active, setActive] = useState(false);
+  const addItem = useCartStore((s) => s.addItem);
   const off = percentOff(product.price, product.compareAtPrice);
   const promo = Boolean(
     product.compareAtPrice && product.compareAtPrice > product.price,
@@ -146,12 +147,20 @@ export function ProductCard({
           ) : null}
         </div>
 
-        <Link
-          href={`/cart?add=${product.slug}`}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!product.inStock) return;
+            addItem(product, 1);
+          }}
+          disabled={!product.inStock}
           className={cn(
             "add-cart-btn mt-2 flex w-full items-center justify-center gap-1.5 rounded-full font-semibold",
             compact ? "h-11 text-[13px]" : "h-11 text-sm",
             active && "is-active",
+            !product.inStock && "pointer-events-none opacity-50",
           )}
         >
           <ShoppingBag
@@ -161,8 +170,8 @@ export function ProductCard({
               "group-hover/card:animate-cart-icon",
             )}
           />
-          Add to cart
-        </Link>
+          {product.inStock ? "Add to bag" : "Out of stock"}
+        </button>
       </div>
     </article>
   );

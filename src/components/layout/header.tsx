@@ -35,8 +35,8 @@ import {
 import { Logo } from "@/components/layout/logo";
 import { SearchOverlay } from "@/components/layout/search-overlay";
 import { Button } from "@/components/ui/button";
+import { useCartItemCount, useCartStore } from "@/lib/cart/store";
 import { mainNav, type NavChild } from "@/lib/mock/site";
-import { getMockCartItemCount } from "@/lib/mock/cart";
 import { cn } from "@/lib/utils";
 
 const NAV_ICONS: Record<NavChild["icon"], LucideIcon> = {
@@ -72,7 +72,8 @@ export function Header() {
   const [openMobileSection, setOpenMobileSection] = useState<string | null>(
     null,
   );
-  const cartCount = getMockCartItemCount();
+  const cartCount = useCartItemCount();
+  const openCart = useCartStore((s) => s.openCart);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -285,19 +286,27 @@ export function Header() {
             </Button>
 
             <Button
-              asChild
+              type="button"
               variant="ghost"
               size="icon"
               className="nav-icon nav-icon--cart pressable relative h-9 w-9"
+              aria-label={
+                cartCount > 0
+                  ? `Open bag, ${cartCount} items`
+                  : "Open bag"
+              }
+              onClick={() => {
+                setMobileOpen(false);
+                setSearchOpen(false);
+                openCart();
+              }}
             >
-              <Link href="/cart" aria-label={`Cart, ${cartCount} items`}>
-                <ShoppingBag className="nav-icon-svg h-[17px] w-[17px]" />
-                {cartCount > 0 ? (
-                  <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-cta px-1 text-[9px] font-semibold text-white">
-                    {cartCount}
-                  </span>
-                ) : null}
-              </Link>
+              <ShoppingBag className="nav-icon-svg h-[17px] w-[17px]" />
+              {cartCount > 0 ? (
+                <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-cta px-1 text-[9px] font-semibold text-white">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              ) : null}
             </Button>
 
             <Button

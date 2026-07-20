@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 /**
  * Global calm carousel clock — every ProductImageCarousel on the page
@@ -74,30 +74,35 @@ export function useSyncedCarouselIndex(
   const liveIndex =
     slideCount > 0 ? ((globalTick % slideCount) + slideCount) % slideCount : 0;
 
-  const holdRef = useRef<number | null>(null);
-  const wasPaused = useRef(paused);
-  const [, bump] = useState(0);
+  /**
+   * Freeze index while paused — React “adjust state while rendering” pattern
+   * (no refs during render; no setState-in-effect).
+   */
+  const [pauseHold, setPauseHold] = useState<{
+    paused: boolean;
+    index: number | null;
+  }>({ paused: false, index: null });
 
-  // Capture slide when pause begins; clear when pause ends
-  if (paused && !wasPaused.current) {
-    holdRef.current = liveIndex;
+  if (paused !== pauseHold.paused) {
+    setPauseHold({
+      paused,
+      index: paused ? liveIndex : null,
+    });
   }
-  if (!paused && wasPaused.current) {
-    holdRef.current = null;
-  }
-  wasPaused.current = paused;
-
-  const index = holdRef.current ?? liveIndex;
 
   const setManual = useCallback(
     (next: number) => {
       if (slideCount <= 0) return;
-      holdRef.current =
-        ((next % slideCount) + slideCount) % slideCount;
-      bump((n) => n + 1);
+      const pinned = ((next % slideCount) + slideCount) % slideCount;
+      setPauseHold((prev) => ({
+        paused: prev.paused,
+        index: pinned,
+      }));
     },
     [slideCount],
   );
+
+  const index = pauseHold.index ?? liveIndex;
 
   return { index, setManual, globalTick };
 }

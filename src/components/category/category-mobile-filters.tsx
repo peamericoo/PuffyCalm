@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { SlidersHorizontal, X } from "lucide-react";
 import type { CatalogFacets } from "@/lib/catalog/types";
@@ -12,6 +12,15 @@ import {
 import { useCatalogUrl } from "@/components/category/use-catalog-url";
 import { cn } from "@/lib/utils";
 import styles from "./category-filters.module.css";
+
+/** Client-only flag without setState-in-effect (portal needs document). */
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
 
 interface CategoryMobileFiltersProps {
   facets: CatalogFacets;
@@ -33,13 +42,9 @@ export function CategoryMobileFilters({
   className,
 }: CategoryMobileFiltersProps) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const { clearAll, hasActive } = useCatalogUrl();
   const activeCount = useActiveFilterCount();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!open) return;

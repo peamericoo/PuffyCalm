@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { PromoBar } from "@/components/layout/promo-bar";
@@ -27,6 +28,7 @@ export function StorefrontShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <Footer />
+      <CartDrawer />
     </div>
   );
 }

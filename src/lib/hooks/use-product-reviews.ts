@@ -42,10 +42,11 @@ export function useProductReviews({
   const [sort, setSortState] = useState<ReviewSort>(initialSort);
   const [tag, setTagState] = useState<string | null>(null);
   const [data, setData] = useState<ReviewsPage | null>(null);
-  const [status, setStatus] =
-    useState<UseProductReviewsResult["status"]>("idle");
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  /** Bumps when a fetch starts; matches resolvedKey when done. */
+  const [requestKey, setRequestKey] = useState(0);
+  const [resolvedKey, setResolvedKey] = useState(0);
 
   const reqId = useRef(0);
 
@@ -68,8 +69,8 @@ export function useProductReviews({
   useEffect(() => {
     const id = ++reqId.current;
     let active = true;
-    setStatus("loading");
-    setError(null);
+    // Derive loading from key mismatch — no sync setState in effect body
+    setRequestKey(id);
 
     void getProductReviewsPage(
       { productId, page, pageSize, sort, tag },
@@ -79,18 +80,28 @@ export function useProductReviews({
         if (!active || id !== reqId.current) return;
         setData(pageData);
         if (pageData.page !== page) setPageState(pageData.page);
-        setStatus("success");
+        setError(null);
+        setResolvedKey(id);
       })
       .catch((err: unknown) => {
         if (!active || id !== reqId.current) return;
         setError(err instanceof Error ? err.message : "Could not load reviews");
-        setStatus("error");
+        setResolvedKey(id);
       });
 
     return () => {
       active = false;
     };
   }, [productId, page, pageSize, sort, tag, rating, reviewCount, tick]);
+
+  const status: UseProductReviewsResult["status"] =
+    requestKey === 0
+      ? "idle"
+      : requestKey !== resolvedKey
+        ? "loading"
+        : error
+          ? "error"
+          : "success";
 
   return {
     data,

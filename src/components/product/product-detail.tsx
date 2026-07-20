@@ -137,14 +137,9 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
                 </p>
 
                 <div className="mt-4 lg:hidden">
-                  <ProductBuyBox
-                    slug={product.slug}
-                    price={product.price}
-                    currency={product.currency}
-                    inStock={product.inStock}
-                  />
+                  <ProductBuyBox product={product} />
                   <p className="mt-2 text-[11px] text-muted-foreground">
-                    Free shipping $75+ · Easy returns
+                    Free shipping $75+ · Easy returns · Guest checkout
                   </p>
                 </div>
 
@@ -155,14 +150,9 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
                 <ProductSpecs specs={specs} className="mt-4 sm:mt-8" />
 
                 <div className="mt-10 hidden lg:block">
-                  <ProductBuyBox
-                    slug={product.slug}
-                    price={product.price}
-                    currency={product.currency}
-                    inStock={product.inStock}
-                  />
+                  <ProductBuyBox product={product} />
                   <p className="mt-3 text-[12px] text-muted-foreground">
-                    Free shipping $75+ · Easy returns
+                    Free shipping $75+ · Easy returns · Guest checkout
                   </p>
                 </div>
               </div>

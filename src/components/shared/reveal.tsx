@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 
 export type RevealVariant = "rise" | "soft" | "slide" | "scale" | "fade";
@@ -24,6 +30,30 @@ interface RevealProps {
   once?: boolean;
 }
 
+function subscribeSkipReveal(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const mobile = window.matchMedia("(max-width: 767px)");
+  reduced.addEventListener("change", onChange);
+  mobile.addEventListener("change", onChange);
+  return () => {
+    reduced.removeEventListener("change", onChange);
+    mobile.removeEventListener("change", onChange);
+  };
+}
+
+function getSkipReveal() {
+  return (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(max-width: 767px)").matches
+  );
+}
+
+/** Mobile / reduced-motion: skip IO and show immediately (SSR: shown). */
+function useSkipReveal() {
+  return useSyncExternalStore(subscribeSkipReveal, getSkipReveal, () => true);
+}
+
 /**
  * Soft scroll entrance. Supports per-block variants and optional re-entry.
  */
@@ -36,39 +66,30 @@ export function Reveal({
   once = true,
 }: RevealProps) {
   const ref = useRef<HTMLElement | null>(null);
-  const [shown, setShown] = useState(false);
+  const skip = useSkipReveal();
+  const [inView, setInView] = useState(false);
+  const shown = skip || inView;
 
   useEffect(() => {
+    if (skip) return;
     const el = ref.current;
     if (!el) return;
-
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    /* Mobile: skip scroll reveals — static paint, better scroll perf */
-    const mobileLite =
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 767px)").matches;
-    if (reduced || mobileLite) {
-      setShown(true);
-      return;
-    }
 
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry) return;
         if (entry.isIntersecting) {
-          setShown(true);
+          setInView(true);
           if (once) io.disconnect();
         } else if (!once) {
-          setShown(false);
+          setInView(false);
         }
       },
       { threshold: 0.14, rootMargin: "0px 0px -6% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [once]);
+  }, [once, skip]);
 
   return (
     <Tag

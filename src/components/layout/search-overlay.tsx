@@ -25,13 +25,15 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const listId = useId();
 
   const results = useMemo(() => searchProducts(query, 6), [query]);
-  const showResults = query.trim().length > 0;
+  const showResults = open && query.trim().length > 0;
+
+  const handleClose = () => {
+    setQuery("");
+    onClose();
+  };
 
   useEffect(() => {
-    if (!open) {
-      setQuery("");
-      return;
-    }
+    if (!open) return;
     const t = window.setTimeout(() => inputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
   }, [open]);
@@ -39,11 +41,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    // handleClose is stable enough for overlay lifecycle (query reset + parent close)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only rebind when open flips
+  }, [open]);
 
   return (
     <div
@@ -70,7 +74,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         )}
         aria-label="Close search"
         tabIndex={-1}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Panel */}
@@ -91,10 +95,10 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             onSubmit={(e) => {
               e.preventDefault();
               if (results[0]) {
-                onClose();
+                handleClose();
                 router.push(`/product/${results[0].slug}`);
               } else if (query.trim()) {
-                onClose();
+                handleClose();
                 router.push("/category/all");
               }
             }}
@@ -107,13 +111,15 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               <input
                 ref={inputRef}
                 type="search"
-                value={query}
+                value={open ? query : ""}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search products..."
                 aria-label="Search products"
                 aria-autocomplete="list"
                 aria-controls={listId}
+                role="combobox"
                 aria-expanded={showResults}
+                aria-haspopup="listbox"
                 className={cn(
                   "h-12 w-full rounded-full border border-border/60 bg-muted/45 py-3 pl-12 pr-4",
                   "text-[15px] font-medium text-foreground placeholder:text-muted-foreground/70",
@@ -129,7 +135,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               size="icon"
               className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
               aria-label="Close search"
-              onClick={onClose}
+              onClick={handleClose}
             >
               <X className="h-5 w-5" />
             </Button>
@@ -159,13 +165,14 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       <li
                         key={product.id}
                         role="option"
+                        aria-selected={false}
                         className="search-result-item"
                         style={{ animationDelay: `${i * 45}ms` }}
                       >
                         <Link
                           href={`/product/${product.slug}`}
                           transitionTypes={["nav-forward"]}
-                          onClick={onClose}
+                          onClick={handleClose}
                           className={cn(
                             "group flex items-center gap-3 rounded-2xl p-2.5 sm:gap-3.5 sm:p-3",
                             "transition-all duration-200",
