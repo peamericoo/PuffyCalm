@@ -2,6 +2,9 @@
 
 > **Use este arquivo** após compactar o chat, em `/new`, ou quando o contexto estiver cheio.  
 > Cole o bloco **PROMPT DE RETOMADA** no início da mensagem + diga o que fazer (ex.: “fase 3”).
+>
+> **Só Frontend (melhoria / refator)?** Use **`/compact-fe`** ou `docs/FRONTEND_CRAFT.md`  
+> (persona **CalmCraft** — não reabre backend).
 
 ---
 
