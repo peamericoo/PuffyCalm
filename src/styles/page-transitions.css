@@ -109,12 +109,31 @@
     240ms var(--vt-ease-out) 40ms both vt-rise-soft;
 }
 
-::view-transition-old(.catalog-header) {
-  animation: 100ms ease-in both vt-fade-out;
+/*
+ * Catalog title — fluid text swap on category change.
+ * Named pair (catalog-title) + class (.catalog-header) for enter/exit/update.
+ */
+::view-transition-group(catalog-title) {
+  animation-duration: 300ms;
+  animation-timing-function: var(--vt-ease);
+  z-index: 6;
+  overflow: clip;
 }
 
+::view-transition-image-pair(catalog-title) {
+  isolation: isolate;
+}
+
+::view-transition-old(catalog-title),
+::view-transition-old(.catalog-header) {
+  animation: 160ms ease-in both vt-title-out;
+}
+
+::view-transition-new(catalog-title),
 ::view-transition-new(.catalog-header) {
-  animation: 200ms var(--vt-ease-out) 30ms both vt-fade-in;
+  animation:
+    280ms var(--vt-ease-out) 40ms both vt-fade-in,
+    300ms var(--vt-ease-out) 40ms both vt-rise-soft;
 }
 
 /* Catalog-type navigations skip heavy default page morph */
@@ -128,6 +147,17 @@ html:active-view-transition-type(catalog) {
   }
   to {
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vt-title-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
   }
 }
 
@@ -283,6 +313,17 @@ html:active-view-transition-type(catalog) {
   }
 
   @keyframes catalog-menu-in {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes vt-title-out {
     from {
       opacity: 1;
       transform: none;

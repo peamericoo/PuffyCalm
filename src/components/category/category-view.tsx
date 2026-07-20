@@ -63,11 +63,27 @@ export function CategoryView({ data, className }: CategoryViewProps) {
       />
 
       <div className="relative mx-auto w-full max-w-[1400px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-5 sm:pb-20 sm:pt-5 lg:px-6">
+        {/*
+          Named title pair — same view-transition-name on every category route
+          so old/new titles crossfade instead of hard-cutting.
+        */}
         <ViewTransition
-          update={{ catalog: "catalog-header", default: "none" }}
+          name="catalog-title"
+          share="catalog-header"
+          enter={{
+            catalog: "catalog-header",
+            default: "catalog-header",
+          }}
+          exit={{
+            catalog: "catalog-header",
+            default: "catalog-header",
+          }}
+          update="catalog-header"
           default="none"
         >
-          <CategoryHeader category={category} total={poolTotal} />
+          <div key={category.slug} className="catalog-title-block">
+            <CategoryHeader category={category} total={poolTotal} />
+          </div>
         </ViewTransition>
 
         <div
