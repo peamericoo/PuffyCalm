@@ -1,0 +1,436 @@
+"""Checkout service — prices from DB, Stripe session server-side."""
+
+from __future__ import annotations
+
+import secrets
+import uuid
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Any
+
+import stripe
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.application.checkout.address import (
+    AddressValidationError,
+    validate_and_normalize_shipping,
+)
+from app.application.checkout.purchase_limits import (
+    PurchaseLimitError,
+    validate_cart_lines,
+)
+from app.core.config import Settings, get_settings
+from app.core.logging import get_logger
+from app.domain.product_rules import DEFAULT_MAX_QUANTITY_PER_ORDER
+from app.infrastructure.db.models import Order, OrderItem, Product, StripeEvent
+
+log = get_logger(__name__)
+
+
+class CheckoutError(Exception):
+    def __init__(self, message: str, *, code: str = "checkout_error") -> None:
+        super().__init__(message)
+        self.message = message
+        self.code = code
+
+
+@dataclass(frozen=True)
+class CheckoutLineInput:
+    product_id: str
+    quantity: int
+
+
+@dataclass(frozen=True)
+class ShippingInput:
+    full_name: str
+    line1: str
+    city: str
+    region: str
+    postal: str
+    country: str = "US"
+
+
+@dataclass
+class CheckoutSessionResult:
+    order_id: str
+    public_code: str
+    client_secret: str
+    total_cents: int
+    currency: str
+    status: str
+
+
+def _money_to_cents(amount: Decimal | float | int) -> int:
+    d = Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return int(d * 100)
+
+
+def _new_id(prefix: str = "ord") -> str:
+    return f"{prefix}_{uuid.uuid4().hex[:16]}"
+
+
+def _public_code() -> str:
+    return f"PC-{secrets.token_hex(4).upper()}"
+
+
+def compute_shipping_cents(subtotal_cents: int, settings: Settings) -> int:
+    if subtotal_cents <= 0:
+        return 0
+    if subtotal_cents >= settings.free_shipping_threshold_cents:
+        return 0
+    return settings.flat_shipping_cents
+
+
+async def create_checkout_session(
+    session: AsyncSession,
+    *,
+    email: str,
+    lines: list[CheckoutLineInput],
+    shipping: ShippingInput,
+    settings: Settings | None = None,
+) -> CheckoutSessionResult:
+    """
+    Validate cart against Postgres, create pending Order, create Stripe Checkout Session.
+
+    Client must NOT send prices — unit prices are always loaded from products table.
+    """
+    settings = settings or get_settings()
+    if not settings.stripe_configured:
+        raise CheckoutError("Stripe is not configured on the server", code="stripe_not_configured")
+
+    if not lines:
+        raise CheckoutError("Cart is empty", code="empty_cart")
+
+    email_norm = email.strip().lower()
+    if not email_norm or "@" not in email_norm:
+        raise CheckoutError("Valid email is required", code="invalid_email")
+
+    try:
+        shipping_norm = validate_and_normalize_shipping(
+            full_name=shipping.full_name,
+            line1=shipping.line1,
+            city=shipping.city,
+            region=shipping.region,
+            postal=shipping.postal,
+            country=shipping.country,
+        )
+    except AddressValidationError as exc:
+        raise CheckoutError(exc.message, code="invalid_address") from exc
+
+    # Aggregate quantities per product id
+    qty_by_id: dict[str, int] = {}
+    for line in lines:
+        q = int(line.quantity)
+        if q < 1 or q > DEFAULT_MAX_QUANTITY_PER_ORDER:
+            raise CheckoutError(
+                f"Quantity must be between 1 and {DEFAULT_MAX_QUANTITY_PER_ORDER}",
+                code="invalid_quantity",
+            )
+        pid = line.product_id.strip()
+        if not pid:
+            raise CheckoutError("Invalid product id", code="invalid_product")
+        qty_by_id[pid] = qty_by_id.get(pid, 0) + q
+
+    product_ids = list(qty_by_id.keys())
+    result = await session.execute(select(Product).where(Product.id.in_(product_ids)))
+    products = {p.id: p for p in result.scalars().all()}
+
+    missing = [pid for pid in product_ids if pid not in products]
+    if missing:
+        raise CheckoutError(
+            f"Unknown product(s): {', '.join(missing)}",
+            code="product_not_found",
+        )
+
+    try:
+        await validate_cart_lines(
+            session,
+            email=email_norm,
+            qty_by_id=qty_by_id,
+            products=products,
+        )
+    except PurchaseLimitError as exc:
+        raise CheckoutError(exc.message, code=exc.code) from exc
+
+    order_items: list[OrderItem] = []
+    subtotal = 0
+    stripe_line_items: list[dict[str, Any]] = []
+
+    for pid, qty in qty_by_id.items():
+        product = products[pid]
+        unit = _money_to_cents(product.price)
+        line_total = unit * qty
+        subtotal += line_total
+        order_items.append(
+            OrderItem(
+                id=_new_id("oli"),
+                product_id=product.id,
+                product_slug=product.slug,
+                product_name=product.name,
+                quantity=qty,
+                unit_price_cents=unit,
+                line_total_cents=line_total,
+                image_url=product.image_url or "",
+            )
+        )
+        stripe_line_items.append(
+            {
+                "price_data": {
+                    "currency": (product.currency or "USD").lower(),
+                    "unit_amount": unit,
+                    "product_data": {
+                        "name": product.name,
+                        "metadata": {"product_id": product.id},
+                    },
+                },
+                "quantity": qty,
+            }
+        )
+
+    shipping_cents = compute_shipping_cents(subtotal, settings)
+    if shipping_cents > 0:
+        stripe_line_items.append(
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": shipping_cents,
+                    "product_data": {"name": "Shipping"},
+                },
+                "quantity": 1,
+            }
+        )
+
+    total = subtotal + shipping_cents
+    if total < 50:  # Stripe minimum for USD is typically $0.50
+        raise CheckoutError("Order total too low", code="total_too_low")
+
+    order = Order(
+        id=_new_id("ord"),
+        public_code=_public_code(),
+        email=email_norm,
+        status="pending",
+        currency="USD",
+        subtotal_cents=subtotal,
+        shipping_cents=shipping_cents,
+        total_cents=total,
+        shipping_address={
+            "fullName": shipping_norm.full_name,
+            "line1": shipping_norm.line1,
+            "city": shipping_norm.city,
+            "region": shipping_norm.region,
+            "postal": shipping_norm.postal,
+            "country": shipping_norm.country,
+        },
+        items=order_items,
+    )
+    session.add(order)
+    await session.flush()
+
+    return_url = (
+        f"{settings.storefront_url.rstrip('/')}/success"
+        f"?order={order.id}&session_id={{CHECKOUT_SESSION_ID}}"
+    )
+
+    try:
+        from app.infrastructure.stripe.client import configure_stripe
+
+        configure_stripe(settings)
+
+        # Embedded checkout UI (Payment Element on our FE)
+        # https://docs.stripe.com/checkout/custom/quickstart
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            ui_mode="custom",
+            line_items=stripe_line_items,
+            customer_email=email_norm,
+            return_url=return_url,
+            metadata={
+                "order_id": order.id,
+                "public_code": order.public_code,
+            },
+            payment_intent_data={
+                "metadata": {
+                    "order_id": order.id,
+                    "public_code": order.public_code,
+                },
+            },
+            # Omit payment_method_types → dynamic payment methods
+        )
+    except stripe.StripeError as exc:
+        log.exception("stripe_session_create_failed", order_id=order.id)
+        raise CheckoutError(
+            "Could not start payment with Stripe",
+            code="stripe_error",
+        ) from exc
+
+    client_secret = getattr(checkout_session, "client_secret", None)
+    if not client_secret:
+        raise CheckoutError(
+            "Stripe session missing client_secret",
+            code="stripe_error",
+        )
+
+    order.stripe_checkout_session_id = checkout_session.id
+    pi = getattr(checkout_session, "payment_intent", None)
+    if isinstance(pi, str):
+        order.stripe_payment_intent_id = pi
+    order.status = "requires_payment"
+    await session.commit()
+    await session.refresh(order)
+
+    log.info(
+        "checkout_session_created",
+        order_id=order.id,
+        public_code=order.public_code,
+        total_cents=total,
+        stripe_session=checkout_session.id,
+    )
+
+    return CheckoutSessionResult(
+        order_id=order.id,
+        public_code=order.public_code,
+        client_secret=client_secret,
+        total_cents=total,
+        currency="USD",
+        status=order.status,
+    )
+
+
+async def get_order_for_guest(
+    session: AsyncSession,
+    order_id: str,
+    *,
+    email: str | None = None,
+) -> Order | None:
+    result = await session.execute(
+        select(Order)
+        .options(selectinload(Order.items))
+        .where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+    if order is None:
+        return None
+    if email is not None:
+        if order.email.lower() != email.strip().lower():
+            return None
+    return order
+
+
+async def mark_order_paid(
+    session: AsyncSession,
+    order: Order,
+    *,
+    payment_intent_id: str | None = None,
+    session_id: str | None = None,
+) -> Order:
+    if order.status == "paid":
+        return order
+    order.status = "paid"
+    order.paid_at = datetime.now(UTC)
+    if payment_intent_id:
+        order.stripe_payment_intent_id = payment_intent_id
+    if session_id:
+        order.stripe_checkout_session_id = session_id
+    await session.commit()
+    await session.refresh(order)
+    log.info("order_paid", order_id=order.id, public_code=order.public_code)
+    return order
+
+
+async def process_stripe_event(
+    session: AsyncSession,
+    event: dict[str, Any],
+) -> dict[str, str]:
+    """
+    Idempotent webhook handler. Returns status for logging.
+    """
+    event_id = str(event.get("id") or "")
+    event_type = str(event.get("type") or "")
+    if not event_id:
+        raise CheckoutError("Invalid Stripe event", code="invalid_event")
+
+    existing = await session.get(StripeEvent, event_id)
+    if existing is not None:
+        return {"status": "duplicate", "eventId": event_id, "type": event_type}
+
+    data_object = (event.get("data") or {}).get("object") or {}
+
+    if event_type in {
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+    }:
+        order = await _resolve_order_from_session(session, data_object)
+        if order:
+            pi = data_object.get("payment_intent")
+            pi_id = pi if isinstance(pi, str) else None
+            await mark_order_paid(
+                session,
+                order,
+                payment_intent_id=pi_id,
+                session_id=data_object.get("id") if isinstance(data_object.get("id"), str) else None,
+            )
+    elif event_type == "payment_intent.succeeded":
+        order = await _resolve_order_from_payment_intent(session, data_object)
+        if order:
+            await mark_order_paid(
+                session,
+                order,
+                payment_intent_id=data_object.get("id")
+                if isinstance(data_object.get("id"), str)
+                else None,
+            )
+    elif event_type in {
+        "checkout.session.expired",
+        "payment_intent.payment_failed",
+    }:
+        order = await _resolve_order_from_session(
+            session, data_object
+        ) or await _resolve_order_from_payment_intent(session, data_object)
+        if order and order.status not in {"paid", "cancelled"}:
+            order.status = "failed"
+            await session.commit()
+
+    session.add(StripeEvent(id=event_id, type=event_type))
+    await session.commit()
+    return {"status": "processed", "eventId": event_id, "type": event_type}
+
+
+async def _resolve_order_from_session(
+    session: AsyncSession,
+    obj: dict[str, Any],
+) -> Order | None:
+    meta = obj.get("metadata") or {}
+    order_id = meta.get("order_id")
+    if order_id:
+        order = await session.get(Order, order_id)
+        if order:
+            return order
+    sid = obj.get("id")
+    if isinstance(sid, str):
+        result = await session.execute(
+            select(Order).where(Order.stripe_checkout_session_id == sid)
+        )
+        return result.scalar_one_or_none()
+    return None
+
+
+async def _resolve_order_from_payment_intent(
+    session: AsyncSession,
+    obj: dict[str, Any],
+) -> Order | None:
+    meta = obj.get("metadata") or {}
+    order_id = meta.get("order_id")
+    if order_id:
+        order = await session.get(Order, order_id)
+        if order:
+            return order
+    pi = obj.get("id")
+    if isinstance(pi, str):
+        result = await session.execute(
+            select(Order).where(Order.stripe_payment_intent_id == pi)
+        )
+        return result.scalar_one_or_none()
+    return None

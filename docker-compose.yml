@@ -1,0 +1,145 @@
+# PuffyCalm local backend stack
+# Usage:
+#   cp .env.example .env
+#   docker compose up --build -d
+#   curl http://localhost:8080/health
+#   curl http://localhost:8080/ready
+#   curl http://localhost:8080/api/v1/
+
+name: puffycalm
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: puffycalm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-puffycalm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-puffycalm_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-puffycalm}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-puffycalm} -d ${POSTGRES_DB:-puffycalm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - puffycalm
+
+  redis:
+    image: redis:7-alpine
+    container_name: puffycalm-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - puffycalm
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: puffycalm-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://puffycalm:puffycalm_dev@postgres:5432/puffycalm}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/1}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-min-32-chars!!}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - puffycalm
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+      - ./backend/alembic:/app/alembic
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: puffycalm-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://puffycalm:puffycalm_dev@postgres:5432/puffycalm}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/1}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-min-32-chars!!}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - puffycalm
+    command:
+      [
+        "celery",
+        "-A",
+        "app.infrastructure.celery.app.celery_app",
+        "worker",
+        "--loglevel=INFO",
+        "--concurrency=2",
+      ]
+    volumes:
+      - ./backend/app:/app/app
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: puffycalm-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - puffycalm
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  puffycalm:
+    name: puffycalm
+    driver: bridge

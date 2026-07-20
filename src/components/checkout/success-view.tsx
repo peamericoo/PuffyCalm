@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   CheckCircle2,
@@ -12,9 +12,13 @@ import {
   Package,
   ShieldCheck,
   Sparkles,
+  XCircle,
 } from "lucide-react";
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
+import { ApiError, getOrder, type OrderResult } from "@/lib/api/checkout";
+import { useCartStore } from "@/lib/cart/store";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import styles from "./success.module.css";
 
@@ -48,16 +52,29 @@ type ProcessStep = {
   icon: typeof CreditCard;
 };
 
-type Phase = "processing" | "confirmed";
+type Phase = "loading" | "processing" | "confirmed" | "failed" | "missing";
+
+const POLL_MS = 1500;
+const MAX_POLLS = 24; // ~36s
 
 /**
- * Realistic mock payment processing (step timeline) → confirmed order.
+ * Success — polls BE for order status (webhook is source of paid).
  */
 export function SuccessView() {
   const params = useSearchParams();
-  const order = params.get("order") ?? "PC-DEMO";
-  const email = params.get("email");
+  const orderId = params.get("order") ?? "";
+  const email = params.get("email") ?? "";
+  const clearCart = useCartStore((s) => s.clearCart);
+  const cleared = useRef(false);
 
+  const [phase, setPhase] = useState<Phase>(
+    orderId && email ? "loading" : "missing",
+  );
+  const [order, setOrder] = useState<OrderResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pollTick, setPollTick] = useState(0);
+
+  const publicCode = order?.publicCode;
   const processSteps = useMemo<ProcessStep[]>(
     () => [
       {
@@ -75,71 +92,156 @@ export function SuccessView() {
       {
         id: "confirm",
         label: "Confirming your order",
-        detail: `Order ${order}`,
+        detail: publicCode
+          ? `Order ${publicCode}`
+          : orderId
+            ? `Order ${orderId.slice(0, 12)}…`
+            : "Creating order",
         icon: Package,
       },
       {
         id: "receipt",
         label: "Sending your receipt",
-        detail: email ? email : "To your inbox",
+        detail: email || "To your inbox",
         icon: Mail,
       },
     ],
-    [order, email],
+    [publicCode, orderId, email],
   );
 
-  const [phase, setPhase] = useState<Phase>("processing");
-  /** Index of the step currently running; completed = all < activeCompleted */
   const [activeIndex, setActiveIndex] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
 
   useEffect(() => {
+    if (!orderId || !email) return;
     let cancelled = false;
-    const timers: number[] = [];
+    let polls = 0;
 
-    const STEP_MS = 720;
-    const HOLD_MS = 380;
-
-    processSteps.forEach((_, i) => {
-      timers.push(
-        window.setTimeout(() => {
-          if (cancelled) return;
-          setActiveIndex(i);
-        }, i * STEP_MS),
-      );
-      timers.push(
-        window.setTimeout(() => {
-          if (cancelled) return;
-          setCompletedCount(i + 1);
-        }, i * STEP_MS + HOLD_MS),
-      );
-    });
-
-    const doneAt = processSteps.length * STEP_MS + HOLD_MS + 280;
-    timers.push(
-      window.setTimeout(() => {
+    const tick = async () => {
+      try {
+        const data = await getOrder(orderId, email);
         if (cancelled) return;
-        setPhase("confirmed");
-      }, doneAt),
-    );
+        setOrder(data);
+        if (data.status === "paid") {
+          setPhase("confirmed");
+          if (!cleared.current) {
+            cleared.current = true;
+            clearCart();
+          }
+          return;
+        }
+        if (data.status === "failed" || data.status === "cancelled") {
+          setPhase("failed");
+          return;
+        }
+        setPhase("processing");
+        polls += 1;
+        setPollTick(polls);
+        if (polls < MAX_POLLS) {
+          window.setTimeout(() => {
+            void tick();
+          }, POLL_MS);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        const msg =
+          e instanceof ApiError
+            ? e.message
+            : e instanceof Error
+              ? e.message
+              : "Could not load order";
+        // Keep processing if transient; after first load fail hard if 404
+        if (e instanceof ApiError && e.status === 404) {
+          setError(msg);
+          setPhase("missing");
+          return;
+        }
+        setPhase("processing");
+        polls += 1;
+        setPollTick(polls);
+        if (polls < MAX_POLLS) {
+          window.setTimeout(() => {
+            void tick();
+          }, POLL_MS);
+        } else {
+          setError(msg);
+        }
+      }
+    };
 
+    void tick();
     return () => {
       cancelled = true;
-      timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [processSteps]);
+  }, [orderId, email, clearCart]);
 
-  const progressPct =
-    phase === "confirmed"
-      ? 100
-      : Math.min(
-          100,
-          ((completedCount + (activeIndex >= completedCount ? 0.45 : 0)) /
-            processSteps.length) *
-            100,
-        );
+  // Soft step animation while processing
+  useEffect(() => {
+    if (phase !== "processing" && phase !== "loading") return;
+    const n = processSteps.length;
+    let i = 0;
+    const id = window.setInterval(() => {
+      i = Math.min(i + 1, n);
+      setActiveIndex(Math.min(i, n - 1));
+      setCompletedCount(Math.min(i, n));
+    }, 700);
+    return () => window.clearInterval(id);
+  }, [phase, processSteps.length]);
 
-  if (phase === "processing") {
+  if (phase === "missing") {
+    return (
+      <section className="px-3 py-14 sm:px-5 sm:py-20">
+        <Container className="max-w-md animate-fade-up text-center">
+          <XCircle className="mx-auto h-12 w-12 text-cta" />
+          <h1 className="mt-4 font-display text-2xl font-semibold text-foreground">
+            Order not found
+          </h1>
+          <p className="mt-2 text-[14px] text-muted-foreground">
+            {error ||
+              "Open this page from checkout, or check the link in your email."}
+          </p>
+          <Button asChild variant="default" className="pressable mt-6">
+            <Link href="/category/all">Continue shopping</Link>
+          </Button>
+        </Container>
+      </section>
+    );
+  }
+
+  if (phase === "failed") {
+    return (
+      <section className="px-3 py-14 sm:px-5 sm:py-20">
+        <Container className="max-w-md animate-fade-up text-center">
+          <XCircle className="mx-auto h-12 w-12 text-cta" />
+          <h1 className="mt-4 font-display text-2xl font-semibold text-foreground">
+            Payment didn’t go through
+          </h1>
+          <p className="mt-2 text-[14px] text-muted-foreground">
+            No charge was kept. You can try checkout again.
+          </p>
+          {order?.publicCode ? (
+            <p className="mt-2 font-mono text-sm text-muted-foreground">
+              {order.publicCode}
+            </p>
+          ) : null}
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button asChild variant="default" className="pressable">
+              <Link href="/checkout">Try again</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/cart">Back to bag</Link>
+            </Button>
+          </div>
+        </Container>
+      </section>
+    );
+  }
+
+  if (phase === "loading" || phase === "processing") {
+    const progressPct = Math.min(
+      95,
+      ((completedCount + 0.4) / processSteps.length) * 100,
+    );
     return (
       <section className="px-3 py-12 sm:px-5 sm:py-16">
         <Container className="max-w-md animate-fade-up">
@@ -152,17 +254,18 @@ export function SuccessView() {
                   <LockIcon />
                 </span>
               </div>
-
               <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
                 Secure payment
               </p>
               <h1 className="mt-1.5 font-display text-[1.45rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.65rem]">
-                Processing your payment
+                {phase === "loading"
+                  ? "Loading your order…"
+                  : "Confirming with Stripe"}
               </h1>
               <p className="mt-1.5 text-[13.5px] text-muted-foreground">
-                Please keep this tab open — almost there.
+                Please keep this tab open
+                {pollTick > 0 ? ` · checking…` : ""}
               </p>
-
               <div className={cn(styles.progressBar, "mt-5 w-full")}>
                 <div
                   className={styles.progressFill}
@@ -176,7 +279,6 @@ export function SuccessView() {
                 const done = i < completedCount;
                 const active = i === activeIndex && !done;
                 const pending = i > activeIndex && !done;
-
                 return (
                   <li
                     key={step.id}
@@ -192,10 +294,8 @@ export function SuccessView() {
                     <span
                       className={cn(
                         "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1",
-                        done &&
-                          "bg-success/15 text-success ring-success/20",
-                        active &&
-                          "bg-white text-brand-deep ring-brand/20",
+                        done && "bg-success/15 text-success ring-success/20",
+                        active && "bg-white text-brand-deep ring-brand/20",
                         pending &&
                           "bg-muted/60 text-muted-foreground ring-border/50",
                       )}
@@ -203,46 +303,42 @@ export function SuccessView() {
                       {done ? (
                         <Check className="h-4 w-4" strokeWidth={2.4} />
                       ) : active ? (
-                        <Loader2
-                          className="h-4 w-4 animate-spin"
-                          strokeWidth={2}
-                        />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <step.icon className="h-3.5 w-3.5" strokeWidth={1.9} />
                       )}
                     </span>
                     <span className="min-w-0 flex-1 text-left">
-                      <span
-                        className={cn(
-                          "block text-[13.5px] font-semibold leading-snug",
-                          done && "text-foreground",
-                          active && "text-foreground",
-                          pending && "text-muted-foreground",
-                        )}
-                      >
+                      <span className="block text-[13.5px] font-semibold">
                         {step.label}
                       </span>
                       <span className="mt-0.5 block text-[12px] text-muted-foreground">
                         {step.detail}
                       </span>
                     </span>
-                    {active ? (
-                      <span className={cn(styles.pulseDot, "mt-2.5 shrink-0")} />
-                    ) : null}
                   </li>
                 );
               })}
             </ol>
 
+            {error ? (
+              <p className="mt-4 text-center text-[12px] text-cta">{error}</p>
+            ) : null}
+
             <p className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Encrypted · Stripe mock · No real charge
+              Waiting for server confirmation · webhook + poll
             </p>
           </div>
         </Container>
       </section>
     );
   }
+
+  // confirmed
+  const totalLabel = order
+    ? formatMoney(order.totalCents / 100, order.currency)
+    : null;
 
   return (
     <section className="px-3 py-12 sm:px-5 sm:py-16">
@@ -270,9 +366,7 @@ export function SuccessView() {
               A receipt is on its way to{" "}
               <span className="font-medium text-foreground">{email}</span>.
             </>
-          ) : (
-            <> A receipt is on its way to your inbox.</>
-          )}
+          ) : null}
         </p>
 
         <div className="mt-6 rounded-[1.25rem] border border-border/70 bg-white/95 px-5 py-4 text-left shadow-sm ring-1 ring-white/70">
@@ -285,34 +379,35 @@ export function SuccessView() {
                 Order number
               </p>
               <p className="mt-0.5 font-mono text-[15px] font-semibold tracking-wide text-foreground">
-                {order}
+                {order?.publicCode ?? orderId}
               </p>
-              <p className="mt-1 text-[12.5px] text-muted-foreground">
-                Mock order — tracking appears when fulfillment is live.
-              </p>
+              {totalLabel ? (
+                <p className="mt-1 text-[13px] font-semibold tabular-nums text-brand-deep">
+                  {totalLabel}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
 
-        {/* Completed timeline */}
-        <div className="mt-4 rounded-[1.25rem] border border-border/60 bg-white/90 px-4 py-3.5 text-left ring-1 ring-white/70">
-          <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            What just happened
-          </p>
-          <ul className="space-y-2">
-            {processSteps.map((step) => (
+        {order?.items?.length ? (
+          <ul className="mt-4 space-y-2 rounded-[1.25rem] border border-border/60 bg-white/90 px-4 py-3 text-left ring-1 ring-white/70">
+            {order.items.map((item) => (
               <li
-                key={step.id}
-                className="flex items-center gap-2.5 text-[13px] text-foreground/90"
+                key={item.productId + item.quantity}
+                className="flex justify-between gap-2 text-[13px]"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success/12 text-success">
-                  <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
+                <span className="min-w-0 truncate font-medium text-foreground">
+                  {item.productName}{" "}
+                  <span className="text-muted-foreground">×{item.quantity}</span>
                 </span>
-                <span className="min-w-0 flex-1 font-medium">{step.label}</span>
+                <span className="shrink-0 tabular-nums text-muted-foreground">
+                  {formatMoney(item.lineTotalCents / 100, order.currency)}
+                </span>
               </li>
             ))}
           </ul>
-        </div>
+        ) : null}
 
         <div className="mt-5 rounded-[1.25rem] border border-brand/20 bg-brand-soft/60 px-5 py-5 text-left ring-1 ring-brand/10">
           <div className="flex items-start gap-2.5">
@@ -322,8 +417,7 @@ export function SuccessView() {
                 Save this order to your account
               </p>
               <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
-                One tap with Google — track shipping, reorder faster, keep
-                addresses. Optional, always.
+                One tap with Google — track shipping, reorder faster. Optional.
               </p>
             </div>
           </div>

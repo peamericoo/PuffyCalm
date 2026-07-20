@@ -9,18 +9,28 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
-  CreditCard,
-  Lock,
   ShoppingBag,
 } from "lucide-react";
 import { CartSummary } from "@/components/cart/cart-summary";
+import { StripePaymentSection } from "@/components/checkout/stripe-payment-section";
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCartStore, useCartTotals } from "@/lib/cart/store";
+import {
+  getCountryMeta,
+  normalizeShippingAddress,
+  regionOptions,
+  SHIP_COUNTRIES,
+  type ShipCountry,
+  validateShippingAddress,
+} from "@/lib/checkout/address";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import styles from "./checkout.module.css";
+
+const selectClass =
+  "flex h-11 w-full rounded-xl border border-border bg-white px-3 text-[14px] text-foreground outline-none transition-[border,box-shadow] focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 disabled:cursor-not-allowed disabled:opacity-50";
 
 type Step = 1 | 2 | 3;
 type Direction = "forward" | "back";
@@ -57,7 +67,6 @@ function GoogleMark({ className }: { className?: string }) {
 export function CheckoutView() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
-  const clearCart = useCartStore((s) => s.clearCart);
   const totals = useCartTotals();
 
   const [step, setStep] = useState<Step>(1);
@@ -71,8 +80,11 @@ export function CheckoutView() {
   const [city, setCity] = useState("");
   const [region, setRegion] = useState("");
   const [postal, setPostal] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [country, setCountry] = useState<ShipCountry>("US");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const countryMeta = getCountryMeta(country);
+  const regionList = regionOptions(country);
 
   const goTo = (next: Step, direction: Direction) => {
     setDir(direction);
@@ -91,14 +103,6 @@ export function CheckoutView() {
     setFullName((n) => n || "Alex Rivera");
   };
 
-  const prefillWallet = () => {
-    prefillGoogle();
-    setLine1((v) => v || "1 Market St");
-    setCity((v) => v || "San Francisco");
-    setRegion((v) => v || "CA");
-    setPostal((v) => v || "94105");
-  };
-
   const validateStep1 = () => {
     const next: Record<string, string> = {};
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -109,14 +113,29 @@ export function CheckoutView() {
   };
 
   const validateStep2 = () => {
-    const next: Record<string, string> = {};
-    if (!fullName.trim()) next.fullName = "Required";
-    if (!line1.trim()) next.line1 = "Required";
-    if (!city.trim()) next.city = "Required";
-    if (!region.trim()) next.region = "Required";
-    if (!postal.trim()) next.postal = "Required";
+    const next = validateShippingAddress({
+      fullName,
+      line1,
+      city,
+      region,
+      postal,
+      country,
+    });
     setErrors(next);
     return Object.keys(next).length === 0;
+  };
+
+  const onCountryChange = (code: ShipCountry) => {
+    setCountry(code);
+    setRegion("");
+    setPostal("");
+    setErrors((x) => {
+      const next = { ...x };
+      delete next.region;
+      delete next.postal;
+      delete next.country;
+      return next;
+    });
   };
 
   const goNext = () => {
@@ -136,22 +155,31 @@ export function CheckoutView() {
     else if (step === 3) goTo(2, "back");
   };
 
-  const placeOrder = async () => {
-    if (submitting || items.length === 0) return;
-    if (!validateStep1()) {
-      goTo(1, "back");
-      return;
-    }
-    if (!validateStep2()) {
-      goTo(2, "back");
-      return;
-    }
-    setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 400));
-    const orderId = `PC-${Date.now().toString(36).toUpperCase()}`;
-    clearCart();
+  const shippingNormalized = normalizeShippingAddress({
+    fullName,
+    line1,
+    city,
+    region,
+    postal,
+    country,
+  });
+
+  /** Identity for Stripe session — recreate if cart or shipping changes. */
+  const paymentSessionKey = [
+    email.trim().toLowerCase(),
+    shippingNormalized.fullName,
+    shippingNormalized.line1,
+    shippingNormalized.city,
+    shippingNormalized.region,
+    shippingNormalized.postal,
+    shippingNormalized.country,
+    ...items.map((i) => `${i.productId}:${i.quantity}`),
+  ].join("|");
+
+  const handlePaid = (orderId: string, paidEmail: string) => {
+    // Keep bag until success confirms paid (webhook may lag)
     router.push(
-      `/success?order=${orderId}&email=${encodeURIComponent(email.trim())}`,
+      `/success?order=${encodeURIComponent(orderId)}&email=${encodeURIComponent(paidEmail)}`,
     );
   };
 
@@ -191,25 +219,7 @@ export function CheckoutView() {
         {step === 1 ? "Continue" : "Continue to payment"}
         <ArrowRight className="h-4 w-4" />
       </Button>
-    ) : (
-      <Button
-        type="button"
-        variant="default"
-        size="lg"
-        className="pressable h-12 w-full flex-1 text-[14px] sm:h-12 sm:min-w-[13rem] sm:flex-none"
-        disabled={submitting}
-        onClick={() => void placeOrder()}
-      >
-        {submitting ? (
-          "Starting payment…"
-        ) : (
-          <>
-            <Lock className="h-3.5 w-3.5" />
-            Pay {totalLabel}
-          </>
-        )}
-      </Button>
-    );
+    ) : null;
 
   return (
     <section className="px-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-20 sm:pt-6 lg:pb-24 lg:pt-8">
@@ -482,8 +492,37 @@ export function CheckoutView() {
               {step === 2 ? (
                 <div className="space-y-3.5 sm:space-y-4">
                   <p className="text-[13px] leading-snug text-muted-foreground">
-                    Where should we deliver?
+                    We deliver to the US, UK, Canada, and Germany.
                   </p>
+
+                  <label className="block space-y-1.5">
+                    <span className="text-[12px] font-medium text-foreground/80">
+                      Country / region
+                    </span>
+                    <select
+                      autoComplete="country"
+                      value={country}
+                      onChange={(e) =>
+                        onCountryChange(e.target.value as ShipCountry)
+                      }
+                      className={cn(
+                        selectClass,
+                        errors.country && "border-cta/60 ring-2 ring-cta/15",
+                      )}
+                      aria-invalid={Boolean(errors.country)}
+                    >
+                      {SHIP_COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.country ? (
+                      <span className="text-[12px] text-cta">
+                        {errors.country}
+                      </span>
+                    ) : null}
+                  </label>
 
                   <label className="block space-y-1.5">
                     <span className="text-[12px] font-medium text-foreground/80">
@@ -493,29 +532,51 @@ export function CheckoutView() {
                       autoComplete="name"
                       placeholder="Full name"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      onChange={(e) => {
+                        setFullName(e.target.value);
+                        if (errors.fullName)
+                          setErrors((x) => ({ ...x, fullName: "" }));
+                      }}
+                      aria-invalid={Boolean(errors.fullName)}
                       className={cn(
                         "h-11",
-                        errors.fullName && "border-cta/60",
+                        errors.fullName && "border-cta/60 ring-2 ring-cta/15",
                       )}
                     />
+                    {errors.fullName ? (
+                      <span className="text-[12px] text-cta">
+                        {errors.fullName}
+                      </span>
+                    ) : null}
                   </label>
                   <label className="block space-y-1.5">
                     <span className="text-[12px] font-medium text-foreground/80">
-                      Address
+                      Street address
                     </span>
                     <Input
                       autoComplete="address-line1"
-                      placeholder="Street address"
+                      placeholder="House number and street"
                       value={line1}
-                      onChange={(e) => setLine1(e.target.value)}
-                      className={cn("h-11", errors.line1 && "border-cta/60")}
+                      onChange={(e) => {
+                        setLine1(e.target.value);
+                        if (errors.line1)
+                          setErrors((x) => ({ ...x, line1: "" }));
+                      }}
+                      aria-invalid={Boolean(errors.line1)}
+                      className={cn(
+                        "h-11",
+                        errors.line1 && "border-cta/60 ring-2 ring-cta/15",
+                      )}
                     />
+                    {errors.line1 ? (
+                      <span className="text-[12px] text-cta">
+                        {errors.line1}
+                      </span>
+                    ) : null}
                   </label>
 
-                  {/* City + State + ZIP share one row on wider phones */}
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-6 sm:gap-3">
-                    <label className="col-span-2 block space-y-1.5 sm:col-span-3">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-6 sm:gap-3">
+                    <label className="block space-y-1.5 sm:col-span-3">
                       <span className="text-[12px] font-medium text-foreground/80">
                         City
                       </span>
@@ -523,45 +584,112 @@ export function CheckoutView() {
                         autoComplete="address-level2"
                         placeholder="City"
                         value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className={cn("h-11", errors.city && "border-cta/60")}
-                      />
-                    </label>
-                    <label className="block space-y-1.5 sm:col-span-1">
-                      <span className="text-[12px] font-medium text-foreground/80">
-                        State
-                      </span>
-                      <Input
-                        autoComplete="address-level1"
-                        placeholder="CA"
-                        value={region}
-                        onChange={(e) => setRegion(e.target.value)}
+                        onChange={(e) => {
+                          setCity(e.target.value);
+                          if (errors.city)
+                            setErrors((x) => ({ ...x, city: "" }));
+                        }}
+                        aria-invalid={Boolean(errors.city)}
                         className={cn(
                           "h-11",
-                          errors.region && "border-cta/60",
+                          errors.city && "border-cta/60 ring-2 ring-cta/15",
                         )}
                       />
+                      {errors.city ? (
+                        <span className="text-[12px] text-cta">
+                          {errors.city}
+                        </span>
+                      ) : null}
                     </label>
-                    <label className="block space-y-1.5 sm:col-span-2">
+
+                    <label className="block space-y-1.5 sm:col-span-3">
                       <span className="text-[12px] font-medium text-foreground/80">
-                        ZIP
+                        {countryMeta.regionLabel}
+                        {countryMeta.regionMode === "optional_text"
+                          ? " (optional)"
+                          : ""}
+                      </span>
+                      {countryMeta.regionMode === "select" ? (
+                        <select
+                          autoComplete="address-level1"
+                          value={region}
+                          onChange={(e) => {
+                            setRegion(e.target.value);
+                            if (errors.region)
+                              setErrors((x) => ({ ...x, region: "" }));
+                          }}
+                          aria-invalid={Boolean(errors.region)}
+                          className={cn(
+                            selectClass,
+                            errors.region &&
+                              "border-cta/60 ring-2 ring-cta/15",
+                          )}
+                        >
+                          <option value="">
+                            {countryMeta.regionPlaceholder}
+                          </option>
+                          {regionList.map((r) => (
+                            <option key={r.code} value={r.code}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          autoComplete="address-level1"
+                          placeholder={countryMeta.regionPlaceholder}
+                          value={region}
+                          onChange={(e) => {
+                            setRegion(e.target.value);
+                            if (errors.region)
+                              setErrors((x) => ({ ...x, region: "" }));
+                          }}
+                          aria-invalid={Boolean(errors.region)}
+                          className={cn(
+                            "h-11",
+                            errors.region &&
+                              "border-cta/60 ring-2 ring-cta/15",
+                          )}
+                        />
+                      )}
+                      {errors.region ? (
+                        <span className="text-[12px] text-cta">
+                          {errors.region}
+                        </span>
+                      ) : null}
+                    </label>
+
+                    <label className="block space-y-1.5 sm:col-span-6">
+                      <span className="text-[12px] font-medium text-foreground/80">
+                        {countryMeta.postalLabel}
                       </span>
                       <Input
                         autoComplete="postal-code"
-                        placeholder="94105"
+                        placeholder={countryMeta.postalPlaceholder}
                         value={postal}
-                        onChange={(e) => setPostal(e.target.value)}
+                        onChange={(e) => {
+                          setPostal(e.target.value);
+                          if (errors.postal)
+                            setErrors((x) => ({ ...x, postal: "" }));
+                        }}
+                        aria-invalid={Boolean(errors.postal)}
                         className={cn(
-                          "h-11",
-                          errors.postal && "border-cta/60",
+                          "h-11 sm:max-w-xs",
+                          errors.postal &&
+                            "border-cta/60 ring-2 ring-cta/15",
                         )}
                       />
+                      {errors.postal ? (
+                        <span className="text-[12px] text-cta">
+                          {errors.postal}
+                        </span>
+                      ) : null}
                     </label>
                   </div>
 
                   {Object.keys(errors).length > 0 ? (
-                    <p className="text-[12px] text-cta">
-                      Please fill in every shipping field.
+                    <p className="text-[12px] text-cta" role="alert">
+                      Fix the highlighted fields to continue.
                     </p>
                   ) : null}
                 </div>
@@ -570,92 +698,48 @@ export function CheckoutView() {
               {step === 3 ? (
                 <div className="space-y-4 sm:space-y-5">
                   <p className="text-[13px] leading-snug text-muted-foreground">
-                    Express pay or card — Stripe mock.
+                    Pay securely — prices confirmed by our servers.
                   </p>
 
-                  {/* Always 3-up — no vertical stack of wallets */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={prefillWallet}
-                      className="pressable flex h-11 items-center justify-center rounded-xl bg-black text-[12px] font-semibold text-white sm:h-12 sm:rounded-full sm:text-[13px]"
-                    >
-                      Pay
-                    </button>
-                    <button
-                      type="button"
-                      onClick={prefillWallet}
-                      className="pressable flex h-11 items-center justify-center gap-1 rounded-xl border border-border bg-[#f2f2f2] text-[12px] font-semibold sm:h-12 sm:gap-1.5 sm:rounded-full sm:text-[13px]"
-                    >
-                      <GoogleMark className="h-3.5 w-3.5" />
-                      Pay
-                    </button>
-                    <button
-                      type="button"
-                      onClick={prefillWallet}
-                      className="pressable flex h-11 items-center justify-center rounded-xl bg-[#00c0f2] text-[12px] font-semibold text-white sm:h-12 sm:rounded-full sm:text-[13px]"
-                    >
-                      Link
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <div
-                      className="absolute inset-0 flex items-center"
-                      aria-hidden
-                    >
-                      <div className="w-full border-t border-border/70" />
-                    </div>
-                    <p className="relative mx-auto w-fit bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      or card
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-dashed border-border bg-brand-mist/40 p-3 sm:p-4">
-                    <div className="mb-3 flex items-center gap-2.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand-deep ring-1 ring-border/60">
-                        <CreditCard className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-foreground">
-                          Payment Element
-                        </p>
-                        <p className="text-[11.5px] text-muted-foreground">
-                          Mock card fields
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <div className="h-11 rounded-full border border-border/80 bg-white px-4 text-[13px] leading-[2.75rem] text-muted-foreground/65">
-                        Card number
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="h-11 rounded-full border border-border/80 bg-white px-4 text-[13px] leading-[2.75rem] text-muted-foreground/65">
-                          MM / YY
-                        </div>
-                        <div className="h-11 rounded-full border border-border/80 bg-white px-4 text-[13px] leading-[2.75rem] text-muted-foreground/65">
-                          CVC
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* One-line recap — not two stacked blocks */}
                   <p className="rounded-xl bg-brand-soft/50 px-3 py-2.5 text-[12px] leading-snug text-muted-foreground">
                     <span className="font-semibold text-foreground">
                       {email || "—"}
                     </span>
                     <span className="mx-1.5 opacity-40">·</span>
                     <span className="line-clamp-1">
-                      {[fullName, city, region].filter(Boolean).join(", ") ||
-                        "—"}
+                      {[
+                        shippingNormalized.fullName,
+                        shippingNormalized.city,
+                        shippingNormalized.region,
+                        shippingNormalized.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "—"}
                     </span>
                   </p>
+
+                  <StripePaymentSection
+                    sessionKey={paymentSessionKey}
+                    contact={{
+                      email: email.trim(),
+                      fullName: shippingNormalized.fullName,
+                      line1: shippingNormalized.line1,
+                      city: shippingNormalized.city,
+                      region: shippingNormalized.region,
+                      postal: shippingNormalized.postal,
+                      country: shippingNormalized.country,
+                    }}
+                    lines={items.map((i) => ({
+                      productId: i.productId,
+                      quantity: i.quantity,
+                    }))}
+                    onPaid={handlePaid}
+                  />
                 </div>
               ) : null}
             </div>
 
-            {/* Desktop actions inside card (mobile uses sticky bar) */}
+            {/* Desktop actions (step 3 Pay is inside Stripe form) */}
             <div className="hidden items-center justify-between gap-3 border-t border-border/60 px-6 py-4 lg:flex lg:px-7">
               {step > 1 ? (
                 <Button type="button" variant="ghost" onClick={goBack}>
@@ -670,7 +754,7 @@ export function CheckoutView() {
                   </Link>
                 </Button>
               )}
-              {primaryCta}
+              {step < 3 ? primaryCta : null}
             </div>
           </div>
 
@@ -708,41 +792,57 @@ export function CheckoutView() {
               </ul>
               <CartSummary totals={totals} className="mt-5" showProgress />
               <p className="mt-4 text-center text-[11px] text-muted-foreground">
-                Guest checkout · Stripe mock · Easy returns
+                Guest checkout · Secured by Stripe · Easy returns
               </p>
             </div>
           </aside>
         </div>
       </Container>
 
-      {/* Mobile sticky CTA — primary action always one thumb-reach */}
-      <div className={styles.stickyBar}>
-        <div className="mx-auto flex max-w-[1120px] items-center gap-2">
-          {step > 1 ? (
+      {/* Mobile sticky CTA — steps 1–2 only (Pay lives in Stripe form) */}
+      {step < 3 ? (
+        <div className={styles.stickyBar}>
+          <div className="mx-auto flex max-w-[1120px] items-center gap-2">
+            {step > 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-12 shrink-0 rounded-full px-0"
+                onClick={goBack}
+                aria-label="Back"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                asChild
+                type="button"
+                variant="outline"
+                className="h-12 w-12 shrink-0 rounded-full px-0"
+              >
+                <Link href="/cart" aria-label="Back to bag">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
+            {primaryCta}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.stickyBar}>
+          <div className="mx-auto flex max-w-[1120px] items-center gap-2">
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-12 shrink-0 rounded-full px-0"
+              className="h-12 w-full"
               onClick={goBack}
-              aria-label="Back"
             >
               <ArrowLeft className="h-4 w-4" />
+              Back to shipping
             </Button>
-          ) : (
-            <Button
-              asChild
-              type="button"
-              variant="outline"
-              className="h-12 w-12 shrink-0 rounded-full px-0"
-            >
-              <Link href="/cart" aria-label="Back to bag">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-          )}
-          {primaryCta}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

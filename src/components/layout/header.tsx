@@ -28,10 +28,10 @@ import {
   Target,
   Thermometer,
   Truck,
-  User,
   X,
   type LucideIcon,
 } from "lucide-react";
+import { HeaderAccountButton } from "@/components/auth/header-account-button";
 import { Logo } from "@/components/layout/logo";
 import { SearchOverlay } from "@/components/layout/search-overlay";
 import { Button } from "@/components/ui/button";
@@ -288,16 +288,7 @@ export function Header() {
               </Link>
             </Button>
 
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="nav-icon nav-icon--user pressable h-9 w-9"
-            >
-              <Link href="/account" aria-label="Account">
-                <User className="nav-icon-svg h-[17px] w-[17px]" />
-              </Link>
-            </Button>
+            <HeaderAccountButton />
 
             <Button
               type="button"
@@ -428,12 +419,12 @@ export function Header() {
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5">
               <Button asChild variant="outline" size="sm" className="w-full">
                 <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  Sign in
+                  Sign in with Google
                 </Link>
               </Button>
               <Button asChild variant="default" size="sm" className="w-full">
-                <Link href="/category/all" onClick={() => setMobileOpen(false)}>
-                  Shop sale
+                <Link href="/register" onClick={() => setMobileOpen(false)}>
+                  Create account
                 </Link>
               </Button>
             </div>

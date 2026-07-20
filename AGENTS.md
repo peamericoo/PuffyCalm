@@ -247,40 +247,63 @@ src/
 
 ---
 
-### 4.3 Backend de dados (alinhado ao frontend)
+### 4.3 Backend (Python — canônico a partir de 2026-07)
+
+> **Decisão do owner:** API e workers vivem em **`/backend`** com **FastAPI**, não Drizzle dentro do Next.  
+> O Next.js continua como storefront + admin UI; o FE consome a API HTTP/WebSocket.  
+> Tag estável do mock frontend: **`v1.0-frontend-mock-complete`**.
 
 | Peça | Escolha | Notas |
 |------|---------|--------|
-| ORM preferido | **Drizzle ORM** + **drizzle-kit** | Leve, tipado, fit com VibeCoding; alternativa aceitável: Prisma |
-| DB | PostgreSQL Railway | Ver §7 |
-| Cache | Redis Railway | Sessão/cart opcional, rate limit |
-| Validação server | **Zod** (mesmos schemas do FE) | |
+| Runtime API | **Python 3.12** + **FastAPI** + Uvicorn | Pasta `backend/` |
+| Arquitetura | Clean Architecture / DDD leve | `domain` → `application` → `infrastructure` + `api` |
+| ORM | **SQLAlchemy 2.x (async)** + **Alembic** | Postgres |
+| DB | PostgreSQL (Compose local + Railway prod) | Ver §7 |
+| Cache / filas | **Redis** | Cache, rate limit, Celery broker/result, pub/sub real-time |
+| Tasks | **Celery** + Redis | E-mails, webhooks pesados, jobs |
+| Real-time admin | WebSockets (FastAPI) + Redis pub/sub | Vendas ao vivo (fase posterior) |
+| Auth admin | **JWT** + refresh + **RBAC** | Fase posterior |
+| Auth storefront | Auth.js (Google) + **guest checkout** | FE; guest nunca bloqueado |
+| Gateway local | **Nginx** (`docker/nginx`) | Rate limit, reverse proxy porta 8080 |
+| Validação FE | **Zod** nos contracts do storefront | Espelhar DTOs Pydantic do BE |
+| Dev stack | **Docker Compose** na raiz | `postgres`, `redis`, `api`, `worker`, `nginx` |
 
----
+```bash
+# Backend local
+cp .env.example .env
+docker compose up --build -d
+curl http://localhost:8080/health
+curl http://localhost:8080/ready
+# docs: http://localhost:8000/docs
+```
+
+Detalhes: `backend/README.md`.
 
 ### 4.4 Estratégia de build
 
-1. **Frontend mock completo primeiro** (UI real com fixtures Zod)  
-2. Depois fluxos reais (auth, carrinho, checkout, pedidos)  
+1. ~~Frontend mock completo~~ (tag `v1.0-frontend-mock-complete`)  
+2. **Backend fase a fase** (scaffold → domínio → catalog API → auth → orders → payments → real-time → admin UI → remover mocks)  
 3. Evitar hardcode extremo — mocks tipados, não strings soltas  
 4. Priorizar **MVP vendável** o mais rápido possível  
+5. **Nunca** migrar o FE inteiro e o BE inteiro no mesmo PR — etapas numeradas  
 
 ### 4.5 Timeline estimada (MVP)
 
 | Fase | Dias |
 |------|------|
-| Frontend mock | 5–9 |
-| Fluxos reais | 10–16 |
+| Frontend mock | 5–9 (feito) |
+| Backend + fluxos reais | 12–20 |
 | Ajustes | 4–7 |
 | **Total** | **25–35 dias** (ritmo realista) |
 
 ### 4.6 Prioridade atual
 
-1. Frontend mock completo (stack §4.2)  
-2. Fluxos reais (auth, carrinho, checkout, pedidos)  
-3. Cadastrar produtos  
-4. Começar TikTok  
-5. Buscar as primeiras vendas  
+1. ~~Frontend mock completo~~  
+2. **Backend scaffold + domínio + catalog API**  
+3. Auth admin + pedidos + Stripe  
+4. Admin dashboard (vendas ao vivo)  
+5. Remover mocks do FE e plugar API  
+6. Cadastrar produtos / TikTok / primeiras vendas  
 
 ---
 
@@ -559,11 +582,17 @@ DATABASE_URL=postgresql://postgres:eDqFAuuniiAlgUdpxEtRjeCOXfAhDcWB@thomas.proxy
 # Redis (local dev → public proxy)
 REDIS_URL=redis://default:SAJKvPerzfduuNNyHhYIUQnZIULKCaKs@tokaido.proxy.rlwy.net:18606
 
-# Auth.js (preencher quando criar)
-AUTH_SECRET=
-AUTH_GOOGLE_ID=
-AUTH_GOOGLE_SECRET=
-# AUTH_URL=
+# Auth.js + Google OAuth (storefront) — Web client "PuffyCalm Web" no GCP easypuff-502919
+# Secrets NÃO vão no git (push protection). Valores reais: .env.local / Railway web service.
+AUTH_SECRET= # openssl rand -base64 32 — set em .env.local e Railway
+AUTH_GOOGLE_ID= # Console → Auth Platform → Clients (Web)
+AUTH_GOOGLE_SECRET= # never commit; Railway + .env.local only
+AUTH_URL=https://web-production-ea635.up.railway.app
+AUTH_TRUST_HOST=true
+ADMIN_EMAIL=paletot.business@gmail.com
+# Redirect URIs no client Google:
+#   http://localhost:3000/api/auth/callback/google
+#   https://web-production-ea635.up.railway.app/api/auth/callback/google
 
 # Stripe (preencher quando criar)
 STRIPE_SECRET_KEY=
@@ -590,8 +619,8 @@ Quando o owner fornecer, **anexar neste AGENTS.md** na seção 11 (ou atualizar 
 
 - [ ] Stripe (publishable, secret, webhook)  
 - [ ] PayPal (client id/secret, webhook)  
-- [ ] Google OAuth (Auth.js) — client no GCP `easypuff-502919`  
-- [ ] `AUTH_SECRET`  
+- [x] Google OAuth (Auth.js) — client Web `PuffyCalm Web` no GCP `easypuff-502919`  
+- [x] `AUTH_SECRET` (local `.env.local` + Railway `web`)
 - [ ] Cloudflare (API token / zone EasyPuff.com)  
 - [ ] Provider de e-mail (vendas + rastreio)  
 - [ ] CJ Dropshipping / AliExpress (se API)  
