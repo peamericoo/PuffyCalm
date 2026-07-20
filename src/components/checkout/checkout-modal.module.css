@@ -1,0 +1,151 @@
+/* Checkout step carousel — calm horizontal stages */
+
+.shell {
+  min-height: min(100dvh, 100vh);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgb(126 184 212 / 0.28), transparent 55%),
+    rgb(26 35 50 / 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.modal {
+  position: relative;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 28.5rem;
+  max-height: min(92dvh, 44rem);
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.72);
+  background: rgb(255 255 255 / 0.97);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.9) inset,
+    0 28px 60px -24px rgb(26 35 50 / 0.42);
+}
+
+.progressTrack {
+  position: relative;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(212 226 236 / 0.85);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-deep), var(--brand));
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.viewport {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.slide {
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.15rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .slide {
+    padding: 1.15rem 1.35rem 0.65rem;
+  }
+}
+
+/* Soft reward confetti dots */
+.rewardStage {
+  position: relative;
+  overflow: hidden;
+}
+
+.rewardBurst {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  opacity: 0;
+  animation: spark-float 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes spark-float {
+  0% {
+    opacity: 0;
+    transform: translate(0, 8px) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1);
+  }
+}
+
+.rewardIcon {
+  animation: reward-pop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes reward-pop {
+  0% {
+    transform: scale(0.72) rotate(-8deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.stepDot {
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  background: rgb(92 107 122 / 0.28);
+  transition:
+    width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.3s ease;
+}
+
+.stepDotActive {
+  width: 1.35rem;
+  background: var(--brand-deep);
+}
+
+.stepDotDone {
+  background: var(--success);
+}
