@@ -113,9 +113,13 @@ export async function createCheckoutSession(input: {
 export async function getOrder(
   orderId: string,
   email: string,
+  options?: { sync?: boolean },
 ): Promise<OrderResult> {
   const url = new URL(`${getApiBaseUrl()}/api/v1/orders/${orderId}`);
   url.searchParams.set("email", email);
+  if (options?.sync) {
+    url.searchParams.set("sync", "true");
+  }
   const res = await fetch(url.toString(), {
     method: "GET",
     headers: { Accept: "application/json" },

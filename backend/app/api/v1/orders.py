@@ -9,7 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import db_session
 from app.api.v1.schemas.checkout import OrderItemOut, OrderOut
-from app.application.checkout.service import get_order_for_guest
+from app.application.checkout.service import (
+    get_order_for_guest,
+    reconcile_order_with_stripe,
+)
+from app.core.config import get_settings
 from app.infrastructure.db.models import Order
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -51,6 +55,15 @@ async def get_order(
         str | None,
         Query(description="Guest email used at checkout (required for privacy)"),
     ] = None,
+    sync: Annotated[
+        bool,
+        Query(
+            description=(
+                "When true, reconcile unpaid orders with Stripe Checkout Session "
+                "(webhook lag / missing secret fallback)."
+            ),
+        ),
+    ] = False,
 ) -> OrderOut:
     """
     Fetch order for success page / tracking.
@@ -69,4 +82,12 @@ async def get_order(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"message": "Order not found", "code": "not_found"},
         )
+    if sync and order.status in {"pending", "requires_payment"}:
+        order = await reconcile_order_with_stripe(
+            session,
+            order,
+            settings=get_settings(),
+        )
+        # Re-load items if still needed for response shape
+        order = await get_order_for_guest(session, order_id, email=email) or order
     return _order_out(order)

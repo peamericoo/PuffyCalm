@@ -13,11 +13,10 @@ import { cn } from "@/lib/utils";
 
 interface PaymentFormProps {
   orderId: string;
-  /** Receipt / success redirect only — already locked on the Checkout Session. */
+  /** Receipt display only — locked on the Checkout Session as customer_email. */
   email: string;
   totalCents: number;
   currency?: string;
-  returnUrl: string;
   onPaid: (orderId: string) => void;
   className?: string;
 }
@@ -40,16 +39,17 @@ function stripeErrorMessage(result: ConfirmResult | null, fallback: string): str
 /**
  * Stripe Custom Checkout form — confirm via checkout.confirm (session clientSecret).
  *
- * Email is set server-side as `customer_email` on Session.create. Do NOT pass
- * `email` to confirm() / updateEmail() or Stripe rejects with:
- * "You cannot update the email because a customer_email … is already set".
+ * Contract (do not break):
+ * - Email is set server-side as `customer_email` — never pass email to confirm().
+ * - `return_url` is set on Session.create — never pass returnUrl to confirm()
+ *   or Stripe rejects with "You cannot provide returnUrl to confirm()…".
+ * - Only pass redirect: "if_required" so card stays on-page; wallets/Link may redirect.
  */
 export function PaymentForm({
   orderId,
   email,
   totalCents,
   currency = "USD",
-  returnUrl,
   onPaid,
   className,
 }: PaymentFormProps) {
@@ -77,14 +77,13 @@ export function PaymentForm({
   const checkout = checkoutState.checkout;
 
   const runConfirm = async () => {
-    // Intentionally omit `email` — session already has customer_email.
+    // return_url + customer_email already on the Session — pass neither here.
     return checkout.confirm({
-      returnUrl,
       redirect: "if_required",
     });
   };
 
-  const handlePay = async () => {
+  const finishConfirm = async () => {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
@@ -95,6 +94,7 @@ export function PaymentForm({
         setSubmitting(false);
         return;
       }
+      // Card success without redirect. Link/wallets may navigate away first.
       onPaid(orderId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Payment failed");
@@ -111,21 +111,8 @@ export function PaymentForm({
 
       <div className="rounded-2xl border border-border/70 bg-white p-1 sm:p-2">
         <ExpressCheckoutElement
-          onConfirm={async () => {
-            setSubmitting(true);
-            setError(null);
-            try {
-              const result = await runConfirm();
-              if (result.type === "error") {
-                setError(stripeErrorMessage(result, "Payment failed"));
-                setSubmitting(false);
-                return;
-              }
-              onPaid(orderId);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Payment failed");
-              setSubmitting(false);
-            }
+          onConfirm={() => {
+            void finishConfirm();
           }}
         />
       </div>
@@ -135,7 +122,7 @@ export function PaymentForm({
           <div className="w-full border-t border-border/70" />
         </div>
         <p className="relative mx-auto w-fit bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          or card
+          or card / Link
         </p>
       </div>
 
@@ -165,7 +152,7 @@ export function PaymentForm({
         size="lg"
         className="pressable h-12 w-full"
         disabled={submitting}
-        onClick={() => void handlePay()}
+        onClick={() => void finishConfirm()}
       >
         {submitting ? (
           <>

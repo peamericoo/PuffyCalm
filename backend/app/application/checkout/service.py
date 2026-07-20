@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
+from urllib.parse import quote
 
 import stripe
 from sqlalchemy import select
@@ -229,9 +230,15 @@ async def create_checkout_session(
     session.add(order)
     await session.flush()
 
+    # Single source of truth for post-payment redirect (Custom Checkout).
+    # FE must NOT pass returnUrl again to checkout.confirm() or Stripe rejects:
+    # "You cannot provide returnUrl to confirm() when return_url was already provided".
+    # Include email so /success can poll guest orders after 3DS / Link redirect.
     return_url = (
         f"{settings.storefront_url.rstrip('/')}/success"
-        f"?order={order.id}&session_id={{CHECKOUT_SESSION_ID}}"
+        f"?order={order.id}"
+        f"&email={quote(email_norm, safe='')}"
+        f"&session_id={{CHECKOUT_SESSION_ID}}"
     )
 
     try:
@@ -353,6 +360,58 @@ async def mark_order_paid(
     await session.refresh(order)
     log.info("order_paid", order_id=order.id, public_code=order.public_code)
     return order
+
+
+async def reconcile_order_with_stripe(
+    session: AsyncSession,
+    order: Order,
+    *,
+    settings: Settings | None = None,
+) -> Order:
+    """
+    If webhook is delayed/missing, pull Checkout Session status from Stripe.
+
+    Idempotent: only promotes requires_payment → paid when payment_status is paid.
+    """
+    if order.status == "paid":
+        return order
+    if order.status not in {"pending", "requires_payment"}:
+        return order
+
+    settings = settings or get_settings()
+    if not settings.stripe_configured:
+        return order
+
+    sid = (order.stripe_checkout_session_id or "").strip()
+    if not sid:
+        return order
+
+    try:
+        from app.infrastructure.stripe.client import configure_stripe
+
+        configure_stripe(settings)
+        checkout_session = stripe.checkout.Session.retrieve(sid)
+    except stripe.StripeError as exc:
+        log.warning(
+            "stripe_reconcile_failed",
+            order_id=order.id,
+            stripe_session=sid,
+            error=str(exc),
+        )
+        return order
+
+    payment_status = getattr(checkout_session, "payment_status", None)
+    if payment_status != "paid":
+        return order
+
+    pi = getattr(checkout_session, "payment_intent", None)
+    pi_id = pi if isinstance(pi, str) else None
+    return await mark_order_paid(
+        session,
+        order,
+        payment_intent_id=pi_id,
+        session_id=sid,
+    )
 
 
 async def process_stripe_event(

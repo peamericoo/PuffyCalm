@@ -119,7 +119,9 @@ export function SuccessView() {
 
     const tick = async () => {
       try {
-        const data = await getOrder(orderId, email);
+        // Mid/late polls: ask API to reconcile with Stripe if webhook lag.
+        const useSync = polls >= 2;
+        const data = await getOrder(orderId, email, { sync: useSync });
         if (cancelled) return;
         setOrder(data);
         if (data.status === "paid") {
@@ -141,6 +143,26 @@ export function SuccessView() {
           window.setTimeout(() => {
             void tick();
           }, POLL_MS);
+        } else {
+          // Final attempt with forced Stripe sync
+          try {
+            const last = await getOrder(orderId, email, { sync: true });
+            if (cancelled) return;
+            setOrder(last);
+            if (last.status === "paid") {
+              setPhase("confirmed");
+              if (!cleared.current) {
+                cleared.current = true;
+                clearCart();
+              }
+              return;
+            }
+          } catch {
+            /* fall through */
+          }
+          setError(
+            "Payment is still processing. Refresh this page in a moment, or check your email for a receipt.",
+          );
         }
       } catch (e) {
         if (cancelled) return;

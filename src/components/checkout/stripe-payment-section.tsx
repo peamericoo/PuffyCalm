@@ -54,8 +54,11 @@ type LoadState =
   | { status: "ready"; session: CreateCheckoutSessionResult };
 
 /**
- * Creates server Checkout Session, then mounts Stripe custom Checkout Elements.
- * Keyed by sessionKey from parent so remount resets state without setState-in-effect.
+ * Creates server Checkout Session once per sessionKey, then mounts custom Elements.
+ *
+ * Remount policy: parent must pass a stable `sessionKey`. This inner component
+ * mounts once (key=sessionKey) and creates exactly one Session — do not re-run
+ * create on every parent re-render (that wiped Payment Element / Link mid-pay).
  */
 export function StripePaymentSection({
   contact,
@@ -84,19 +87,23 @@ function StripePaymentInner({
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const stripePromise = useMemo(() => getStripe(), []);
 
+  // Capture contact/lines at mount — key={sessionKey} is the only recreate path.
+  const contactAtMount = contact;
+  const linesAtMount = lines;
+
   useEffect(() => {
     let cancelled = false;
 
     void createCheckoutSession({
-      email: contact.email,
-      lines,
+      email: contactAtMount.email,
+      lines: linesAtMount,
       shipping: {
-        fullName: contact.fullName,
-        line1: contact.line1,
-        city: contact.city,
-        region: contact.region,
-        postal: contact.postal,
-        country: contact.country ?? "US",
+        fullName: contactAtMount.fullName,
+        line1: contactAtMount.line1,
+        city: contactAtMount.city,
+        region: contactAtMount.region,
+        postal: contactAtMount.postal,
+        country: contactAtMount.country ?? "US",
       },
     })
       .then((session) => {
@@ -116,7 +123,8 @@ function StripePaymentInner({
     return () => {
       cancelled = true;
     };
-  }, [contact, lines]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once; remount via key
+  }, []);
 
   if (state.status === "loading") {
     return (
@@ -151,10 +159,6 @@ function StripePaymentInner({
   }
 
   const { session } = state;
-  const returnUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/success?order=${encodeURIComponent(session.orderId)}&email=${encodeURIComponent(contact.email)}`
-      : `/success?order=${session.orderId}`;
 
   return (
     <div className={className}>
@@ -169,11 +173,10 @@ function StripePaymentInner({
       >
         <PaymentForm
           orderId={session.orderId}
-          email={contact.email}
+          email={contactAtMount.email}
           totalCents={session.totalCents}
           currency={session.currency}
-          returnUrl={returnUrl}
-          onPaid={(id) => onPaid(id, contact.email)}
+          onPaid={(id) => onPaid(id, contactAtMount.email)}
         />
       </CheckoutElementsProvider>
     </div>

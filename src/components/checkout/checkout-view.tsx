@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -198,6 +198,37 @@ export function CheckoutView() {
     shippingNormalized.country,
     ...items.map((i) => `${i.productId}:${i.quantity}`),
   ].join("|");
+
+  // Stable references for StripePaymentSection (remount only when sessionKey changes).
+  const paymentContact = useMemo(
+    () => ({
+      email: email.trim(),
+      fullName: shippingNormalized.fullName,
+      line1: shippingNormalized.line1,
+      city: shippingNormalized.city,
+      region: shippingNormalized.region,
+      postal: shippingNormalized.postal,
+      country: shippingNormalized.country,
+    }),
+    [
+      email,
+      shippingNormalized.fullName,
+      shippingNormalized.line1,
+      shippingNormalized.city,
+      shippingNormalized.region,
+      shippingNormalized.postal,
+      shippingNormalized.country,
+    ],
+  );
+
+  const paymentLines = useMemo(
+    () =>
+      items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity,
+      })),
+    [items],
+  );
 
   const handlePaid = (orderId: string, paidEmail: string) => {
     // Keep bag until success confirms paid (webhook may lag)
@@ -783,19 +814,8 @@ export function CheckoutView() {
 
                   <StripePaymentSection
                     sessionKey={paymentSessionKey}
-                    contact={{
-                      email: email.trim(),
-                      fullName: shippingNormalized.fullName,
-                      line1: shippingNormalized.line1,
-                      city: shippingNormalized.city,
-                      region: shippingNormalized.region,
-                      postal: shippingNormalized.postal,
-                      country: shippingNormalized.country,
-                    }}
-                    lines={items.map((i) => ({
-                      productId: i.productId,
-                      quantity: i.quantity,
-                    }))}
+                    contact={paymentContact}
+                    lines={paymentLines}
                     onPaid={handlePaid}
                   />
                 </div>
