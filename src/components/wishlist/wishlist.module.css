@@ -1,0 +1,61 @@
+.heroGlow {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgb(224 122 95 / 0.14), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 10%, rgb(126 184 212 / 0.22), transparent 50%);
+}
+
+.itemIn {
+  animation: wish-item-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wish-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mosaicFloat {
+  animation: mosaic-float 8s ease-in-out infinite;
+}
+
+@keyframes mosaic-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-6px) rotate(var(--rot, 0deg));
+  }
+}
+
+.heartBurst {
+  animation: heart-burst 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes heart-burst {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itemIn,
+  .mosaicFloat,
+  .heartBurst {
+    animation: none;
+  }
+}

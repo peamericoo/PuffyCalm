@@ -6,6 +6,7 @@ import { ProductLink } from "@/components/motion/product-link";
 import { ProductMediaTransition } from "@/components/motion/product-media-transition";
 import type { Product } from "@/types/product";
 import { ProductImageCarousel } from "@/components/product/product-image-carousel";
+import { WishlistHeart } from "@/components/wishlist/wishlist-heart";
 import { useCartStore } from "@/lib/cart/store";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -61,28 +62,32 @@ export function ProductCard({
         className,
       )}
     >
-      {/* Image alone clips — body stays overflow-visible so CTA never vanishes */}
-      <ProductLink
-        slug={product.slug}
+      {/* Image alone clips — heart sits as sibling (not inside the link). */}
+      <div
         className={cn(
-          "relative z-[1] block overflow-hidden rounded-t-[1.2rem]",
+          "relative z-[1] overflow-hidden rounded-t-[1.2rem]",
           compact ? "aspect-[1/1.02]" : "aspect-[4/5]",
         )}
       >
-        <ProductMediaTransition productId={product.id}>
-          <ProductImageCarousel
-            images={product.images}
-            imageUrl={product.imageUrl}
-            alt={product.imageAlt}
-            paused={active}
-            className="absolute inset-0 h-full w-full"
-            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-            showDots={!compact}
-          />
-        </ProductMediaTransition>
+        <ProductLink
+          slug={product.slug}
+          className="absolute inset-0 block"
+        >
+          <ProductMediaTransition productId={product.id}>
+            <ProductImageCarousel
+              images={product.images}
+              imageUrl={product.imageUrl}
+              alt={product.imageAlt}
+              paused={active}
+              className="absolute inset-0 h-full w-full"
+              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              showDots={!compact}
+            />
+          </ProductMediaTransition>
+        </ProductLink>
 
         {off ? (
-          <span className="absolute left-2 top-2 z-[3] flex flex-col items-start gap-0.5 sm:left-2.5 sm:top-2.5">
+          <span className="pointer-events-none absolute left-2 top-2 z-[3] flex flex-col items-start gap-0.5 sm:left-2.5 sm:top-2.5">
             <span className="rounded-full bg-brand-deep px-2.5 py-1 text-[12px] font-bold tracking-wide text-white shadow-sm sm:px-3 sm:text-[13px]">
               −{off}%
             </span>
@@ -93,7 +98,11 @@ export function ProductCard({
             ) : null}
           </span>
         ) : null}
-      </ProductLink>
+
+        <span className="absolute right-2 top-2 z-[4] sm:right-2.5 sm:top-2.5">
+          <WishlistHeart product={product} size="sm" />
+        </span>
+      </div>
 
       <div
         className={cn(

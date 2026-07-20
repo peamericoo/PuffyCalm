@@ -5,6 +5,10 @@ import { useState } from "react";
 import { Heart, Minus, Plus, ShoppingBag, Zap } from "lucide-react";
 import type { Product } from "@/types/product";
 import { useCartStore } from "@/lib/cart/store";
+import {
+  useIsWishlisted,
+  useWishlistStore,
+} from "@/lib/wishlist/store";
 import { formatMoney } from "@/lib/format";
 import iconStyles from "./product-icons.module.css";
 import { cn } from "@/lib/utils";
@@ -22,8 +26,9 @@ export function ProductBuyBox({ product, className }: ProductBuyBoxProps) {
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
   const addItemQuiet = useCartStore((s) => s.addItemQuiet);
+  const wish = useIsWishlisted(product.id);
+  const toggleWish = useWishlistStore((s) => s.toggle);
   const [qty, setQty] = useState(1);
-  const [wish, setWish] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const total = product.price * qty;
   const inStock = product.inStock;
@@ -114,8 +119,8 @@ export function ProductBuyBox({ product, className }: ProductBuyBoxProps) {
         {/* Wishlist */}
         <button
           type="button"
-          onClick={() => setWish((w) => !w)}
-          aria-label={wish ? "Remove from wishlist" : "Save to wishlist"}
+          onClick={() => toggleWish(product)}
+          aria-label={wish ? "Remove from calm list" : "Save to calm list"}
           aria-pressed={wish}
           className={cn(
             iconStyles.heart,

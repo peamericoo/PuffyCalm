@@ -36,6 +36,7 @@ import { Logo } from "@/components/layout/logo";
 import { SearchOverlay } from "@/components/layout/search-overlay";
 import { Button } from "@/components/ui/button";
 import { useCartItemCount, useCartStore } from "@/lib/cart/store";
+import { useWishlistCount } from "@/lib/wishlist/store";
 import { mainNav, type NavChild } from "@/lib/mock/site";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +74,7 @@ export function Header() {
     null,
   );
   const cartCount = useCartItemCount();
+  const wishCount = useWishlistCount();
   const openCart = useCartStore((s) => s.openCart);
 
   useEffect(() => {
@@ -267,10 +269,22 @@ export function Header() {
               asChild
               variant="ghost"
               size="icon"
-              className="nav-icon nav-icon--heart pressable hidden h-9 w-9 sm:inline-flex"
+              className="nav-icon nav-icon--heart pressable relative hidden h-9 w-9 sm:inline-flex"
             >
-              <Link href="/wishlist" aria-label="Wishlist">
+              <Link
+                href="/wishlist"
+                aria-label={
+                  wishCount > 0
+                    ? `Calm list, ${wishCount} saved`
+                    : "Calm list"
+                }
+              >
                 <Heart className="nav-icon-svg h-[17px] w-[17px]" />
+                {wishCount > 0 ? (
+                  <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-cta px-1 text-[9px] font-semibold text-white">
+                    {wishCount > 9 ? "9+" : wishCount}
+                  </span>
+                ) : null}
               </Link>
             </Button>
 
