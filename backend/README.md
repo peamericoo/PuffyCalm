@@ -153,6 +153,7 @@ OpenAPI: http://localhost:8000/docs
 | Method | Path | Notes |
 |--------|------|--------|
 | POST | `/api/v1/auth/login` | body `{email,password}` → cookies + user |
+| POST | `/api/v1/auth/google-exchange` | **Phase E1** body `{idToken}` → cookies if email ∈ `ADMIN_EMAILS` / `STAFF_EMAILS` |
 | POST | `/api/v1/auth/refresh` | needs refresh cookie |
 | POST | `/api/v1/auth/logout` | revoke refresh jti in Redis, clear cookies |
 | GET | `/api/v1/auth/me` | cookie or Bearer |
@@ -161,8 +162,18 @@ OpenAPI: http://localhost:8000/docs
 
 Roles: `admin`, `staff`. Default seed (change in prod):
 
-- `admin@puffycalm.com` / `changeme-admin-dev`
+- `admin@puffycalm.com` / `changeme-admin-dev` (or `ADMIN_EMAIL` / `ADMIN_EMAILS`)
 - `staff@puffycalm.com` / `changeme-staff-dev`
+
+### Phase E env (API)
+
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_EMAILS` | Comma-separated Google emails → role `admin` (fallback: `ADMIN_EMAIL`) |
+| `STAFF_EMAILS` | Comma-separated Google emails → role `staff` |
+| `GOOGLE_CLIENT_ID` | OAuth Web client ID (audience); same as web `AUTH_GOOGLE_ID` |
+| `COOKIE_SAMESITE` | Use `none` when storefront host ≠ API host (Railway) |
+| `COOKIE_SECURE` | Required `true` when `SameSite=None` |
 
 ### Cookie login curl
 

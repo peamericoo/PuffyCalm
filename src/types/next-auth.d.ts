@@ -8,6 +8,8 @@ declare module "next-auth" {
       id: string;
       role: AppRole;
     } & DefaultSession["user"];
+    /** Present for admin/staff only — used once to bridge → FastAPI cookies (Phase E). */
+    googleIdToken?: string;
   }
 
   interface User {
@@ -19,5 +21,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
     role?: AppRole;
+    /** Google OpenID ID token from last OAuth; short-lived. */
+    googleIdToken?: string;
   }
 }

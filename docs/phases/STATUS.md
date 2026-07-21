@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase D concluída) |
-| **HEAD / Fase D** | `6efe45f` (+ stamp `2c07ebe` on `main`) |
+| **Última atualização** | 2026-07-21 (Fase E concluída) |
+| **HEAD / Fase E** | *(preencher no commit — ver git log)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **E** (admin auth bridge; pode rodar em paralelo com polish) |
+| **Próxima fase** | **F** (admin orders API) |
 
 ## Fases
 
@@ -22,7 +22,7 @@
 | B | Catalog FE → API | **done** | `66ae6d9` | `docs/phases/PHASE_B_COMPLETE.md` |
 | C | Reviews + Search → API | **done** | `ec2012e` | `docs/phases/PHASE_C_COMPLETE.md` |
 | D | Money integrity cart | **done** | `6efe45f` | `docs/phases/PHASE_D_COMPLETE.md` |
-| E | Admin auth bridge | pending | — | — |
+| E | Admin auth bridge | **done** | *(este commit)* | `docs/phases/PHASE_E_COMPLETE.md` |
 | F | Admin orders API | pending | — | — |
 | G | Admin orders UI | pending | — | — |
 | H | Admin products API+UI | pending | — | — |
@@ -38,17 +38,15 @@
 ## Estado do sistema (resumo)
 
 - **Prod healthy:** web + api Railway Online; `/health` ok; `/ready` postgres+redis true.
-- **Env prod assinado (Fase A + D):** `STRIPE_*`, `STOREFRONT_URL`, `NEXT_PUBLIC_API_URL`, shipping **7500/699** no api.
-- **Contratos congelados:** Stripe Custom sem `returnUrl` no FE; lines `productId`+qty; preço no BE; guest checkout sagrado — `docs/ops/CONTRACTS.md`.
-- **Shipping (Fase D):** FE **75 / 6.99** + BE prod **7500 / 699** ¢; copy UI “$75” coerente. Step pagamento usa totais server.
-- **SKU smoke `prod_009`:** sozinho → **$7.49** ($0.50 + $6.99 flat). Não é bug; documentado. Unlist na Fase P.
-- **BE:** catalog/search/reviews read real; checkout Stripe real; admin JWT probes only.
-- **FE (pós-D):** catalog+reviews+search API; cart money alinhado; checkout+success real.
-- **Admin UI:** shell only (allowlist email FE).
+- **Env prod:** Stripe + shipping 7500/699; **Fase E:** owner deve setar `ADMIN_EMAILS`, `GOOGLE_CLIENT_ID`, `COOKIE_SAMESITE=none` no **api**.
+- **Contratos congelados:** Stripe Custom; guest checkout; `docs/ops/CONTRACTS.md`.
+- **BE:** catalog/search/reviews real; checkout real; **admin Google bridge + JWT cookies** (`POST /auth/google-exchange`, `/admin/ping`).
+- **FE:** catalog+reviews+search API; cart money; checkout real; **/admin** com bridge que prova ping.
+- **Admin UI:** shell + backend session proof only (sem CRUD pedidos/produtos).
 - **Não recriar:** Stripe Custom checkout; guest checkout.
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase em **Próxima fase** (= **E**).
-2. Ler `PHASE_D_COMPLETE.md` + `docs/ops/CONTRACTS.md` + `docs/ops/ENV_CHECKLIST.md`.
-3. Executar **só** a Fase E; ao fim criar `PHASE_E_COMPLETE.md` e atualizar esta tabela.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **F**.
+2. Ler `PHASE_E_COMPLETE.md` + `docs/ops/CONTRACTS.md` + `docs/ops/ENV_CHECKLIST.md`.
+3. Executar **só** a Fase F; ao fim criar `PHASE_F_COMPLETE.md` e atualizar esta tabela.

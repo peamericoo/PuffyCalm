@@ -14,6 +14,19 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
 
 
+class GoogleExchangeRequest(BaseModel):
+    """Browser admin: Google OpenID ID token from Auth.js after OAuth."""
+
+    id_token: str = Field(
+        min_length=20,
+        max_length=8192,
+        validation_alias="idToken",
+        serialization_alias="idToken",
+    )
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class UserOut(CamelModel):
     id: str
     email: EmailStr

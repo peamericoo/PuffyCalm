@@ -20,33 +20,30 @@ Projeto: PuffyCalm / PuffyEasy (repo peamericoo/PuffyCalm)
 Workdir Windows: C:\Users\pedro.torres\Projects\PuffyCalm
 
 Leia docs/ECOMMERCE_MASTER_PLAN.md + docs/CONTINUE.md + docs/phases/STATUS.md + AGENTS.md §4.
-Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + PHASE_D_COMPLETE.md.
+Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + PHASE_E_COMPLETE.md.
 NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (2026-07-21, pós Fase D):
-- Fase A DONE — contratos + checklist env + política prod_009 → docs/ops/*
-- Fase B DONE — catalog/category/PDP/home rails → FastAPI
-- Fase C DONE — reviews paginadas + header search → FastAPI
-  (NEXT_PUBLIC_USE_API_CATALOG default ON para catalog+reviews+search)
-- Fase D DONE — shipping FE 75/6.99 + BE prod 7500/699; payment summary = server totals
-  (prod_009 sozinho cobra ~$7.49 — documentado; não é bug)
+ESTADO ATUAL (2026-07-21, pós Fase E):
+- Fase A–D DONE — contratos, catalog/reviews/search FE→API, money integrity shipping
+- Fase E DONE — E1 Google→JWT cookies; POST /auth/google-exchange; ADMIN_EMAILS no api
+  (FE /admin bridge prova GET /admin/ping com credentials:include)
 - Prod Railway SUCCESS: web https://web-production-ea635.up.railway.app
   api https://api-production-4f01.up.railway.app (health+ready OK)
-- BE: FastAPI catalog/reviews/search REAL; admin JWT+RBAC probes REAL;
+- BE: catalog/reviews/search REAL; admin JWT+RBAC + Google bridge REAL;
   checkout Stripe Custom + webhook + order GET REAL
-- FE: catalog + reviews + search REAL; cart/wishlist Zustand;
-  checkout payment + success REAL; cart money aligned
-- Admin UI: shell /admin (Auth.js email allowlist FE) — ops API/UI ainda não
-- Guest checkout sagrado; admin alvo: paletot.business@gmail.com no BE (Fase E)
+- FE: catalog + reviews + search REAL; cart money; checkout real; admin bridge REAL
+- Admin ops (orders CRUD) ainda não — Fase F+
+- Guest checkout sagrado
+- Owner: setar no api Railway ADMIN_EMAILS + GOOGLE_CLIENT_ID + COOKIE_SAMESITE=none
 - Rollback storefront data: NEXT_PUBLIC_USE_API_CATALOG=0 (rebuild web)
 
 ROADMAP (master plan A–P):
-  A ✅ → B catalog FE→API ✅ → C reviews+search ✅ → D money integrity ✅
-  E admin auth bridge → F admin orders API → G admin orders UI
+  A ✅ → B ✅ → C ✅ → D ✅ → E admin auth ✅
+  F admin orders API → G admin orders UI
   H products admin → I media → J CMS-lite → K account orders → L inventory
   M remove mocks → N legal pages → O observability → P go-live
 
-Próxima ação: execute Fase E (admin auth bridge). Uma fase por vez.
+Próxima ação: execute Fase F (admin orders API). Uma fase por vez.
 
 Stripe contract (não quebrar) — ver docs/ops/CONTRACTS.md:
 - Confirm SEM returnUrl no FE (return_url só no Session.create BE)

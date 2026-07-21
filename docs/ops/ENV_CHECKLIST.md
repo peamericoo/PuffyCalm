@@ -23,7 +23,12 @@ API: `https://api-production-4f01.up.railway.app`
 | `SECRET_KEY` | **Yes** | JWT signing | **SET** |
 | `CORS_ORIGINS` | **Yes** | Browser origins (web URL) | **SET** |
 | `APP_ENV` | Yes | `production` vs dev cookies | **SET** |
-| `ADMIN_EMAIL` | Yes | Seed / future admin bootstrap | **SET** |
+| `ADMIN_EMAIL` | Yes | Seed primary + fallback allowlist | **SET** |
+| `ADMIN_EMAILS` | **Yes (Fase E)** | Comma-separated Google emails → BE role `admin` | set on deploy (see below) |
+| `STAFF_EMAILS` | Optional | Comma-separated Google emails → role `staff` | optional |
+| `GOOGLE_CLIENT_ID` | **Yes (Fase E)** | OAuth Web client ID (ID token audience); same as web `AUTH_GOOGLE_ID` | set on deploy |
+| `COOKIE_SAMESITE` | **Yes (prod cross-origin)** | `none` when web host ≠ api host (Railway) | set `none` in prod |
+| `COOKIE_SECURE` | With SameSite=None | Must be true (or leave auto from `APP_ENV=production`) | auto true in prod |
 | `FREE_SHIPPING_THRESHOLD_CENTS` | Ops | Shipping math | **SET = 7500** (Fase D; $75 free ship) |
 | `FLAT_SHIPPING_CENTS` | Ops | Shipping math | **SET = 699** (Fase D; $6.99 flat) |
 | `CELERY_BROKER_URL` | Optional MVP | Worker | SET |
@@ -35,6 +40,8 @@ API: `https://api-production-4f01.up.railway.app`
 - Publishable Stripe key does **not** belong on `api`.
 - Webhook URL (Stripe Dashboard / CLI):  
   `https://api-production-4f01.up.railway.app/api/v1/webhooks/stripe`
+- **Fase E:** `ADMIN_EMAILS` is the real admin barrier (not FE `ADMIN_EMAIL`).  
+  `GOOGLE_CLIENT_ID` is public client ID (not a secret), but keep env-only.
 
 ---
 
@@ -59,7 +66,8 @@ API: `https://api-production-4f01.up.railway.app`
 **Rules:**
 
 - `NEXT_PUBLIC_*` is visible in the browser — never put server secrets there.
-- FE admin email allowlist is **UX only**; real admin auth = Fase E (BE JWT).
+- FE admin email allowlist is **UX only**; real admin auth = **Fase E** BE JWT  
+  (`POST /auth/google-exchange` + cookies → `GET /admin/ping`).
 
 ---
 
@@ -87,6 +95,8 @@ Local checklist (developer signs off, no values in git):
 - [ ] Catalog/reviews/search API on by default; optional `NEXT_PUBLIC_USE_API_CATALOG=0` for mock rollback
 - [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (test) in `.env.local`
 - [ ] Auth Google redirect URIs include `http://localhost:3000/api/auth/callback/google`
+- [ ] API: `ADMIN_EMAILS` + `GOOGLE_CLIENT_ID` (same client id as `AUTH_GOOGLE_ID`)
+- [ ] Local cookies: `COOKIE_SAMESITE=lax` OK (localhost same-site)
 
 ---
 

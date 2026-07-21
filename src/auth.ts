@@ -56,6 +56,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.picture =
           (profile as { picture?: string }).picture ?? token.picture;
       }
+      // Phase E1: keep Google ID token briefly so /admin can exchange → BE cookies.
+      // ID tokens expire (~1h); BE refresh cookies cover longer admin sessions.
+      if (account?.provider === "google" && account.id_token) {
+        token.googleIdToken = account.id_token;
+      }
       if (user?.id) token.id = user.id;
       token.role = roleForEmail(
         (token.email as string | undefined) ?? user?.email,
@@ -73,6 +78,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (token.email) session.user.email = token.email as string;
         if (token.name) session.user.name = token.name as string;
         if (token.picture) session.user.image = token.picture as string;
+      }
+      // Only expose ID token to admin/staff clients (bridge UX). Never for customers.
+      if (token.role === "admin" || token.role === "staff") {
+        session.googleIdToken =
+          typeof token.googleIdToken === "string"
+            ? token.googleIdToken
+            : undefined;
       }
       return session;
     },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { AdminBackendBridge } from "@/components/admin/admin-backend-bridge";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Container } from "@/components/shared/container";
@@ -13,8 +14,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Minimal admin entry — Google session with role admin/staff.
- * Full ops UI (orders/products live) is still roadmap phase 8.
+ * Admin entry — Auth.js Google (UX allowlist) + Phase E backend JWT bridge.
+ * Orders/products CRUD ships in later phases; this page proves /admin/ping.
  */
 export default async function AdminPage() {
   const session = await auth();
@@ -52,7 +53,8 @@ export default async function AdminPage() {
               callbackUrl="/admin"
             />
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              Only accounts with admin/staff role can open this area.
+              FE allowlist is UX only. API requires the same email in{" "}
+              <code className="text-[11px]">ADMIN_EMAILS</code> after bridge.
             </p>
           </div>
         </Container>
@@ -70,15 +72,20 @@ export default async function AdminPage() {
           Welcome, {session.user.name ?? "operator"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          You’re signed in as{" "}
+          You&apos;re signed in as{" "}
           <span className="font-medium text-foreground">
             {session.user.email}
           </span>
-          . Full order desk / live sales UI ships in the next admin phase —
-          API + JWT admin already exist on the backend.
+          . Backend authorization is independent of this page shell — the
+          bridge below exchanges Google → FastAPI cookies.
         </p>
 
-        <div className="mt-8 space-y-3 rounded-[1.35rem] border border-border/70 bg-white p-6 shadow-sm">
+        <AdminBackendBridge
+          className="mt-8"
+          googleIdToken={session.googleIdToken}
+        />
+
+        <div className="mt-6 space-y-3 rounded-[1.35rem] border border-border/70 bg-white p-6 shadow-sm">
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Quick links
           </p>
@@ -95,8 +102,8 @@ export default async function AdminPage() {
             </li>
             <li>
               <span className="text-muted-foreground">
-                Orders API:{" "}
-                <code className="text-xs">GET /api/v1/admin/*</code> (FastAPI)
+                Next: admin orders API (Fase F) —{" "}
+                <code className="text-xs">GET /api/v1/admin/orders</code>
               </span>
             </li>
           </ul>

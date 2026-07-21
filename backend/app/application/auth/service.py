@@ -141,14 +141,123 @@ async def logout_refresh(refresh_token: str | None, *, settings: Settings | None
         log.info("logout_refresh_decode_failed")
 
 
+def _unusable_password_hash() -> str:
+    """Random hash so Google-only users cannot password-login by guessing."""
+    return hash_password(f"google-only:{uuid.uuid4().hex}:{uuid.uuid4().hex}")
+
+
+async def get_or_create_google_admin_user(
+    session: AsyncSession,
+    *,
+    email: str,
+    full_name: str,
+    role: str,
+    settings: Settings | None = None,
+) -> User:
+    """
+    Upsert an admin/staff user after a verified Google identity.
+
+    Existing password-seeded rows keep their password_hash; role is synced
+    to the allowlist result. New rows get an unusable password hash.
+    """
+    settings = settings or get_settings()
+    email_n = email.strip().lower()
+    if role not in {UserRole.admin.value, UserRole.staff.value}:
+        raise AuthError("invalid_role", "Invalid admin role")
+
+    user = await get_user_by_email(session, email_n)
+    if user is not None:
+        changed = False
+        if user.role != role:
+            user.role = role
+            changed = True
+        if not user.is_active:
+            user.is_active = True
+            changed = True
+        if full_name and full_name != user.full_name:
+            user.full_name = full_name
+            changed = True
+        if changed:
+            await session.commit()
+            await session.refresh(user)
+        return user
+
+    # Prefer stable id for primary admin email (seed-compatible)
+    fixed_id = "user_admin" if role == UserRole.admin.value else None
+    if fixed_id and await session.get(User, fixed_id) is not None:
+        fixed_id = None
+
+    user = User(
+        id=fixed_id or f"user_{uuid.uuid4().hex[:12]}",
+        email=email_n,
+        password_hash=_unusable_password_hash(),
+        full_name=full_name or email_n.split("@")[0],
+        role=role,
+        is_active=True,
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    log.info("google_admin_user_created", email=email_n, role=role, user_id=user.id)
+    return user
+
+
+async def exchange_google_id_token(
+    session: AsyncSession,
+    id_token: str,
+    *,
+    settings: Settings | None = None,
+    verify_fn=None,
+) -> tuple[User, TokenPair]:
+    """
+    Verify Google ID token → allowlist role → issue JWT cookie pair.
+
+    ``verify_fn`` is injectable for tests (async (token, settings=) -> claims).
+    """
+    settings = settings or get_settings()
+
+    if verify_fn is None:
+        from app.application.auth.google import verify_google_id_token
+
+        verify_fn = verify_google_id_token
+
+    claims = await verify_fn(id_token, settings=settings)
+    email = str(claims.get("email") or "").strip().lower()
+    role = settings.role_for_google_email(email)
+    if role is None:
+        log.info("google_exchange_not_allowlisted", email=email)
+        raise AuthError(
+            "not_admin",
+            "This Google account is not authorized for admin access",
+        )
+
+    name = str(claims.get("name") or claims.get("given_name") or "").strip()
+    user = await get_or_create_google_admin_user(
+        session,
+        email=email,
+        full_name=name,
+        role=role,
+        settings=settings,
+    )
+    if not user.is_active:
+        raise AuthError("inactive", "User account is inactive")
+
+    pair = await issue_tokens(user, settings=settings)
+    log.info("google_exchange_ok", email=email, role=role, user_id=user.id)
+    return user, pair
+
+
 async def seed_admin_users(session: AsyncSession, *, settings: Settings | None = None) -> dict[str, str]:
     """Idempotent bootstrap of admin + staff accounts from settings."""
     settings = settings or get_settings()
     created: dict[str, str] = {}
 
+    # Seed primary admin from ADMIN_EMAIL (first of ADMIN_EMAILS if set for password seed)
+    primary_admin = next(iter(settings.admin_email_set), settings.admin_email)
+
     specs = [
         (
-            settings.admin_email,
+            primary_admin,
             settings.admin_password,
             settings.admin_full_name,
             UserRole.admin.value,

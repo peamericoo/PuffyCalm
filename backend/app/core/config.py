@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"  # lax | strict | none
     cookie_domain: str | None = None  # None = host-only (best for localhost)
 
-    # Bootstrap admin (seeded if missing). Primary owner uses Google OAuth on FE.
+    # Bootstrap admin (seeded if missing). Password login remains for scripts/dev.
     admin_email: str = "paletot.business@gmail.com"
     admin_password: str = "changeme-admin-dev"
     admin_full_name: str = "PuffyCalm Admin"
@@ -56,6 +56,15 @@ class Settings(BaseSettings):
     staff_email: str = "staff@puffycalm.com"
     staff_password: str = "changeme-staff-dev"
     staff_full_name: str = "PuffyCalm Staff"
+
+    # --- Admin Google bridge (Phase E / E1) ---
+    # Comma-separated allowlists for POST /auth/google-exchange → JWT cookies.
+    # If ADMIN_EMAILS is empty, falls back to ADMIN_EMAIL (single).
+    admin_emails: str = ""
+    # Extra staff emails for Google bridge (optional). Seed STAFF_EMAIL also allowed.
+    staff_emails: str = ""
+    # Google OAuth Web client ID (audience for ID token). Same value as AUTH_GOOGLE_ID on web.
+    google_client_id: str = ""
 
     # --- Stripe (Phase 6) — secret never leaves the API process ---
     stripe_secret_key: str = ""
@@ -93,6 +102,42 @@ class Settings(BaseSettings):
         if self.cookie_secure is not None:
             return self.cookie_secure
         return not self.is_development
+
+    @staticmethod
+    def _split_emails(raw: str) -> frozenset[str]:
+        return frozenset(
+            e.strip().lower() for e in (raw or "").split(",") if e.strip()
+        )
+
+    @property
+    def admin_email_set(self) -> frozenset[str]:
+        """Emails allowed as role=admin via Google bridge (and seed primary)."""
+        parsed = self._split_emails(self.admin_emails)
+        if parsed:
+            return parsed
+        single = (self.admin_email or "").strip().lower()
+        return frozenset({single}) if single else frozenset()
+
+    @property
+    def staff_email_set(self) -> frozenset[str]:
+        """Emails allowed as role=staff via Google bridge (excludes admin set)."""
+        parsed = set(self._split_emails(self.staff_emails))
+        seed = (self.staff_email or "").strip().lower()
+        if seed:
+            parsed.add(seed)
+        # Never treat an admin email as staff-only
+        return frozenset(parsed - set(self.admin_email_set))
+
+    def role_for_google_email(self, email: str) -> str | None:
+        """Return admin|staff if email is allowlisted; else None (not authorized)."""
+        e = (email or "").strip().lower()
+        if not e:
+            return None
+        if e in self.admin_email_set:
+            return "admin"
+        if e in self.staff_email_set:
+            return "staff"
+        return None
 
     def alembic_database_url(self) -> str:
         """Alembic prefers a sync driver; map asyncpg → psycopg (v3) if needed."""
