@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import type { CartLineItem } from "@/types/cart";
 import { useCartStore } from "@/lib/cart/store";
 import { MAX_LINE_QTY } from "@/lib/cart/constants";
@@ -27,12 +27,24 @@ export function CartLineRow({
   const removeItem = useCartStore((s) => s.removeItem);
   const lineTotal = item.price * item.quantity;
   const isDrawer = density === "drawer";
+  const onSale = Boolean(
+    item.compareAtPrice && item.compareAtPrice > item.price,
+  );
+  const unitSave =
+    onSale && item.compareAtPrice
+      ? item.compareAtPrice - item.price
+      : 0;
+  const lineSave = unitSave * item.quantity;
+  const offPct =
+    onSale && item.compareAtPrice
+      ? Math.round(((item.compareAtPrice - item.price) / item.compareAtPrice) * 100)
+      : 0;
 
   return (
     <article
       className={cn(
         "flex gap-3",
-        isDrawer ? "py-3.5" : "gap-4 py-5 sm:gap-5",
+        isDrawer ? "p-2.5 sm:px-0 sm:py-3.5 md:p-0 md:py-3.5" : "gap-4 py-5 sm:gap-5",
         className,
       )}
     >
@@ -40,8 +52,9 @@ export function CartLineRow({
         href={`/product/${item.slug}`}
         onClick={onNavigate}
         className={cn(
-          "relative shrink-0 overflow-hidden rounded-xl bg-brand-soft ring-1 ring-border/60",
-          isDrawer ? "h-[4.5rem] w-[4.5rem]" : "h-24 w-24 sm:h-28 sm:w-28",
+          "relative shrink-0 overflow-hidden rounded-xl bg-brand-soft ring-1 ring-border/50",
+          "transition-transform duration-200 active:scale-[0.98]",
+          isDrawer ? "h-[4.25rem] w-[4.25rem]" : "h-24 w-24 sm:h-28 sm:w-28",
         )}
       >
         <Image
@@ -49,8 +62,19 @@ export function CartLineRow({
           alt={item.imageAlt}
           fill
           className="object-cover"
-          sizes={isDrawer ? "72px" : "112px"}
+          sizes={isDrawer ? "68px" : "112px"}
+          quality={72}
         />
+        {onSale && offPct > 0 ? (
+          <span
+            className={cn(
+              "absolute left-1 top-1 rounded-md bg-cta px-1 py-px",
+              "text-[9px] font-bold tracking-wide text-white shadow-sm",
+            )}
+          >
+            −{offPct}%
+          </span>
+        ) : null}
       </Link>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -66,43 +90,69 @@ export function CartLineRow({
             >
               {item.name}
             </Link>
-            <p
+
+            <div
               className={cn(
-                "mt-0.5 tabular-nums text-muted-foreground",
+                "mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5",
                 isDrawer ? "text-[12.5px]" : "text-sm",
               )}
             >
-              {formatMoney(item.price, item.currency)}
-              {item.compareAtPrice && item.compareAtPrice > item.price ? (
-                <span className="ml-1.5 line-through opacity-70">
+              <span
+                className={cn(
+                  "font-semibold tabular-nums",
+                  onSale ? "text-brand-deep" : "text-foreground",
+                )}
+              >
+                {formatMoney(item.price, item.currency)}
+              </span>
+              {onSale && item.compareAtPrice ? (
+                <span className="tabular-nums text-muted-foreground line-through decoration-muted-foreground/70">
                   {formatMoney(item.compareAtPrice, item.currency)}
                 </span>
               ) : null}
-            </p>
+              {lineSave > 0 ? (
+                <span className="font-semibold tabular-nums text-cta">
+                  Save {formatMoney(lineSave, item.currency)}
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <button
             type="button"
             onClick={() => removeItem(item.productId)}
             aria-label={`Remove ${item.name}`}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+              "text-muted-foreground transition-[background-color,color,transform] duration-150",
+              "hover:bg-cta/10 hover:text-cta active:scale-90",
+            )}
           >
-            <X className="h-3.5 w-3.5" strokeWidth={2} />
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-2">
-          <div className="inline-flex h-9 items-center rounded-full border border-border bg-white">
+          <div
+            className={cn(
+              "inline-flex h-9 items-center rounded-full border border-border/80 bg-white",
+              "shadow-[0_1px_0_rgb(255_255_255/0.8)_inset]",
+            )}
+          >
             <button
               type="button"
               aria-label="Decrease quantity"
               disabled={item.quantity <= 1}
               onClick={() => setQuantity(item.productId, item.quantity - 1)}
-              className="flex h-9 w-9 items-center justify-center text-foreground transition-colors hover:bg-brand-soft disabled:opacity-30"
+              className={cn(
+                "flex h-9 w-9 items-center justify-center text-foreground",
+                "transition-[background-color,transform] duration-150",
+                "hover:bg-brand-soft active:scale-90 disabled:opacity-30",
+              )}
             >
               <Minus className="h-3.5 w-3.5" strokeWidth={2.25} />
             </button>
-            <span className="min-w-[1.25rem] text-center text-[13px] font-semibold tabular-nums">
+            <span className="min-w-[1.35rem] text-center text-[13px] font-semibold tabular-nums">
               {item.quantity}
             </span>
             <button
@@ -110,7 +160,11 @@ export function CartLineRow({
               aria-label="Increase quantity"
               disabled={item.quantity >= MAX_LINE_QTY}
               onClick={() => setQuantity(item.productId, item.quantity + 1)}
-              className="flex h-9 w-9 items-center justify-center text-foreground transition-colors hover:bg-brand-soft disabled:opacity-30"
+              className={cn(
+                "flex h-9 w-9 items-center justify-center text-foreground",
+                "transition-[background-color,transform] duration-150",
+                "hover:bg-brand-soft active:scale-90 disabled:opacity-30",
+              )}
             >
               <Plus className="h-3.5 w-3.5" strokeWidth={2.25} />
             </button>
@@ -118,8 +172,9 @@ export function CartLineRow({
 
           <p
             className={cn(
-              "font-semibold tabular-nums text-foreground",
-              isDrawer ? "text-[13.5px]" : "text-[15px]",
+              "font-bold tabular-nums tracking-tight",
+              isDrawer ? "text-[14px]" : "text-[15px]",
+              onSale ? "text-brand-deep" : "text-foreground",
             )}
           >
             {formatMoney(lineTotal, item.currency)}
