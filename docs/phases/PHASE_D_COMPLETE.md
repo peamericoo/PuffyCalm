@@ -5,7 +5,7 @@
 | **Fase** | D — Money integrity cart / shipping |
 | **Data** | 2026-07-21 |
 | **Timezone** | America/local owner |
-| **Commit** | *(preenchido no STATUS após commit)* |
+| **Commit** | `6efe45f` (+ stamp docs) |
 | **DoD atingido** | **SIM** |
 
 ---
