@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | O — Observability + tests |
 | **Data** | 2026-07-21 |
-| **Commit** | *(este commit)* |
+| **Commit** | `ebc9052` |
 | **DoD atingido** | **SIM** — falha de pagamento / checkout rastreável por `order_id` nos logs |
 
 ---

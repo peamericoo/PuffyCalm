@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase O — observability + tests) |
-| **HEAD / Fase O** | *(ver commit deste push)* |
+| **HEAD / Fase O** | `ebc9052` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -32,7 +32,7 @@
 | L | Inventory + fulfillment | **done** | `03a4e15` | `docs/phases/PHASE_L_COMPLETE.md` |
 | M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
 | N | Legal pages + errors | **done** | `1d37eba` | `docs/phases/PHASE_N_COMPLETE.md` |
-| O | Observability + tests | **done** | *(este commit)* | `docs/phases/PHASE_O_COMPLETE.md` |
+| O | Observability + tests | **done** | `ebc9052` | `docs/phases/PHASE_O_COMPLETE.md` |
 | P | Go-live hardening | pending | — | — |
 
 ## Estado do sistema (resumo)
