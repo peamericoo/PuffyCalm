@@ -5,7 +5,7 @@
 | **Fase** | B — Catalog FE → API real |
 | **Data** | 2026-07-21 |
 | **Timezone** | America/local owner |
-| **Commit** | _(preenchido após git commit)_ |
+| **Commit** | `66ae6d9` |
 | **DoD atingido** | **SIM** |
 
 ---

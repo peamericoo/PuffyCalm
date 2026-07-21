@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase B concluída) |
-| **HEAD / Fase B** | _(hash após commit)_ |
+| **HEAD / Fase B** | `66ae6d9` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -19,7 +19,7 @@
 | Fase | Nome | Status | Commit | Log |
 |------|------|--------|--------|-----|
 | A | Contratos + higiene | **done** | `e01af6e` | `docs/phases/PHASE_A_COMPLETE.md` |
-| B | Catalog FE → API | **done** | _(após commit)_ | `docs/phases/PHASE_B_COMPLETE.md` |
+| B | Catalog FE → API | **done** | `66ae6d9` | `docs/phases/PHASE_B_COMPLETE.md` |
 | C | Reviews + Search → API | **pending** | — | — |
 | D | Money integrity cart | pending | — | — |
 | E | Admin auth bridge | pending | — | — |
