@@ -315,7 +315,13 @@ async def create_checkout_session(
         order_id=order.id,
         public_code=order.public_code,
         total_cents=total,
-        stripe_session=checkout_session.id,
+        subtotal_cents=subtotal,
+        shipping_cents=shipping_cents,
+        line_count=len(order_items),
+        stripe_session_id=checkout_session.id,
+        # domain only — never full email / address / card in logs
+        email_domain=email_norm.rsplit("@", 1)[-1] if "@" in email_norm else "",
+        ship_country=shipping_norm.country,
     )
 
     return CheckoutSessionResult(
@@ -491,7 +497,14 @@ async def mark_order_paid(
         order.stripe_checkout_session_id = session_id
     await session.commit()
     await session.refresh(order)
-    log.info("order_paid", order_id=order.id, public_code=order.public_code)
+    log.info(
+        "order_paid",
+        order_id=order.id,
+        public_code=order.public_code,
+        payment_intent_id=payment_intent_id or order.stripe_payment_intent_id or "",
+        stripe_session_id=session_id or order.stripe_checkout_session_id or "",
+        total_cents=order.total_cents,
+    )
     return order
 
 
@@ -559,6 +572,9 @@ async def process_stripe_event(
     2. ``mark_order_paid`` FOR UPDATE + paid-status gate — two *different*
        events for the same order (session.completed + pi.succeeded) only
        decrement inventory once.
+
+    Phase O return keys (all string; empty when unknown):
+    status, eventId, type, orderId, publicCode
     """
     event_id = str(event.get("id") or "")
     event_type = str(event.get("type") or "")
@@ -567,9 +583,22 @@ async def process_stripe_event(
 
     existing = await session.get(StripeEvent, event_id)
     if existing is not None:
-        return {"status": "duplicate", "eventId": event_id, "type": event_type}
+        log.info(
+            "stripe_event_duplicate",
+            event_id=event_id,
+            event_type=event_type,
+        )
+        return {
+            "status": "duplicate",
+            "eventId": event_id,
+            "type": event_type,
+            "orderId": "",
+            "publicCode": "",
+        }
 
     data_object = (event.get("data") or {}).get("object") or {}
+    order: Order | None = None
+    outcome = "ignored"
 
     if event_type in {
         "checkout.session.completed",
@@ -585,6 +614,14 @@ async def process_stripe_event(
                 payment_intent_id=pi_id,
                 session_id=data_object.get("id") if isinstance(data_object.get("id"), str) else None,
             )
+            outcome = "paid"
+        else:
+            outcome = "order_not_found"
+            log.warning(
+                "stripe_event_order_not_found",
+                event_id=event_id,
+                event_type=event_type,
+            )
     elif event_type == "payment_intent.succeeded":
         order = await _resolve_order_from_payment_intent(session, data_object)
         if order:
@@ -594,6 +631,14 @@ async def process_stripe_event(
                 payment_intent_id=data_object.get("id")
                 if isinstance(data_object.get("id"), str)
                 else None,
+            )
+            outcome = "paid"
+        else:
+            outcome = "order_not_found"
+            log.warning(
+                "stripe_event_order_not_found",
+                event_id=event_id,
+                event_type=event_type,
             )
     elif event_type in {
         "checkout.session.expired",
@@ -611,6 +656,40 @@ async def process_stripe_event(
         }:
             order.status = "failed"
             await session.commit()
+            outcome = "failed"
+            log.warning(
+                "order_payment_failed",
+                order_id=order.id,
+                public_code=order.public_code,
+                event_id=event_id,
+                event_type=event_type,
+            )
+        elif order:
+            outcome = "skipped_terminal"
+            log.info(
+                "order_payment_fail_skipped",
+                order_id=order.id,
+                public_code=order.public_code,
+                event_id=event_id,
+                event_type=event_type,
+                order_status=order.status,
+            )
+        else:
+            outcome = "order_not_found"
+            log.warning(
+                "stripe_event_order_not_found",
+                event_id=event_id,
+                event_type=event_type,
+            )
+    else:
+        log.info(
+            "stripe_event_unhandled_type",
+            event_id=event_id,
+            event_type=event_type,
+        )
+
+    order_id = order.id if order else ""
+    public_code = order.public_code if order else ""
 
     # Record event id after business logic. Unique PK prevents a racing
     # duplicate insert of the same event_id (IntegrityError → treat as dup).
@@ -620,8 +699,35 @@ async def process_stripe_event(
     except IntegrityError:
         # Concurrent identical event_id: paid path already committed separately.
         await session.rollback()
-        return {"status": "duplicate", "eventId": event_id, "type": event_type}
-    return {"status": "processed", "eventId": event_id, "type": event_type}
+        log.info(
+            "stripe_event_duplicate",
+            event_id=event_id,
+            event_type=event_type,
+            order_id=order_id,
+        )
+        return {
+            "status": "duplicate",
+            "eventId": event_id,
+            "type": event_type,
+            "orderId": order_id,
+            "publicCode": public_code,
+        }
+
+    log.info(
+        "stripe_event_processed",
+        event_id=event_id,
+        event_type=event_type,
+        order_id=order_id,
+        public_code=public_code,
+        outcome=outcome,
+    )
+    return {
+        "status": "processed",
+        "eventId": event_id,
+        "type": event_type,
+        "orderId": order_id,
+        "publicCode": public_code,
+    }
 
 
 async def _resolve_order_from_session(

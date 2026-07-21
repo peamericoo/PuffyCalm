@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase N — legal + empty/error) |
-| **HEAD / Fase N** | `1d37eba` |
+| **Última atualização** | 2026-07-21 (Fase O — observability + tests) |
+| **HEAD / Fase O** | *(ver commit deste push)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **O** (obs + tests) · **P** (go-live) |
+| **Próxima fase** | **P** (go-live hardening) |
 
 ## Fases
 
@@ -32,13 +32,14 @@
 | L | Inventory + fulfillment | **done** | `03a4e15` | `docs/phases/PHASE_L_COMPLETE.md` |
 | M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
 | N | Legal pages + errors | **done** | `1d37eba` | `docs/phases/PHASE_N_COMPLETE.md` |
-| O | Observability + tests | pending | — | — |
+| O | Observability + tests | **done** | *(este commit)* | `docs/phases/PHASE_O_COMPLETE.md` |
 | P | Go-live hardening | pending | — | — |
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy:** web + api Railway; H–M validated; inventory `stock_qty` on Postgres.
-- **Fase N:** trust pages EN reais (`/about` `/help` `/returns` `/privacy` `/terms`); privacy/terms = operational D2C placeholders; `ErrorState` + storefront error boundary.
+- **Prod healthy:** web + api Railway; H–N validated; smoke O: health/ready/catalog OK.
+- **Fase O:** structlog JSON em checkout create + Stripe webhook com `order_id` / `event_id`; `FiveXXLogMiddleware`; smoke `scripts/smoke-post-deploy.*`; Sentry **follow-up**.
+- **Fase N residual:** trust pages; ErrorState.
 - **Fase M residual:** chrome em `lib/site.ts`; content defaults offline; BE seed; `prod_009` até P; restock on cancel defer.
 - **Env prod:** Stripe + shipping; auth; orders; products; media S3; content; inventory.
 - **Contratos congelados:** Stripe Custom; guest checkout; `stripe_events` idempotency.
@@ -46,7 +47,7 @@
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **O** ou **P**.
-2. Ler `PHASE_N_COMPLETE.md` se precisar de páginas legais / error UX.
-3. Executar **só** uma fase; ao fim criar `PHASE_*_COMPLETE.md` e atualizar esta tabela.
-4. Redeploy **web** se N ainda não estiver no serviço Railway de produção.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **P**.
+2. Ler `PHASE_O_COMPLETE.md` se precisar diagnosticar pedidos / smoke.
+3. Executar **só** Fase P; ao fim criar `PHASE_P_COMPLETE.md` e atualizar esta tabela.
+4. Redeploy **api** para logs O em produção (web não obrigatório para O).

@@ -1,4 +1,8 @@
-"""Structured logging setup (structlog → stdlib)."""
+"""Structured logging setup (structlog → stdlib).
+
+Phase O: checkout/webhook paths emit JSON fields (prod) with order_id / event_id.
+Never log card data, full PAN, CVV, or full shipping address.
+"""
 
 from __future__ import annotations
 
@@ -67,3 +71,26 @@ def setup_logging(settings: Settings) -> None:
 
 def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     return structlog.get_logger(name)
+
+
+def email_domain(email: str | None) -> str:
+    """Safe log field: domain only (no local-part / PII)."""
+    raw = (email or "").strip().lower()
+    if "@" not in raw:
+        return ""
+    return raw.rsplit("@", 1)[-1]
+
+
+def redact_email(email: str | None) -> str:
+    """
+    Redacted email for logs: first char of local-part + ***@domain.
+
+    Prefer ``email_domain`` when the local-part is unnecessary.
+    """
+    raw = (email or "").strip().lower()
+    if "@" not in raw:
+        return ""
+    local, domain = raw.rsplit("@", 1)
+    if not local:
+        return f"***@{domain}"
+    return f"{local[0]}***@{domain}"

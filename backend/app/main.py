@@ -1,13 +1,14 @@
 """FastAPI application factory."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from botocore.exceptions import ClientError
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app import __version__
 from app.api.router import build_root_probes_router, build_v1_router
@@ -21,6 +22,29 @@ from app.infrastructure.storage.local import LocalStorage
 from app.infrastructure.storage.s3 import S3Storage
 
 log = get_logger(__name__)
+
+
+class FiveXXLogMiddleware(BaseHTTPMiddleware):
+    """Phase O: log server errors with method/path (no body / PII)."""
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        try:
+            response = await call_next(request)
+        except Exception:
+            log.exception(
+                "http_unhandled_exception",
+                method=request.method,
+                path=request.url.path,
+            )
+            raise
+        if response.status_code >= 500:
+            log.error(
+                "http_5xx",
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+            )
+        return response
 
 
 @asynccontextmanager
@@ -132,6 +156,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    # Outer relative to CORS when added after it (Starlette: last added = first run)
+    application.add_middleware(FiveXXLogMiddleware)
 
     # GET /health, GET /ready
     application.include_router(build_root_probes_router())

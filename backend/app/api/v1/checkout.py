@@ -19,6 +19,9 @@ from app.application.checkout.service import (
     create_checkout_session,
 )
 from app.core.config import get_settings
+from app.core.logging import email_domain, get_logger
+
+log = get_logger(__name__)
 
 router = APIRouter(prefix="/checkout", tags=["checkout"])
 
@@ -38,6 +41,17 @@ async def create_session(
     Body lines carry **productId + quantity only** — unit prices come from the DB.
     """
     settings = get_settings()
+    line_count = len(body.lines)
+    product_ids = [ln.product_id for ln in body.lines]
+    ship_country = (body.shipping.country or "").strip().upper() or "US"
+    base_fields = {
+        "email_domain": email_domain(str(body.email)),
+        "line_count": line_count,
+        "product_ids": product_ids[:20],  # cap list noise
+        "ship_country": ship_country,
+    }
+    log.info("checkout_create_start", **base_fields)
+
     try:
         result = await create_checkout_session(
             session,
@@ -73,10 +87,37 @@ async def create_session(
             "stripe_not_configured": status.HTTP_503_SERVICE_UNAVAILABLE,
             "stripe_error": status.HTTP_502_BAD_GATEWAY,
         }
+        http_status = code_map.get(exc.code, status.HTTP_400_BAD_REQUEST)
+        # Business rejection vs payment/infra failure
+        if exc.code in {"stripe_error", "stripe_not_configured"}:
+            log.error(
+                "checkout_create_failed",
+                code=exc.code,
+                http_status=http_status,
+                **base_fields,
+            )
+        else:
+            log.warning(
+                "checkout_create_failed",
+                code=exc.code,
+                http_status=http_status,
+                **base_fields,
+            )
         raise HTTPException(
-            status_code=code_map.get(exc.code, status.HTTP_400_BAD_REQUEST),
+            status_code=http_status,
             detail={"message": exc.message, "code": exc.code},
         ) from exc
+
+    log.info(
+        "checkout_create_ok",
+        order_id=result.order_id,
+        public_code=result.public_code,
+        total_cents=result.total_cents,
+        subtotal_cents=result.subtotal_cents,
+        shipping_cents=result.shipping_cents,
+        status=result.status,
+        **base_fields,
+    )
 
     return CreateCheckoutSessionOut(
         order_id=result.order_id,
