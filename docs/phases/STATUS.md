@@ -7,8 +7,8 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase H concluída no código) |
-| **HEAD / Fase H** | `05c6d0c` |
+| **Última atualização** | 2026-07-21 (Fase H **validada em Railway prod**) |
+| **HEAD / Fase H** | `8ec7062` (feat `05c6d0c` + fix) |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -25,7 +25,7 @@
 | E | Admin auth bridge | **done** | `d65aedb` | `docs/phases/PHASE_E_COMPLETE.md` |
 | F | Admin orders API | **done** | `614ed17` | `docs/phases/PHASE_F_COMPLETE.md` |
 | G | Admin orders UI | **done** | `e34999c` | `docs/phases/PHASE_G_COMPLETE.md` |
-| H | Admin products API+UI | **done** | `05c6d0c` | `docs/phases/PHASE_H_COMPLETE.md` |
+| H | Admin products API+UI | **done** (prod smoke 22/22) | `8ec7062` | `docs/phases/PHASE_H_COMPLETE.md` |
 | I | Media / storage | pending | — | — |
 | J | CMS-lite home | pending | — | — |
 | K | Account orders | pending | — | — |
@@ -37,8 +37,8 @@
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy (pré-deploy H):** web + api Railway Online; Fase H **no git** — redeploy **api + web** para expor admin products em prod.
-- **Env prod:** Stripe + shipping; auth bridge E; orders F/G; **products H** após deploy.
+- **Prod healthy:** web + api Railway Online; **Fase H deployed + smoke 22/22** (draft→publish→unpublish).
+- **Env prod:** Stripe + shipping; auth bridge E; orders F/G; **products H live**.
 - **Contratos congelados:** Stripe Custom; guest checkout; `docs/ops/CONTRACTS.md`.
 - **BE:** catalog/search/reviews; checkout; admin auth; admin orders; **admin products CRUD + publish**.
 - **FE:** catalog+reviews+search API; cart money; checkout real; admin bridge; orders UI; **products admin UI + revalidate**.

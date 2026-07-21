@@ -4,8 +4,8 @@
 |-------|--------|
 | **Fase** | H — Admin API + UI produtos |
 | **Data** | 2026-07-21 |
-| **Commit** | `05c6d0c` |
-| **DoD atingido** | **SIM** (código + unit validation + tsc; integração DB via Docker) |
+| **Commit** | `05c6d0c` (+ fix `8ec7062`) |
+| **DoD atingido** | **SIM** — validado em **Railway prod** 2026-07-21 (22/22 smoke) |
 
 ---
 
@@ -148,26 +148,32 @@ curl -sS http://localhost:8080/api/v1/products/my-new-massager
 
 ---
 
-## 7. Validação executada nesta sessão
+## 7. Validação Railway prod (2026-07-21)
 
 | Check | Resultado |
 |-------|-----------|
-| Rotas products registradas | **SIM** (unit import) |
-| Validação slug/price/sku + lifecycle constants | **SIM** (python unit) |
-| `npx tsc --noEmit` | **SIM** exit 0 |
-| `pytest tests/test_admin_products_api.py` com `REQUIRE_READY=1` | **Não concluído aqui** — Docker Desktop off; tentativa via Railway public proxy ficou lenta/travada (rede SSL proxy). Testes estão prontos para `docker compose` local. |
-| Deploy Railway api/web | **Não** nesta sessão (código no git; redeploy separado) |
+| Deploy **api** | **SUCCESS** `4d4416f7` (fix M2M) |
+| Deploy **web** | **SUCCESS** `b17d10be` (SSG resilience) |
+| `/health` + `/ready` | **200** postgres+redis |
+| OpenAPI products routes | **SIM** |
+| Admin login password | **200** role admin |
+| Create draft → PDP 404 | **PASS** |
+| Publish → PDP 200 + catalog recovery | **PASS** |
+| Patch name/price | **PASS** |
+| Unpublish → PDP 404 + fora do catalog | **PASS** |
+| Slug conflict 409 / price 0 → 422 | **PASS** |
+| Web `/admin/products` + `/new` | **307** (redirect auth — rota existe) |
+| Smoke suite | **22 / 22 PASS** |
+| `npx tsc --noEmit` | **0** |
 
-### Como rodar integração local (owner)
+**Hotfix pós-primeiro deploy:**
 
-```bash
-docker compose up -d --build
-docker compose exec api alembic upgrade head
-docker compose exec api python -m app.infrastructure.db.seed
-docker compose exec -e REQUIRE_READY=1 api pytest -q tests/test_admin_products_api.py
-```
+1. Create 500 `MissingGreenlet` — categories/images após `flush` em async → fix em `create_admin_product` (assign antes de persist).
+2. Web build FAIL — SSG fetch `ENOTFOUND` API no railpack → `getProductDetail` + page toleram network no build.
 
-Prova DoD manual: create draft → publish → GET storefront 200 → unpublish → 404.
+### Produto smoke (limpo com unpublish)
+
+- id `prod_03a6583a56a5` · slug `phase-h-smoke-18c48b9a` · status final **draft** (não polui storefront)
 
 ---
 
