@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | P — Prep produção / go-live hardening |
 | **Data** | 2026-07-21 |
-| **Commit** | _(stamp após commit)_ |
+| **Commit** | `aca39db` |
 | **DoD atingido** | **SIM** — checklist §1 assinado; smoke SKU off UI; secrets/rate-limit notes |
 | **Estado sistema** | **MVP operável** |
 

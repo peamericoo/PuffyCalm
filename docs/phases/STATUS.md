@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase P — go-live hardening) |
-| **HEAD / Fase P** | _(stamp após commit)_ |
+| **HEAD / Fase P** | `aca39db` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Secrets / rate limits** | `docs/ops/SECRETS_AUDIT.md` · `docs/ops/RATE_LIMITS.md` |
@@ -36,7 +36,7 @@
 | M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
 | N | Legal pages + errors | **done** | `1d37eba` | `docs/phases/PHASE_N_COMPLETE.md` |
 | O | Observability + tests | **done** | `ebc9052` | `docs/phases/PHASE_O_COMPLETE.md` |
-| P | Go-live hardening | **done** | _(stamp)_ | `docs/phases/PHASE_P_COMPLETE.md` |
+| P | Go-live hardening | **done** | `aca39db` | `docs/phases/PHASE_P_COMPLETE.md` |
 
 ## Estado do sistema (resumo)
 
