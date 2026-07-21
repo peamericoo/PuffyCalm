@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase P — go-live hardening) |
-| **HEAD / Fase P** | `aca39db` |
+| **HEAD / Fase P** | `f4c59a9` (feature `aca39db`) |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Secrets / rate limits** | `docs/ops/SECRETS_AUDIT.md` · `docs/ops/RATE_LIMITS.md` |
