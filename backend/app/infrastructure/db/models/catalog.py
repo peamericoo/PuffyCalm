@@ -98,6 +98,14 @@ class Product(Base):
     badges: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
     features: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
     in_stock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Available units. 0 → not sellable; decremented on paid (webhook path).
+    # Default high enough for dropship MVP; admin can set 0 to block sales.
+    stock_qty: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=100,
+        server_default="100",
+    )
     featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     category_label: Mapped[str | None] = mapped_column(String(128), nullable=True)
     # Lifecycle: draft | published | archived — storefront only shows published

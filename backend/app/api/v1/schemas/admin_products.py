@@ -61,6 +61,7 @@ class AdminProductListItemOut(CamelModel):
     currency: str
     image_url: str = Field(serialization_alias="imageUrl")
     in_stock: bool = Field(serialization_alias="inStock")
+    stock_qty: int = Field(serialization_alias="stockQty")
     featured: bool
     category_slugs: list[str] = Field(serialization_alias="categorySlugs")
     published_at: str | None = Field(default=None, serialization_alias="publishedAt")
@@ -100,6 +101,7 @@ class AdminProductDetailOut(CamelModel):
     features: list[str]
     specs: list[AdminProductSpecOut]
     in_stock: bool = Field(serialization_alias="inStock")
+    stock_qty: int = Field(serialization_alias="stockQty")
     featured: bool
     max_quantity_per_order: int = Field(serialization_alias="maxQuantityPerOrder")
     purchase_limit_per_customer: int | None = Field(
@@ -157,6 +159,12 @@ class AdminProductCreateIn(CamelModel):
     features: list[str] = Field(default_factory=list)
     specs: list[AdminProductSpecIn] = Field(default_factory=list)
     in_stock: bool = Field(default=True, validation_alias="inStock")
+    stock_qty: int = Field(
+        default=100,
+        ge=0,
+        le=1_000_000,
+        validation_alias="stockQty",
+    )
     featured: bool = False
     status: ProductStatusLiteral = "draft"
     max_quantity_per_order: int = Field(
@@ -244,6 +252,12 @@ class AdminProductUpdateIn(CamelModel):
     features: list[str] | None = None
     specs: list[AdminProductSpecIn] | None = None
     in_stock: bool | None = Field(default=None, validation_alias="inStock")
+    stock_qty: int | None = Field(
+        default=None,
+        ge=0,
+        le=1_000_000,
+        validation_alias="stockQty",
+    )
     featured: bool | None = None
     status: ProductStatusLiteral | None = None
     max_quantity_per_order: int | None = Field(

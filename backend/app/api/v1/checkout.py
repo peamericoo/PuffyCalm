@@ -66,6 +66,7 @@ async def create_session(
             "product_not_found": status.HTTP_404_NOT_FOUND,
             "product_not_available": status.HTTP_409_CONFLICT,
             "out_of_stock": status.HTTP_409_CONFLICT,
+            "insufficient_stock": status.HTTP_409_CONFLICT,
             "max_quantity_exceeded": status.HTTP_409_CONFLICT,
             "purchase_limit_exceeded": status.HTTP_409_CONFLICT,
             "total_too_low": status.HTTP_400_BAD_REQUEST,

@@ -38,6 +38,7 @@ class ProductOut(CamelModel):
     features: list[str]
     specs: list[ProductSpecOut] | None = None
     in_stock: bool = Field(serialization_alias="inStock")
+    stock_qty: int | None = Field(default=None, serialization_alias="stockQty")
     featured: bool | None = None
     category_label: str | None = Field(default=None, serialization_alias="categoryLabel")
 

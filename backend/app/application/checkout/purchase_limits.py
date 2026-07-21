@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.checkout.inventory import available_stock
 from app.domain.product_rules import (
     DEFAULT_MAX_QUANTITY_PER_ORDER,
     PURCHASE_COUNT_STATUSES,
@@ -46,6 +47,13 @@ def assert_quantity_allowed(product: Product, quantity: int) -> None:
             f"You can buy at most {max_q} of {product.name} per order",
             code="max_quantity_exceeded",
         )
+    # Inventory: cannot buy more than available stock_qty
+    stock = available_stock(product)
+    if quantity > stock:
+        raise PurchaseLimitError(
+            f"Only {stock} left in stock for {product.name}",
+            code="insufficient_stock" if stock > 0 else "out_of_stock",
+        )
 
 
 def assert_product_sellable(product: Product) -> None:
@@ -56,6 +64,12 @@ def assert_product_sellable(product: Product) -> None:
             code="product_not_available",
         )
     if not product.in_stock:
+        raise PurchaseLimitError(
+            f"Product out of stock: {product.name}",
+            code="out_of_stock",
+        )
+    # stock_qty 0 always blocks, even if in_stock was left stale
+    if available_stock(product) < 1:
         raise PurchaseLimitError(
             f"Product out of stock: {product.name}",
             code="out_of_stock",

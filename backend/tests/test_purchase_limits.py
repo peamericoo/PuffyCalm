@@ -19,6 +19,7 @@ def _product(**kwargs: object) -> SimpleNamespace:
         "name": "Test Product",
         "status": "published",
         "in_stock": True,
+        "stock_qty": 50,
         "max_quantity_per_order": 1,
         "purchase_limit_per_customer": 1,
     }
@@ -48,8 +49,15 @@ def test_out_of_stock() -> None:
     assert ei.value.code == "out_of_stock"
 
 
+def test_stock_qty_zero_blocks_sellable() -> None:
+    """Phase L: qty 0 never sells even if in_stock left stale True."""
+    with pytest.raises(PurchaseLimitError) as ei:
+        assert_product_sellable(_product(in_stock=True, stock_qty=0))  # type: ignore[arg-type]
+    assert ei.value.code == "out_of_stock"
+
+
 def test_max_quantity_one() -> None:
-    p = _product(max_quantity_per_order=1)
+    p = _product(max_quantity_per_order=1, stock_qty=50)
     assert_quantity_allowed(p, 1)  # type: ignore[arg-type]
     with pytest.raises(PurchaseLimitError) as ei:
         assert_quantity_allowed(p, 2)  # type: ignore[arg-type]
@@ -57,7 +65,15 @@ def test_max_quantity_one() -> None:
 
 
 def test_max_quantity_default_style() -> None:
-    p = _product(max_quantity_per_order=9)
+    p = _product(max_quantity_per_order=9, stock_qty=50)
     assert_quantity_allowed(p, 9)  # type: ignore[arg-type]
     with pytest.raises(PurchaseLimitError):
         assert_quantity_allowed(p, 10)  # type: ignore[arg-type]
+
+
+def test_quantity_exceeds_stock_qty() -> None:
+    p = _product(max_quantity_per_order=9, stock_qty=2)
+    assert_quantity_allowed(p, 2)  # type: ignore[arg-type]
+    with pytest.raises(PurchaseLimitError) as ei:
+        assert_quantity_allowed(p, 3)  # type: ignore[arg-type]
+    assert ei.value.code == "insufficient_stock"

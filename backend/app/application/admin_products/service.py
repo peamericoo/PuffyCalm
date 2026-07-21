@@ -13,6 +13,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.application.checkout.inventory import DEFAULT_STOCK_QTY, sync_in_stock_flag
 from app.domain.product_rules import ProductStatus
 from app.infrastructure.db.models import Category, Product, ProductImage, ProductSpec
 
@@ -338,6 +339,7 @@ async def create_admin_product(
         badges=list(data.get("badges") or []),
         features=list(data.get("features") or []),
         in_stock=bool(data.get("in_stock", True)),
+        stock_qty=max(0, int(data.get("stock_qty") if data.get("stock_qty") is not None else DEFAULT_STOCK_QTY)),
         featured=bool(data.get("featured", False)),
         category_label=data.get("category_label"),
         status=ProductStatus.draft.value,  # set via side effects below
@@ -348,6 +350,11 @@ async def create_admin_product(
         rating=Decimal("0"),
         review_count=0,
     )
+    # Keep flags coherent: in_stock true with qty 0 → bump to 1; qty 0 → OOS
+    if product.in_stock and product.stock_qty < 1:
+        product.stock_qty = 1
+    if product.stock_qty < 1:
+        product.in_stock = False
     product.categories = cats
     for i, url in enumerate(image_urls):
         u = str(url).strip()
@@ -413,8 +420,19 @@ async def update_admin_product(
         product.badges = list(data["badges"])
     if "features" in fields_set and data.get("features") is not None:
         product.features = list(data["features"])
+    if "stock_qty" in fields_set and data.get("stock_qty") is not None:
+        product.stock_qty = max(0, int(data["stock_qty"]))
+        sync_in_stock_flag(product)
+        # Restock: qty > 0 with only stock_qty patch → mark sellable again
+        if product.stock_qty > 0 and "in_stock" not in fields_set:
+            product.in_stock = True
     if "in_stock" in fields_set and data.get("in_stock") is not None:
         product.in_stock = bool(data["in_stock"])
+        if product.in_stock and product.stock_qty < 1:
+            product.stock_qty = 1
+        if not product.in_stock:
+            # Soft hold: leave stock_qty as-is for ops visibility
+            pass
     if "featured" in fields_set and data.get("featured") is not None:
         product.featured = bool(data["featured"])
     if "max_quantity_per_order" in fields_set and data.get("max_quantity_per_order") is not None:

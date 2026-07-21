@@ -86,6 +86,7 @@ async def seed_catalog(session: AsyncSession, *, reset: bool = False) -> dict[st
         data.setdefault("status", ProductStatus.published.value)
         data.setdefault("published_at", now)
         data.setdefault("max_quantity_per_order", 9)
+        data.setdefault("stock_qty", 100)
         product = await _get_product(session, raw["id"])
         if product is None:
             product = Product(**data)

@@ -55,6 +55,7 @@ def product_to_out(product: Product, *, include_specs: bool = True) -> ProductOu
         features=list(product.features or []),
         specs=specs,
         in_stock=product.in_stock,
+        stock_qty=int(getattr(product, "stock_qty", 0) or 0),
         featured=product.featured,
         category_label=product.category_label,
     )

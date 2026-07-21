@@ -27,6 +27,8 @@ export type AdminProductListItem = {
   currency: string;
   imageUrl: string;
   inStock: boolean;
+  /** Available units (Phase L). 0 blocks checkout. */
+  stockQty?: number;
   featured: boolean;
   categorySlugs: string[];
   publishedAt: string | null;
@@ -80,6 +82,7 @@ export type AdminProductCreateInput = {
   features?: string[];
   specs?: { label: string; value: string }[];
   inStock?: boolean;
+  stockQty?: number;
   featured?: boolean;
   status?: AdminProductStatus;
   maxQuantityPerOrder?: number;
@@ -175,6 +178,10 @@ function mapListItem(raw: Record<string, unknown>): AdminProductListItem {
     currency: asString(raw.currency, "USD"),
     imageUrl: asString(raw.imageUrl ?? raw.image_url),
     inStock: Boolean(raw.inStock ?? raw.in_stock),
+    stockQty:
+      raw.stockQty != null || raw.stock_qty != null
+        ? asNumber(raw.stockQty ?? raw.stock_qty)
+        : undefined,
     featured: Boolean(raw.featured),
     categorySlugs: asStringArray(raw.categorySlugs ?? raw.category_slugs),
     publishedAt:

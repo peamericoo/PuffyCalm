@@ -12,12 +12,17 @@ from urllib.parse import quote
 
 import stripe
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.application.checkout.address import (
     AddressValidationError,
     validate_and_normalize_shipping,
+)
+from app.application.checkout.inventory import (
+    INVENTORY_APPLIED_STATUSES,
+    deduct_inventory_for_order,
 )
 from app.application.checkout.purchase_limits import (
     PurchaseLimitError,
@@ -444,8 +449,40 @@ async def mark_order_paid(
     payment_intent_id: str | None = None,
     session_id: str | None = None,
 ) -> Order:
-    if order.status == "paid":
+    """
+    Promote order to paid and decrement inventory once.
+
+    Idempotent under double webhook delivery:
+    - Row-level FOR UPDATE on the order.
+    - If status is already paid/processing/shipped/delivered → no-op
+      (inventory already applied on the first transition).
+    """
+    # Lock order row so concurrent webhooks cannot both deduct stock.
+    locked = await session.execute(
+        select(Order)
+        .options(selectinload(Order.items))
+        .where(Order.id == order.id)
+        .with_for_update()
+    )
+    order = locked.scalar_one()
+
+    if order.status in INVENTORY_APPLIED_STATUSES:
+        # Already paid path — keep payment ids if newly provided, no stock change.
+        dirty = False
+        if payment_intent_id and not order.stripe_payment_intent_id:
+            order.stripe_payment_intent_id = payment_intent_id
+            dirty = True
+        if session_id and not order.stripe_checkout_session_id:
+            order.stripe_checkout_session_id = session_id
+            dirty = True
+        if dirty:
+            await session.commit()
+            await session.refresh(order)
         return order
+
+    # First transition into the paid/fulfillment path → decrement stock once.
+    await deduct_inventory_for_order(session, order)
+
     order.status = "paid"
     order.paid_at = datetime.now(UTC)
     if payment_intent_id:
@@ -516,6 +553,12 @@ async def process_stripe_event(
 ) -> dict[str, str]:
     """
     Idempotent webhook handler. Returns status for logging.
+
+    Layers of idempotency (Phase L):
+    1. ``stripe_events`` PK — same event_id is a no-op (duplicate delivery).
+    2. ``mark_order_paid`` FOR UPDATE + paid-status gate — two *different*
+       events for the same order (session.completed + pi.succeeded) only
+       decrement inventory once.
     """
     event_id = str(event.get("id") or "")
     event_type = str(event.get("type") or "")
@@ -559,12 +602,25 @@ async def process_stripe_event(
         order = await _resolve_order_from_session(
             session, data_object
         ) or await _resolve_order_from_payment_intent(session, data_object)
-        if order and order.status not in {"paid", "cancelled"}:
+        if order and order.status not in {
+            "paid",
+            "processing",
+            "shipped",
+            "delivered",
+            "cancelled",
+        }:
             order.status = "failed"
             await session.commit()
 
+    # Record event id after business logic. Unique PK prevents a racing
+    # duplicate insert of the same event_id (IntegrityError → treat as dup).
     session.add(StripeEvent(id=event_id, type=event_type))
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        # Concurrent identical event_id: paid path already committed separately.
+        await session.rollback()
+        return {"status": "duplicate", "eventId": event_id, "type": event_type}
     return {"status": "processed", "eventId": event_id, "type": event_type}
 
 
