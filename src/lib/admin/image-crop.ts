@@ -17,22 +17,22 @@ export const ASPECT_PRESETS: Record<
   hero: {
     label: "Hero banner",
     value: 16 / 9,
-    frameClass: "aspect-[16/9] w-full max-w-xl",
+    frameClass: "aspect-[16/9] w-full max-w-full",
   },
   product: {
     label: "Product card",
     value: 4 / 5,
-    frameClass: "aspect-[4/5] w-36",
+    frameClass: "aspect-[4/5] w-full max-w-[9rem]",
   },
   square: {
     label: "Square",
     value: 1,
-    frameClass: "aspect-square w-36",
+    frameClass: "aspect-square w-full max-w-[10rem]",
   },
   wide: {
     label: "Wide tile",
     value: 2 / 1,
-    frameClass: "aspect-[2/1] w-full max-w-sm",
+    frameClass: "aspect-[2/1] w-full max-w-full",
   },
 };
 

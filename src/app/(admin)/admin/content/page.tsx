@@ -28,10 +28,10 @@ export default async function AdminContentPage() {
     <div className="min-h-full">
       <AdminPageHeader
         title="Home content"
-        description="Edit the site-wide promo ticker and homepage hero slides. Saves revalidate the storefront home cache."
+        description="Promo ticker, hero slides, lifestyle tiles — with live previews. Saves revalidate the storefront."
         activePath="/admin/content"
       />
-      <div className="mx-auto max-w-3xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-5 sm:py-8">
         <ContentEditorView googleIdToken={session.googleIdToken} />
       </div>
     </div>

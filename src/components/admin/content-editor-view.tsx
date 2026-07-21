@@ -274,8 +274,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
         </p>
       ) : null}
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
-      <div className="min-w-0 space-y-8">
+      <div className="grid w-full min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start">
+      <div className="min-w-0 max-w-full space-y-8">
 
       <section className="rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="font-display text-lg font-semibold tracking-tight">
@@ -360,7 +360,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Title line 1">
                 <input
                   className={inputClass}
@@ -588,8 +588,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
       </div>
       </div>
 
-      {/* Sticky live previews — real storefront components */}
-      <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+      {/* Live previews — full width below editor on small screens; side rail on lg+ */}
+      <div className="min-w-0 max-w-full space-y-4 lg:sticky lg:top-24 lg:self-start">
         <AdminLivePreview
           title="Promo ticker"
           description="Same marquee strip as the top of the store."
@@ -619,7 +619,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
               Add a complete slide (titles + framed image) to preview.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-border/50 [&_section]:pb-0">
+            <div className="max-h-[420px] overflow-auto overflow-x-hidden rounded-xl bg-white shadow-sm ring-1 ring-border/50 [&_section]:pb-0 [&_h1]:text-2xl! sm:[&_h1]:text-3xl!">
               <HeroCarousel slides={previewSlides} />
             </div>
           )}

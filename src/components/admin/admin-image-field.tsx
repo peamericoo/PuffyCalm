@@ -33,10 +33,11 @@ type Props = {
 };
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30";
+  "h-10 w-full min-w-0 rounded-xl border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30";
 
 /**
  * Global admin image control: URL, upload, crop/frame, framed preview.
+ * Layout always stacks cleanly — never squeezes action buttons.
  */
 export function AdminImageField({
   label = "Image",
@@ -96,7 +97,6 @@ export function AdminImageField({
     }
     setError(null);
     setRevokeOnClose(null);
-    // Proxy so canvas crop works for cross-origin /media on the API host.
     const raw = value.trim();
     if (raw.startsWith("blob:") || raw.startsWith("data:")) {
       setCropSrc(raw);
@@ -132,64 +132,64 @@ export function AdminImageField({
   };
 
   return (
-    <div className={cn("flex flex-col gap-2 text-sm", className)}>
+    <div className={cn("flex w-full min-w-0 flex-col gap-2 text-sm", className)}>
       <span className="font-medium text-foreground">{label}</span>
 
       {showFramePreview ? (
         <FramePreview src={value || undefined} aspect={aspect} />
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <input
+        className={cn(inputClass, "font-mono text-[13px]")}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+
+      <div className="flex w-full min-w-0 flex-wrap gap-2">
         <input
-          className={cn(inputClass, "font-mono text-[13px] sm:flex-1")}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          ref={fileRef}
+          type="file"
+          accept={MEDIA_ACCEPT}
+          className="sr-only"
+          disabled={uploading}
+          onChange={(e) => {
+            openCropFromFile(e.target.files?.[0] ?? null);
+          }}
         />
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept={MEDIA_ACCEPT}
-            className="sr-only"
-            disabled={uploading}
-            onChange={(e) => {
-              openCropFromFile(e.target.files?.[0] ?? null);
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-10"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                Working…
-              </>
-            ) : (
-              <>
-                <Upload className="mr-1.5 h-4 w-4" />
-                Upload & frame
-              </>
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-10"
-            disabled={uploading || !value.trim()}
-            onClick={openCropFromValue}
-          >
-            <Crop className="mr-1.5 h-4 w-4" />
-            Adjust frame
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-10 shrink-0"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              Working…
+            </>
+          ) : (
+            <>
+              <Upload className="mr-1.5 h-4 w-4" />
+              Upload & frame
+            </>
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-10 shrink-0"
+          disabled={uploading || !value.trim()}
+          onClick={openCropFromValue}
+        >
+          <Crop className="mr-1.5 h-4 w-4" />
+          Adjust frame
+        </Button>
       </div>
+
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         {defaultHelp}
       </p>
