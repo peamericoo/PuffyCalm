@@ -313,6 +313,17 @@ async def create_admin_product(
     if not image_url and image_urls:
         image_url = image_urls[0]
 
+    # Resolve M2M + nested rows BEFORE flush so async session never lazy-loads
+    # (MissingGreenlet if relationship access happens after expire/flush).
+    cats = await _resolve_categories(session, list(data.get("category_slugs") or []))
+    specs_raw = data.get("specs") or []
+    specs: list[tuple[str, str]] = []
+    for s in specs_raw:
+        if isinstance(s, dict):
+            specs.append((str(s["label"]), str(s["value"])))
+        else:
+            specs.append((str(s.label), str(s.value)))
+
     product = Product(
         id=product_id,
         slug=slug,
@@ -337,24 +348,20 @@ async def create_admin_product(
         rating=Decimal("0"),
         review_count=0,
     )
-    session.add(product)
-    await session.flush()
-
-    cats = await _resolve_categories(session, list(data.get("category_slugs") or []))
     product.categories = cats
-
-    _set_images(product, image_urls)
-    specs_raw = data.get("specs") or []
-    specs: list[tuple[str, str]] = []
-    for s in specs_raw:
-        if isinstance(s, dict):
-            specs.append((str(s["label"]), str(s["value"])))
-        else:
-            specs.append((str(s.label), str(s.value)))
-    _set_specs(product, specs)
+    for i, url in enumerate(image_urls):
+        u = str(url).strip()
+        if u:
+            product.images.append(ProductImage(url=u, sort_order=i))
+    if product.images and not (product.image_url or "").strip():
+        product.image_url = product.images[0].url
+    for i, (label, value) in enumerate(specs):
+        product.specs.append(
+            ProductSpec(label=label.strip(), value=value.strip(), sort_order=i)
+        )
 
     _apply_status_side_effects(product, status)
-
+    session.add(product)
     await session.commit()
     return await get_admin_product(session, product_id)
 

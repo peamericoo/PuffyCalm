@@ -47,7 +47,13 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const detail = await getProductDetail(slug, 4);
+  let detail: Awaited<ReturnType<typeof getProductDetail>> = null;
+  try {
+    detail = await getProductDetail(slug, 4);
+  } catch {
+    // Unreachable API during SSG/build — never crash next build
+    notFound();
+  }
   if (!detail) notFound();
 
   return (

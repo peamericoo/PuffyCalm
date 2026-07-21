@@ -137,6 +137,14 @@ export async function getProductDetail(
     if (err instanceof CatalogApiError && err.code === "not_found") {
       return null;
     }
+    // Build-time DNS/network to API must not fail `next build` (Railway railpack).
+    // Runtime still surfaces via error.tsx when the page throws from other paths.
+    if (
+      err instanceof TypeError ||
+      (err instanceof CatalogApiError && err.code === "request_failed")
+    ) {
+      return null;
+    }
     throw err;
   }
 }
