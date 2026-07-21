@@ -5,6 +5,7 @@
 | **Fase** | E — Admin auth bridge |
 | **Data** | 2026-07-21 |
 | **Escolha** | **E1** (Google → JWT cookies no FastAPI) |
+| **Commit** | `d65aedb` |
 | **DoD atingido** | **SIM** (código + testes unitários/integrados com mock Google) |
 
 ---
