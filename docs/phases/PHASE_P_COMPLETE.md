@@ -154,7 +154,17 @@ Admin OpenAPI → /admin/orders*, /admin/products* present
 Domain mocks → none in src/
 ```
 
-Deploy: se commit incluir só docs + seed/migration, **reseed/migration** garante que ambiente novo não re-publica `prod_009`. Prod já atualizado via SQL one-shot. Rodar `alembic upgrade head` no próximo deploy/ops do `api`.
+### Deploy API (Phase P)
+
+| Item | Valor |
+|------|--------|
+| Prod DB | `prod_009` draft + alembic stamped `p1a2b3c4d5e6` (SQL one-shot) |
+| API image | **SUCCESS** `8335f823-9add-4ebd-827a-b482dc414134` (Dockerfile/Python from backend context) |
+| Build logs | https://railway.com/project/7d5e7670-fa5c-4400-9273-cc49ce2a0a8f/service/aebdf190-f974-4eb1-97ed-cf25cf568f7d?id=8335f823-9add-4ebd-827a-b482dc414134 |
+| Nota | `railway up` a partir da **raiz monorepo** tenta build Next e falha; deploy API = contexto **só** `backend/` (Dockerfile) |
+| Web | sem mudança de código FE nesta fase — permanece Online |
+
+Pós-deploy: `health=ok` · `ready=ok` · catalog total **8** · PDP smoke **404**.
 
 ---
 
