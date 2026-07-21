@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | N — Legal + empty/error states |
 | **Data** | 2026-07-21 |
-| **Commit** | *(este commit)* |
+| **Commit** | `1d37eba` |
 | **DoD atingido** | **SIM** — about/help/returns/privacy/terms sem ComingSoon; error boundaries compartilhados |
 
 ---

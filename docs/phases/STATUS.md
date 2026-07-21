@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase N — legal + empty/error) |
-| **HEAD / Fase N** | *(ver commit deste push)* |
+| **HEAD / Fase N** | `1d37eba` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -31,7 +31,7 @@
 | K | Account orders | **done** | `db6a5a0` | `docs/phases/PHASE_K_COMPLETE.md` |
 | L | Inventory + fulfillment | **done** | `03a4e15` | `docs/phases/PHASE_L_COMPLETE.md` |
 | M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
-| N | Legal pages + errors | **done** | *(este commit)* | `docs/phases/PHASE_N_COMPLETE.md` |
+| N | Legal pages + errors | **done** | `1d37eba` | `docs/phases/PHASE_N_COMPLETE.md` |
 | O | Observability + tests | pending | — | — |
 | P | Go-live hardening | pending | — | — |
 
