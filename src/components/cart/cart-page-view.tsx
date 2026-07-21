@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { CartLineRow } from "@/components/cart/cart-line-row";
@@ -22,6 +22,16 @@ export function CartPageView() {
   const addItemQuiet = useCartStore((s) => s.addItemQuiet);
   const openCart = useCartStore((s) => s.openCart);
   const totals = useCartTotals();
+  const savings = useMemo(
+    () =>
+      items.reduce((sum, item) => {
+        if (item.compareAtPrice && item.compareAtPrice > item.price) {
+          return sum + (item.compareAtPrice - item.price) * item.quantity;
+        }
+        return sum;
+      }, 0),
+    [items],
+  );
 
   // Back-compat: /cart?add=slug&qty=n
   useEffect(() => {
@@ -100,7 +110,11 @@ export function CartPageView() {
               <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Order summary
               </h2>
-              <CartSummary totals={totals} className="mt-4" />
+              <CartSummary
+                totals={totals}
+                savings={savings}
+                className="mt-4"
+              />
 
               <Button
                 asChild
@@ -113,10 +127,6 @@ export function CartPageView() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-
-              <p className="mt-3 text-center text-[11px] leading-snug text-muted-foreground">
-                Guest checkout · Payments secured by Stripe
-              </p>
             </div>
           </aside>
         </div>
