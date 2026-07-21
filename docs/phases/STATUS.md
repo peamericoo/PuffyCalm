@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase C concluída) |
-| **HEAD / Fase C** | _(stamp after commit)_ |
+| **HEAD / Fase C** | `ec2012e` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -20,7 +20,7 @@
 |------|------|--------|--------|-----|
 | A | Contratos + higiene | **done** | `e01af6e` | `docs/phases/PHASE_A_COMPLETE.md` |
 | B | Catalog FE → API | **done** | `66ae6d9` | `docs/phases/PHASE_B_COMPLETE.md` |
-| C | Reviews + Search → API | **done** | _(stamp)_ | `docs/phases/PHASE_C_COMPLETE.md` |
+| C | Reviews + Search → API | **done** | `ec2012e` | `docs/phases/PHASE_C_COMPLETE.md` |
 | D | Money integrity cart | pending | — | — |
 | E | Admin auth bridge | pending | — | — |
 | F | Admin orders API | pending | — | — |

@@ -5,7 +5,7 @@
 | **Fase** | C — Reviews + Search FE → API |
 | **Data** | 2026-07-21 |
 | **Timezone** | America/local owner |
-| **Commit** | _(stamp after commit)_ |
+| **Commit** | `ec2012e` |
 | **DoD atingido** | **SIM** |
 
 ---
@@ -31,7 +31,7 @@ Completar browse real: PDP reviews paginadas e header search autocomplete leem o
 | Feature flag rollback | **SIM** | `NEXT_PUBLIC_USE_API_CATALOG=0` cobre catalog+reviews+search |
 | `tsc --noEmit` limpo | **SIM** | exit 0 |
 | STATUS.md + este log | **SIM** | este commit |
-| Commit feito | **SIM** | hash em STATUS + este arquivo |
+| Commit feito | **SIM** | `ec2012e` (+ stamp docs) |
 
 ---
 
