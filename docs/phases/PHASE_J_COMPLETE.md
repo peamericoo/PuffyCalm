@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | J — CMS-lite home content |
 | **Data** | 2026-07-21 |
-| **Commit** | *(stamp after commit)* |
+| **Commit** | `99fe3dd` |
 | **DoD atingido** | **SIM** — API + admin UI + storefront consome BE; revalidate home |
 
 ---
