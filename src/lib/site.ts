@@ -1,3 +1,9 @@
+/**
+ * Static storefront chrome (brand, nav, footer, lifestyle modules).
+ * Not catalog data — product/category/reviews come from the API.
+ * Phase J: promo + hero live in content API / `lib/content/defaults`.
+ */
+
 export const siteConfig = {
   name: "PuffyCalm",
   tagline: "Products that make everyday life better",
@@ -222,54 +228,7 @@ export const footerNav = {
   ],
 } as const;
 
-/**
- * @deprecated Phase J — promo + hero moved to API (`GET /api/v1/content/home`).
- * Fallback copy lives in `src/lib/content/defaults.ts`. Kept only if other
- * mocks still re-export; storefront must not import these for home chrome.
- */
-export const promoMessages = [
-  "🎉 We just launched — welcome to PuffyCalm",
-  "🔥 Launch sale: up to 20% off bestsellers this week",
-  "🚚 Free tracked shipping on orders $75+",
-  "⏱️ Limited launch offer — comfort upgrades from $39",
-  "✨ Guest checkout · Ships to US, UK, AU & CA",
-  "💆 New drops: recovery tools that actually feel premium",
-] as const;
-
-/** @deprecated Phase J — use `@/types/content` HeroSlide */
-export type HeroSlide = {
-  id: string;
-  titleLine1: string;
-  titleLine2: string;
-  titleAccent?: string;
-  subtitle: string;
-  ctaLabel: string;
-  ctaHref: string;
-  secondaryLabel?: string;
-  secondaryHref?: string;
-  imageUrl: string;
-  imageAlt: string;
-};
-
-/** @deprecated Phase J — use getHomeContent() / fallbackHomeContent() */
-export const heroSlides: HeroSlide[] = [
-  {
-    id: "slide_launch",
-    titleLine1: "Your body is",
-    titleLine2: "asking for better.",
-    titleAccent: "better.",
-    subtitle:
-      "Stop living with the ache. Premium comfort & recovery — free shipping over $75.",
-    ctaLabel: "Shop the launch",
-    ctaHref: "/category/all",
-    secondaryLabel: "See bestsellers",
-    secondaryHref: "/category/recovery",
-    imageUrl:
-      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1800&q=80",
-    imageAlt: "Calm wellness lifestyle",
-  },
-];
-
+/** Home lifestyle module — static editorial links (not CMS product data). */
 export const lifestyleCollections = [
   {
     id: "life_1",

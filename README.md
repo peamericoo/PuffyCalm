@@ -11,9 +11,9 @@ Premium storefront for **PuffyCalm / PuffyEasy** — products that make everyday
 | DB / cache | PostgreSQL 16 + Redis 7 |
 | Workers | Celery |
 | Gateway (local) | Nginx |
-| Data (current) | Mock fixtures in `src/lib/mock` until API migration |
+| Data (current) | FastAPI catalog/orders; static chrome in `src/lib/site.ts` |
 
-Stable frontend mock tag: **`v1.0-frontend-mock-complete`**
+Historical frontend mock tag: **`v1.0-frontend-mock-complete`**
 
 ## Develop — frontend
 

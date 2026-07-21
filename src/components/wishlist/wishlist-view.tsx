@@ -17,12 +17,12 @@ import {
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart/store";
-import { getFeaturedProducts } from "@/lib/mock/products";
 import {
   sortWishlistItems,
   useWishlistStore,
 } from "@/lib/wishlist/store";
 import { formatMoney } from "@/lib/format";
+import type { Product } from "@/types/product";
 import type { WishlistItem } from "@/types/wishlist";
 import { cn } from "@/lib/utils";
 import styles from "./wishlist.module.css";
@@ -37,8 +37,13 @@ function isOnSale(item: WishlistItem) {
 
 /**
  * Wishlist page — uniform cards, fluid filter transitions, pagination.
+ * `suggestions` come from catalog API (server) for empty-state rails.
  */
-export function WishlistView() {
+export function WishlistView({
+  suggestions: catalogSuggestions = [],
+}: {
+  suggestions?: Product[];
+}) {
   const router = useRouter();
   const rawItems = useWishlistStore((s) => s.items);
   const hasHydrated = useWishlistStore((s) => s.hasHydrated);
@@ -87,10 +92,10 @@ export function WishlistView() {
 
   const suggestions = useMemo(
     () =>
-      getFeaturedProducts()
+      catalogSuggestions
         .filter((p) => !items.some((i) => i.productId === p.id))
         .slice(0, 4),
-    [items],
+    [catalogSuggestions, items],
   );
 
   const toCartProduct = (item: WishlistItem) => ({
@@ -378,7 +383,7 @@ export function WishlistView() {
 function EmptyWishlist({
   suggestions,
 }: {
-  suggestions: ReturnType<typeof getFeaturedProducts>;
+  suggestions: Product[];
 }) {
   const toggle = useWishlistStore((s) => s.toggle);
 

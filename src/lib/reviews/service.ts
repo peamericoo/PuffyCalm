@@ -1,24 +1,20 @@
 /**
- * Product reviews data access facade.
+ * Product reviews data access facade — FastAPI only (Phase M).
  *
- * Default: FastAPI GET /api/v1/products/{id}/reviews.
- * Rollback: same flag as catalog — `NEXT_PUBLIC_USE_API_CATALOG=0`.
- *
+ * GET /api/v1/products/{id}/reviews
  * UI only consumes `ReviewsPage` — no mock imports in components.
  */
 
-import { isApiCatalogEnabled } from "@/lib/api/config";
 import {
   fetchProductReviewsPage,
   ReviewsApiError,
 } from "@/lib/api/reviews";
-import { getProductReviewsPageMock } from "@/lib/mock/reviews";
 import type { ReviewsPage, ReviewsQuery } from "@/types/review";
 
 export type ReviewsServiceContext = {
-  /** Catalog average shown on PDP (mock path / fallback display) */
+  /** Catalog average shown on PDP (optional display context) */
   rating?: number;
-  /** Storefront review count (mock path when pool size ≠ marketing count) */
+  /** Storefront review count (optional display context) */
   reviewCount?: number;
 };
 
@@ -36,15 +32,8 @@ export class ReviewsFetchError extends Error {
  */
 export async function getProductReviewsPage(
   query: ReviewsQuery,
-  ctx?: ReviewsServiceContext,
+  _ctx?: ReviewsServiceContext,
 ): Promise<ReviewsPage> {
-  if (!isApiCatalogEnabled()) {
-    return getProductReviewsPageMock(query, {
-      rating: ctx?.rating ?? 4.7,
-      reviewCount: ctx?.reviewCount ?? 0,
-    });
-  }
-
   try {
     return await fetchProductReviewsPage(query);
   } catch (err) {

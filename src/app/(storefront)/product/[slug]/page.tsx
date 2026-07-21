@@ -5,7 +5,7 @@ import {
   getProductDetail,
   listProductSlugs,
 } from "@/lib/catalog/service";
-import { siteConfig } from "@/lib/mock/site";
+import { siteConfig } from "@/lib/site";
 
 /** ISR — catalog from API with short revalidate. */
 export const revalidate = 60;

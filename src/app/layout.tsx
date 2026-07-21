@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { AuthSessionProvider } from "@/components/auth/session-provider";
-import { siteConfig } from "@/lib/mock/site";
+import { siteConfig } from "@/lib/site";
 import "@/styles/globals.css";
 
 const inter = Inter({

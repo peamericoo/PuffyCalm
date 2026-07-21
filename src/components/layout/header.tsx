@@ -38,7 +38,7 @@ import { SearchOverlay } from "@/components/layout/search-overlay";
 import { Button } from "@/components/ui/button";
 import { useCartItemCount, useCartStore } from "@/lib/cart/store";
 import { useWishlistCount } from "@/lib/wishlist/store";
-import { mainNav, type NavChild } from "@/lib/mock/site";
+import { mainNav, type NavChild } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const NAV_ICONS: Record<NavChild["icon"], LucideIcon> = {

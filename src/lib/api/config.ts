@@ -10,13 +10,9 @@ export function getStripePublishableKey(): string {
 }
 
 /**
- * Storefront catalog/reviews/search from FastAPI (default ON).
- * Set NEXT_PUBLIC_USE_API_CATALOG=0|false|off|no to force mock fixtures.
+ * @deprecated Phase M — domain data is always API; mock rollback removed.
+ * Kept as always-true for any residual callers / env docs; safe to delete later.
  */
 export function isApiCatalogEnabled(): boolean {
-  const raw = process.env.NEXT_PUBLIC_USE_API_CATALOG?.trim().toLowerCase();
-  if (raw === "0" || raw === "false" || raw === "off" || raw === "no") {
-    return false;
-  }
   return true;
 }

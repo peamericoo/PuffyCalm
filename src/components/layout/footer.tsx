@@ -3,7 +3,7 @@ import { Logo } from "@/components/layout/logo";
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { footerNav, siteConfig } from "@/lib/mock/site";
+import { footerNav, siteConfig } from "@/lib/site";
 
 export function Footer() {
   const year = new Date().getFullYear();

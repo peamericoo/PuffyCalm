@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CategoryView } from "@/components/category";
 import { getCatalogPage, listCatalogSlugs } from "@/lib/catalog/service";
-import { siteConfig } from "@/lib/mock/site";
+import { siteConfig } from "@/lib/site";
 
 /**
  * Static category shells — no searchParams on the server.

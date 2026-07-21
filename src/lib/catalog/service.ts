@@ -1,10 +1,8 @@
 /**
- * Catalog data access facade.
- *
- * Default: FastAPI (`NEXT_PUBLIC_API_URL`).
- * Rollback: set `NEXT_PUBLIC_USE_API_CATALOG=0` to use `src/lib/mock/*`.
+ * Catalog data access facade — FastAPI only (Phase M).
  *
  * Shapes stay CatalogPage / Product — cart still receives product.id from PDP.
+ * Offline / build-time: empty lists or null (no mock fixtures).
  */
 
 import {
@@ -14,76 +12,24 @@ import {
   fetchProductBySlug,
   type ProductDetailPayload,
 } from "@/lib/api/catalog";
-import { isApiCatalogEnabled } from "@/lib/api/config";
-import { buildFacets } from "@/lib/catalog/filter";
 import type { CatalogPage } from "@/lib/catalog/types";
-import { categories, getCategoryBySlug } from "@/lib/mock/categories";
-import {
-  getProductBySlug as mockGetProductBySlug,
-  getProductsByCategory,
-  getRelatedProducts as mockGetRelatedProducts,
-  products as mockProducts,
-} from "@/lib/mock/products";
 import type { Category, Product } from "@/types/product";
 
-export { isApiCatalogEnabled };
-
-const FALLBACK_ALL: Category = {
-  id: "cat_all",
-  slug: "all",
-  name: "All products",
-  description: "The full PuffyCalm collection of life-improving essentials.",
-  tagline: "Everything we love right now",
-  imageUrl:
-    "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1200&q=80",
-  ctaLabel: "Shop All",
-  productCount: 0,
-};
-
-function mockCatalogPage(categorySlug: string): CatalogPage | null {
-  const slug = categorySlug.trim().toLowerCase() || "all";
-  const category =
-    getCategoryBySlug(slug) ?? (slug === "all" ? FALLBACK_ALL : null);
-  if (!category) return null;
-
-  const pool = getProductsByCategory(slug);
-  const facets = buildFacets(
-    pool,
-    categories.map((c) => ({ slug: c.slug, name: c.name })),
-  );
-  const siblings = categories.map((c) => ({
-    ...c,
-    productCount: getProductsByCategory(c.slug).length,
-  }));
-
-  return {
-    category: {
-      ...category,
-      productCount: pool.length,
-    },
-    products: pool,
-    siblings,
-    sort: "featured",
-    stock: "all",
-    types: [],
-    sale: false,
-    total: pool.length,
-    poolTotal: pool.length,
-    facets,
-  };
-}
+/** Seed category slugs for generateStaticParams when API is offline at build. */
+const BUILD_FALLBACK_CATEGORY_SLUGS = [
+  "all",
+  "recovery",
+  "comfort",
+  "everyday",
+] as const;
 
 /**
  * Category shelf pool. Returns null when category does not exist (→ notFound).
- * Throws CatalogApiError on transport / 5xx when API mode is on.
+ * Throws CatalogApiError on transport / 5xx.
  */
 export async function getCatalogPage(
   categorySlug: string,
 ): Promise<CatalogPage | null> {
-  if (!isApiCatalogEnabled()) {
-    return mockCatalogPage(categorySlug);
-  }
-
   try {
     return await fetchCatalogPage(categorySlug);
   } catch (err) {
@@ -95,12 +41,6 @@ export async function getCatalogPage(
 }
 
 export async function listCategories(): Promise<Category[]> {
-  if (!isApiCatalogEnabled()) {
-    return categories.map((c) => ({
-      ...c,
-      productCount: getProductsByCategory(c.slug).length,
-    }));
-  }
   return fetchCategories();
 }
 
@@ -111,7 +51,7 @@ export async function listCatalogSlugs(): Promise<string[]> {
   } catch {
     /* build-time / offline — fall through */
   }
-  return categories.map((c) => c.slug);
+  return [...BUILD_FALLBACK_CATEGORY_SLUGS];
 }
 
 /**
@@ -122,15 +62,6 @@ export async function getProductDetail(
   slug: string,
   related = 4,
 ): Promise<ProductDetailPayload | null> {
-  if (!isApiCatalogEnabled()) {
-    const product = mockGetProductBySlug(slug);
-    if (!product) return null;
-    return {
-      product,
-      related: mockGetRelatedProducts(slug, related),
-    };
-  }
-
   try {
     return await fetchProductBySlug(slug, related);
   } catch (err) {
@@ -149,11 +80,8 @@ export async function getProductDetail(
   }
 }
 
-/** Product slugs for generateStaticParams (API → mock fallback). */
+/** Product slugs for generateStaticParams (API only; empty if offline). */
 export async function listProductSlugs(): Promise<string[]> {
-  if (!isApiCatalogEnabled()) {
-    return mockProducts.map((p) => p.slug);
-  }
   try {
     const page = await fetchCatalogPage("all");
     if (page.products.length > 0) {
@@ -162,31 +90,27 @@ export async function listProductSlugs(): Promise<string[]> {
   } catch {
     /* offline build */
   }
-  return mockProducts.map((p) => p.slug);
+  return [];
 }
 
 /**
  * Home “What customers buy first” rail — sale first, then rating.
- * Max 6 items from published catalog.
+ * Max 6 items from published catalog. Empty array if API unreachable.
  */
 export async function getHomeProductRail(limit = 6): Promise<Product[]> {
-  let pool: Product[];
-
-  if (!isApiCatalogEnabled()) {
-    pool = [...mockProducts];
-  } else {
+  try {
     const page = await fetchCatalogPage("all");
-    pool = page.products;
+    return [...page.products]
+      .sort((a, b) => {
+        const saleA = a.compareAtPrice ? 1 : 0;
+        const saleB = b.compareAtPrice ? 1 : 0;
+        if (saleB !== saleA) return saleB - saleA;
+        return b.rating - a.rating || b.reviewCount - a.reviewCount;
+      })
+      .slice(0, limit);
+  } catch {
+    return [];
   }
-
-  return [...pool]
-    .sort((a, b) => {
-      const saleA = a.compareAtPrice ? 1 : 0;
-      const saleB = b.compareAtPrice ? 1 : 0;
-      if (saleB !== saleA) return saleB - saleA;
-      return b.rating - a.rating || b.reviewCount - a.reviewCount;
-    })
-    .slice(0, limit);
 }
 
 export { CatalogApiError };

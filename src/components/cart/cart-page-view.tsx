@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { CartLineRow } from "@/components/cart/cart-line-row";
 import { CartSummary } from "@/components/cart/cart-summary";
@@ -10,40 +9,45 @@ import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { computeCartSavings } from "@/lib/cart/savings";
 import { useCartStore, useCartTotals } from "@/lib/cart/store";
-import { getProductBySlug } from "@/lib/mock/products";
 import { formatMoney } from "@/lib/format";
+import type { Product } from "@/types/product";
 
 /**
  * Full bag page — optional fallback for deep links / desktop review.
  * Primary UX is still the cart drawer.
+ *
+ * Deep link `/cart?add=slug&qty=n` is resolved on the server (catalog API)
+ * and passed as prefillProduct — no mock catalog.
  */
-export function CartPageView() {
-  const searchParams = useSearchParams();
+export function CartPageView({
+  prefillProduct = null,
+  prefillQty = 1,
+}: {
+  prefillProduct?: Product | null;
+  prefillQty?: number;
+}) {
   const items = useCartStore((s) => s.items);
   const addItemQuiet = useCartStore((s) => s.addItemQuiet);
   const openCart = useCartStore((s) => s.openCart);
   const totals = useCartTotals();
   const savings = useMemo(() => computeCartSavings(items), [items]);
+  const appliedPrefill = useRef(false);
 
-  // Back-compat: /cart?add=slug&qty=n
+  // Back-compat: server-resolved product for /cart?add=slug&qty=n
   useEffect(() => {
-    const add = searchParams.get("add");
-    if (!add) return;
-    const product = getProductBySlug(add);
-    if (!product) return;
-    const qty = Number(searchParams.get("qty") ?? "1");
-    addItemQuiet(product, Number.isFinite(qty) ? qty : 1);
+    if (!prefillProduct || appliedPrefill.current) return;
+    appliedPrefill.current = true;
+    addItemQuiet(prefillProduct, prefillQty);
     openCart();
-    // Strip query without full navigation noise
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.delete("add");
       url.searchParams.delete("qty");
       window.history.replaceState({}, "", url.pathname);
     }
-  }, [searchParams, addItemQuiet, openCart]);
+  }, [prefillProduct, prefillQty, addItemQuiet, openCart]);
 
-  if (items.length === 0) {
+  if (items.length === 0 && !prefillProduct) {
     return (
       <section className="px-3 py-16 sm:px-5 sm:py-24">
         <Container className="max-w-lg animate-fade-up text-center">
@@ -64,6 +68,16 @@ export function CartPageView() {
               <Link href="/">Back home</Link>
             </Button>
           </div>
+        </Container>
+      </section>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <section className="px-3 py-16 sm:px-5 sm:py-24">
+        <Container className="max-w-lg animate-fade-up text-center text-sm text-muted-foreground">
+          Updating bag…
         </Container>
       </section>
     );

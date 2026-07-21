@@ -91,13 +91,12 @@ total = subtotal + shipping
 
 ### Onde existe
 
-- FE mock: `src/lib/mock/products.ts`
-- BE seed: `backend/app/infrastructure/db/seed_data.py`
+- BE seed: `backend/app/infrastructure/db/seed_data.py` (FE mock fixtures removed Phase M)
 - Visível no catálogo se listado (não há flag unlisted no model ainda)
 
 ### Política (congelada na Fase A, charge math Fase D)
 
-1. **Manter** em seed/mock enquanto smoke de pagamento for necessário.
+1. **Manter** em seed enquanto smoke de pagamento for necessário.
 2. Tratar como **dev / unlisted intent**: não usar em marketing, ads ou merchandising real.
 3. **Não remover** no meio das fases (IDs estáveis) até P.
 4. **Antes de go-live real (Fase P ou antes):** unpublish / hide / reseed.
@@ -128,5 +127,5 @@ Obrigatório. Conta Google é opcional (account UX), nunca blocker de compra.
 
 ## 5. Catalog API (pós B/C)
 
-Home / category / PDP / search / reviews leem FastAPI por default (`NEXT_PUBLIC_USE_API_CATALOG` off = mock rollback).  
-Mocks de domínio ainda existem em disco até Fase M.
+Home / category / PDP / search / reviews leem **somente FastAPI** (Phase M — mock rollback removido).  
+Chrome estático: `src/lib/site.ts` (nav/footer/lifestyle). Promo/hero: content API (J).

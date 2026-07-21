@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Reveal } from "@/components/shared/reveal";
 import { DisplayStack } from "@/components/shared/section-heading";
-import { lifestyleCollections } from "@/lib/mock/site";
+import { lifestyleCollections } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function LifestyleCollections() {
