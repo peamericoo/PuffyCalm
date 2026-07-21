@@ -4,7 +4,9 @@
 > Cole o bloco **PROMPT DE RETOMADA** no início da mensagem + diga o que fazer (ex.: “execute Fase B”).
 >
 > **Roadmap canônico (auditoria 2026-07-21):** [`docs/ECOMMERCE_MASTER_PLAN.md`](./ECOMMERCE_MASTER_PLAN.md)  
-> As fases antigas 7–10 abaixo foram **substituídas** pelas fases **A–P** do master plan.  
+> **Prompts copy-paste por fase (sessões descartáveis):** [`docs/PHASE_PROMPTS.md`](./PHASE_PROMPTS.md)  
+> **Status entre IAs:** [`docs/phases/STATUS.md`](./phases/STATUS.md)  
+> As fases antigas 7–10 foram **substituídas** pelas fases **A–P** do master plan.  
 > **Só Frontend (craft/polish)?** Use **`/compact-fe`** ou `docs/FRONTEND_CRAFT.md`  
 > (persona **CalmCraft** — não reabre backend).
 
