@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 /**
  * Admin entry — Auth.js Google (UX allowlist) + Phase E backend JWT bridge.
- * Orders/products CRUD ships in later phases; this page proves /admin/ping.
+ * Phase G: orders UI at /admin/orders (real API data only).
  */
 export default async function AdminPage() {
   const session = await auth();
@@ -87,9 +87,21 @@ export default async function AdminPage() {
 
         <div className="mt-6 space-y-3 rounded-[1.35rem] border border-border/70 bg-white p-6 shadow-sm">
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Quick links
+            Operations
           </p>
           <ul className="space-y-2 text-sm">
+            <li>
+              <Link
+                className="font-medium text-brand-deep hover:underline"
+                href="/admin/orders"
+              >
+                Orders
+              </Link>
+              <span className="text-muted-foreground">
+                {" "}
+                — list, detail, status (Phase G)
+              </span>
+            </li>
             <li>
               <Link className="text-brand-deep hover:underline" href="/">
                 Storefront home
@@ -102,14 +114,13 @@ export default async function AdminPage() {
             </li>
             <li>
               <span className="text-muted-foreground">
-                Next: admin orders API (Fase F) —{" "}
-                <code className="text-xs">GET /api/v1/admin/orders</code>
+                Next: products admin (Phase H)
               </span>
             </li>
           </ul>
           <div className="flex flex-col gap-2 pt-2 sm:flex-row">
             <Button asChild variant="default" className="flex-1">
-              <Link href="/category/all">View catalog</Link>
+              <Link href="/admin/orders">Open orders</Link>
             </Button>
             <SignOutButton className="flex-1" />
           </div>
