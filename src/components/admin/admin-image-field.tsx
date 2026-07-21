@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Crop, Loader2, Upload } from "lucide-react";
 import { ensureAdminBackendSession } from "@/lib/api/admin-auth";
 import {
   AdminMediaApiError,
@@ -9,6 +9,11 @@ import {
   MEDIA_MAX_BYTES,
   uploadAdminMedia,
 } from "@/lib/api/admin-media";
+import {
+  AdminImageCropDialog,
+  FramePreview,
+} from "@/components/admin/admin-image-crop-dialog";
+import type { AspectPreset } from "@/lib/admin/image-crop";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,19 +22,21 @@ type Props = {
   value: string;
   onChange: (url: string) => void;
   googleIdToken?: string | null;
-  /** Optional product id if associating upload with a product. */
   productId?: string;
+  /** Target frame on the storefront — drives crop aspect + preview shape. */
+  aspect?: AspectPreset;
   className?: string;
   placeholder?: string;
   help?: string;
+  /** Show large framed preview matching storefront crop. */
+  showFramePreview?: boolean;
 };
 
 const inputClass =
   "h-10 w-full rounded-xl border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30";
 
 /**
- * Image URL + file upload (Railway S3 → public /media/… URL).
- * Same media API as products/categories.
+ * Global admin image control: URL, upload, crop/frame, framed preview.
  */
 export function AdminImageField({
   label = "Image",
@@ -37,15 +44,38 @@ export function AdminImageField({
   onChange,
   googleIdToken,
   productId,
+  aspect = "square",
   className,
-  placeholder = "/media/products/… or https://…",
-  help = "Upload jpeg/png/webp/gif (max 5 MiB) or paste a URL.",
+  placeholder = "/media/… or https://…",
+  help,
+  showFramePreview = true,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [revokeOnClose, setRevokeOnClose] = useState<string | null>(null);
 
-  const onFile = async (file: File | null) => {
+  const defaultHelp =
+    help ??
+    "Upload → adjust the frame (pan/zoom) → applies the crop. Or paste a URL and click Adjust frame.";
+
+  const uploadFile = async (file: File) => {
+    if (file.size > MEDIA_MAX_BYTES) {
+      throw new Error(
+        `File exceeds ${Math.round(MEDIA_MAX_BYTES / (1024 * 1024))} MiB limit`,
+      );
+    }
+    await ensureAdminBackendSession({ googleIdToken });
+    const result = await uploadAdminMedia({
+      file,
+      productId: productId || undefined,
+    });
+    if (!result.url) throw new Error("Upload returned no public URL");
+    onChange(result.url);
+  };
+
+  const openCropFromFile = (file: File | null) => {
     if (!file) return;
     setError(null);
     if (file.size > MEDIA_MAX_BYTES) {
@@ -54,17 +84,40 @@ export function AdminImageField({
       );
       return;
     }
+    const url = URL.createObjectURL(file);
+    setRevokeOnClose(url);
+    setCropSrc(url);
+  };
+
+  const openCropFromValue = () => {
+    if (!value.trim()) {
+      setError("Add or upload an image first.");
+      return;
+    }
+    setError(null);
+    setRevokeOnClose(null);
+    // Proxy so canvas crop works for cross-origin /media on the API host.
+    const raw = value.trim();
+    if (raw.startsWith("blob:") || raw.startsWith("data:")) {
+      setCropSrc(raw);
+      return;
+    }
+    setCropSrc(`/api/admin/media-proxy?url=${encodeURIComponent(raw)}`);
+  };
+
+  const closeCrop = () => {
+    if (revokeOnClose) URL.revokeObjectURL(revokeOnClose);
+    setRevokeOnClose(null);
+    setCropSrc(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const onCropApply = async (file: File) => {
     setUploading(true);
+    setError(null);
     try {
-      await ensureAdminBackendSession({ googleIdToken });
-      const result = await uploadAdminMedia({
-        file,
-        productId: productId || undefined,
-      });
-      if (!result.url) {
-        throw new Error("Upload returned no public URL");
-      }
-      onChange(result.url);
+      await uploadFile(file);
+      closeCrop();
     } catch (e) {
       setError(
         e instanceof AdminMediaApiError
@@ -75,13 +128,17 @@ export function AdminImageField({
       );
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-1.5 text-sm", className)}>
+    <div className={cn("flex flex-col gap-2 text-sm", className)}>
       <span className="font-medium text-foreground">{label}</span>
+
+      {showFramePreview ? (
+        <FramePreview src={value || undefined} aspect={aspect} />
+      ) : null}
+
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           className={cn(inputClass, "font-mono text-[13px] sm:flex-1")}
@@ -89,7 +146,7 @@ export function AdminImageField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
         />
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <input
             ref={fileRef}
             type="file"
@@ -97,7 +154,7 @@ export function AdminImageField({
             className="sr-only"
             disabled={uploading}
             onChange={(e) => {
-              void onFile(e.target.files?.[0] ?? null);
+              openCropFromFile(e.target.files?.[0] ?? null);
             }}
           />
           <Button
@@ -111,32 +168,46 @@ export function AdminImageField({
             {uploading ? (
               <>
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                Uploading…
+                Working…
               </>
             ) : (
               <>
                 <Upload className="mr-1.5 h-4 w-4" />
-                Upload
+                Upload & frame
               </>
             )}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-10"
+            disabled={uploading || !value.trim()}
+            onClick={openCropFromValue}
+          >
+            <Crop className="mr-1.5 h-4 w-4" />
+            Adjust frame
+          </Button>
         </div>
       </div>
-      {value ? (
-        <div className="mt-1 flex items-center gap-3">
-          <div className="relative h-16 w-24 overflow-hidden rounded-xl bg-brand-soft ring-1 ring-border/60">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="" className="h-full w-full object-cover" />
-          </div>
-          <p className="text-[11px] text-muted-foreground break-all">{help}</p>
-        </div>
-      ) : (
-        <p className="text-[11px] text-muted-foreground">{help}</p>
-      )}
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        {defaultHelp}
+      </p>
       {error ? (
         <p className="text-xs text-destructive" role="alert">
           {error}
         </p>
+      ) : null}
+
+      {cropSrc ? (
+        <AdminImageCropDialog
+          open
+          imageSrc={cropSrc}
+          aspect={aspect}
+          title={`Frame · ${label}`}
+          onCancel={closeCrop}
+          onApply={onCropApply}
+        />
       ) : null}
     </div>
   );

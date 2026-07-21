@@ -216,7 +216,8 @@ export function CategoriesEditorView({ googleIdToken }: Props) {
                   );
                 }}
                 googleIdToken={googleIdToken}
-                help="Upload or paste URL. Empty = brand gradient on mood/filters."
+                aspect="square"
+                help="Upload & frame to square (mood thumbs + filters). Empty = brand gradient."
               />
             </div>
 

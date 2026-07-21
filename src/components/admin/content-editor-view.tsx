@@ -10,6 +10,9 @@ import {
 import { ensureAdminBackendSession } from "@/lib/api/admin-auth";
 import { revalidateHome } from "@/lib/admin/revalidate-home";
 import { AdminImageField } from "@/components/admin/admin-image-field";
+import { AdminLivePreview } from "@/components/admin/admin-live-preview";
+import { HeroCarousel } from "@/components/home/hero-carousel";
+import { LifestyleCollections } from "@/components/home/lifestyle-collections";
 import { Button } from "@/components/ui/button";
 import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
 import { cn } from "@/lib/utils";
@@ -217,12 +220,23 @@ export function ContentEditorView({ googleIdToken }: Props) {
     );
   }
 
+  const previewSlides = slides.filter(
+    (s) => s.imageUrl.trim() && s.titleLine1.trim() && s.titleLine2.trim(),
+  );
+  const previewLifestyle = lifestyle.filter(
+    (t) => t.imageUrl.trim() && t.title.trim() && t.href.trim(),
+  );
+  const previewPromos = promoText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          Promo (all pages), home hero, and lifestyle tiles. Leave empty for a
-          clean storefront — fill when ready to launch.
+          Promo, hero, and lifestyle — with live storefront previews. Use{" "}
+          <strong>Upload & frame</strong> to control crop before save.
           {updatedAt ? (
             <>
               {" "}
@@ -259,6 +273,9 @@ export function ContentEditorView({ googleIdToken }: Props) {
           {message}
         </p>
       ) : null}
+
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
+      <div className="min-w-0 space-y-8">
 
       <section className="rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="font-display text-lg font-semibold tracking-tight">
@@ -397,7 +414,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
                 value={slide.imageUrl}
                 onChange={(url) => updateSlide(index, { imageUrl: url })}
                 googleIdToken={googleIdToken}
-                help="Upload a photo or paste a URL. Saved as public /media/… on the API."
+                aspect="hero"
+                help="Upload & frame to 16:9 (matches home hero). Adjust frame anytime."
               />
               <Field label="CTA label">
                 <input
@@ -534,6 +552,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   )
                 }
                 googleIdToken={googleIdToken}
+                aspect="square"
               />
               <Field label="Layout span">
                 <select
@@ -562,10 +581,63 @@ export function ContentEditorView({ googleIdToken }: Props) {
         ))}
       </section>
 
-      <div className="flex justify-end pb-8">
+      <div className="flex justify-end pb-4">
         <Button type="button" onClick={() => void onSave()} disabled={saving}>
           {saving ? "Saving…" : "Save & revalidate home"}
         </Button>
+      </div>
+      </div>
+
+      {/* Sticky live previews — real storefront components */}
+      <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <AdminLivePreview
+          title="Promo ticker"
+          description="Same marquee strip as the top of the store."
+        >
+          {previewPromos.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No promo lines yet.</p>
+          ) : (
+            <div className="promo-bar relative h-9 overflow-hidden rounded-lg text-white">
+              <div className="flex h-full w-max items-center gap-8 whitespace-nowrap px-3 text-[11px] font-medium">
+                {[...previewPromos, ...previewPromos].map((t, i) => (
+                  <span key={`${t}-${i}`} className="inline-flex items-center gap-8">
+                    {t}
+                    <span className="h-1 w-1 rounded-full bg-white/50" aria-hidden />
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </AdminLivePreview>
+
+        <AdminLivePreview
+          title="Hero carousel"
+          description="Exact home hero component (softer zoom on storefront)."
+        >
+          {previewSlides.length === 0 ? (
+            <p className="rounded-xl bg-white/80 px-3 py-8 text-center text-xs text-muted-foreground">
+              Add a complete slide (titles + framed image) to preview.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-border/50 [&_section]:pb-0">
+              <HeroCarousel slides={previewSlides} />
+            </div>
+          )}
+        </AdminLivePreview>
+
+        <AdminLivePreview
+          title="Lifestyle mosaic"
+          description="Home lifestyle block — hidden on site when empty."
+        >
+          {previewLifestyle.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No lifestyle tiles yet.</p>
+          ) : (
+            <div className="overflow-hidden rounded-xl bg-white ring-1 ring-border/50">
+              <LifestyleCollections tiles={previewLifestyle} />
+            </div>
+          )}
+        </AdminLivePreview>
+      </div>
       </div>
     </div>
   );

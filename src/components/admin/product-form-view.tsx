@@ -21,11 +21,14 @@ import {
   uploadAdminMedia,
 } from "@/lib/api/admin-media";
 import { revalidateCatalog } from "@/lib/admin/revalidate-catalog";
+import { AdminImageField } from "@/components/admin/admin-image-field";
+import { AdminLivePreview } from "@/components/admin/admin-live-preview";
 import { ProductStatusBadge } from "@/components/admin/product-status-badge";
-import { Button } from "@/components/ui/button";
 import { ProductReviewsEditor } from "@/components/admin/product-reviews-editor";
+import { ProductCard } from "@/components/product/product-card";
+import { Button } from "@/components/ui/button";
 import { fetchCategories } from "@/lib/api/catalog";
-import type { Category } from "@/types/product";
+import type { Category, Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -469,6 +472,52 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
     );
   }
 
+  const galleryUrls = useMemo(
+    () =>
+      form.imagesText
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean),
+    [form.imagesText],
+  );
+
+  const previewProduct: Product = useMemo(() => {
+    const price = Number.parseFloat(form.price) || 0;
+    const compare = form.compareAtPrice
+      ? Number.parseFloat(form.compareAtPrice)
+      : undefined;
+    const cover = form.imageUrl || galleryUrls[0] || "";
+    const images = galleryUrls.length > 0 ? galleryUrls : cover ? [cover] : [];
+    return {
+      id: form.id || "preview",
+      slug: form.slug || "preview-product",
+      name: form.name || "Product name",
+      shortDescription: form.shortDescription || "Short description",
+      description: form.description || "",
+      price,
+      compareAtPrice:
+        compare && Number.isFinite(compare) ? compare : undefined,
+      currency: "USD",
+      categorySlugs: form.categorySlugs,
+      imageUrl: cover,
+      images,
+      imageAlt: form.imageAlt || form.name || "Product",
+      rating: 0,
+      reviewCount: 0,
+      badges: form.badgesText
+        .split(",")
+        .map((b) => b.trim())
+        .filter(Boolean) as Product["badges"],
+      features: form.featuresText
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean),
+      inStock: form.inStock,
+      featured: form.featured,
+      categoryLabel: form.categoryLabel || undefined,
+    };
+  }, [form, galleryUrls]);
+
   return (
     <form onSubmit={(e) => void onSave(e)} className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -655,86 +704,33 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         <section className="space-y-4 rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold">Media & taxonomy</h2>
           <p className="text-xs text-muted-foreground">
-            Upload JPEG/PNG/WebP/GIF (max 5 MiB). Files go to object storage;
-            URLs are stored on the product. First gallery URL becomes cover if
-            primary is empty.
+            <strong>Upload & frame</strong> crops to product-card ratio (4:5).
+            Cover is the main card image; gallery lines are extra PDP shots.
           </p>
 
-          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Upload images
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer">
-                <input
-                  type="file"
-                  accept={MEDIA_ACCEPT}
-                  multiple
-                  disabled={uploading || saving || lifecycleBusy}
-                  className="sr-only"
-                  onChange={(e) => {
-                    void onUploadFiles(e.target.files, { setCover: false });
-                    e.target.value = "";
-                  }}
-                />
-                <span
-                  className={cn(
-                    "inline-flex h-9 items-center rounded-xl border border-border bg-white px-3 text-sm font-medium shadow-sm",
-                    uploading
-                      ? "pointer-events-none opacity-60"
-                      : "hover:bg-muted",
-                  )}
-                >
-                  {uploading ? "Uploading…" : "Add to gallery"}
-                </span>
-              </label>
-              <label className="inline-flex cursor-pointer">
-                <input
-                  type="file"
-                  accept={MEDIA_ACCEPT}
-                  disabled={uploading || saving || lifecycleBusy}
-                  className="sr-only"
-                  onChange={(e) => {
-                    void onUploadFiles(e.target.files, { setCover: true });
-                    e.target.value = "";
-                  }}
-                />
-                <span
-                  className={cn(
-                    "inline-flex h-9 items-center rounded-xl border border-brand-deep/30 bg-brand-deep/5 px-3 text-sm font-medium text-brand-deep shadow-sm",
-                    uploading
-                      ? "pointer-events-none opacity-60"
-                      : "hover:bg-brand-deep/10",
-                  )}
-                >
-                  Upload as cover
-                </span>
-              </label>
-            </div>
-            {!productId ? (
-              <p className="text-xs text-muted-foreground">
-                New product: uploads are stored immediately; save the draft to
-                attach URLs to the product record.
-              </p>
-            ) : null}
-            {form.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- admin preview of arbitrary remote URL
-              <img
-                src={form.imageUrl}
-                alt={form.imageAlt || form.name || "Cover preview"}
-                className="mt-1 h-28 w-28 rounded-lg border border-border object-cover"
-              />
-            ) : null}
-          </div>
+          <AdminImageField
+            label="Cover image (product card frame)"
+            value={form.imageUrl}
+            onChange={(url) => {
+              setForm((prev) => {
+                const lines = prev.imagesText
+                  .split("\n")
+                  .map((l) => l.trim())
+                  .filter(Boolean);
+                const nextLines =
+                  url && !lines.includes(url) ? [url, ...lines] : lines;
+                return {
+                  ...prev,
+                  imageUrl: url,
+                  imagesText: nextLines.join("\n"),
+                };
+              });
+            }}
+            googleIdToken={googleIdToken}
+            productId={productId}
+            aspect="product"
+          />
 
-          <Field label="Primary image URL">
-            <input
-              value={form.imageUrl}
-              onChange={(e) => setField("imageUrl", e.target.value)}
-              className={inputClass}
-              placeholder="https://…"
-            />
-          </Field>
           <Field label="Image alt">
             <input
               value={form.imageAlt}
@@ -742,6 +738,36 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               className={inputClass}
             />
           </Field>
+
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Quick add to gallery (no crop)
+            </span>
+            <label className="inline-flex cursor-pointer">
+              <input
+                type="file"
+                accept={MEDIA_ACCEPT}
+                multiple
+                disabled={uploading || saving || lifecycleBusy}
+                className="sr-only"
+                onChange={(e) => {
+                  void onUploadFiles(e.target.files, { setCover: false });
+                  e.target.value = "";
+                }}
+              />
+              <span
+                className={cn(
+                  "inline-flex h-9 items-center rounded-xl border border-border bg-white px-3 text-sm font-medium shadow-sm",
+                  uploading
+                    ? "pointer-events-none opacity-60"
+                    : "hover:bg-muted",
+                )}
+              >
+                {uploading ? "Uploading…" : "Add files to gallery"}
+              </span>
+            </label>
+          </div>
+
           <Field label="Gallery URLs (one per line, order preserved)">
             <textarea
               value={form.imagesText}
@@ -822,6 +848,16 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
           googleIdToken={googleIdToken}
         />
       ) : null}
+
+      <AdminLivePreview
+        title="Product card"
+        description="Same card used on home / category grids (compact)."
+        className="max-w-sm"
+      >
+        <div className="mx-auto w-[200px]">
+          <ProductCard product={previewProduct} compact />
+        </div>
+      </AdminLivePreview>
     </form>
   );
 }
