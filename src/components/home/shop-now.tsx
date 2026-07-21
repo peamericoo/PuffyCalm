@@ -289,12 +289,19 @@ function MobileMoodStrip({
 
 function CatalogUnavailable() {
   return (
-    <div className="glass-panel rounded-[1.5rem] px-6 py-10 text-center">
-      <p className="text-sm font-medium text-foreground">
+    <div
+      className="glass-panel rounded-[1.5rem] px-6 py-10 text-center"
+      role="status"
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        Catalog
+      </p>
+      <p className="mt-2 text-sm font-medium text-foreground">
         Catalog temporarily unavailable
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Please refresh in a moment — guest checkout still works once products load.
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        Please refresh in a moment — guest checkout still works once products
+        load. Your cart is unaffected.
       </p>
       <Link
         href="/category/all"

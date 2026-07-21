@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase M — domain mocks removed) |
-| **HEAD / Fase M** | `9122721` |
+| **Última atualização** | 2026-07-21 (Fase N — legal + empty/error) |
+| **HEAD / Fase N** | *(ver commit deste push)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **N** (legal + empty/error) · **O** (obs + tests) · **P** (go-live) — N paralelo; P prefere M done |
+| **Próxima fase** | **O** (obs + tests) · **P** (go-live) |
 
 ## Fases
 
@@ -31,22 +31,22 @@
 | K | Account orders | **done** | `db6a5a0` | `docs/phases/PHASE_K_COMPLETE.md` |
 | L | Inventory + fulfillment | **done** | `03a4e15` | `docs/phases/PHASE_L_COMPLETE.md` |
 | M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
-| N | Legal pages + errors | pending | — | — |
+| N | Legal pages + errors | **done** | *(este commit)* | `docs/phases/PHASE_N_COMPLETE.md` |
 | O | Observability + tests | pending | — | — |
 | P | Go-live hardening | pending | — | — |
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy:** web + api Railway; H–L validated; inventory `stock_qty` on Postgres.
-- **Fase M:** `src/lib/mock/` **apagado**; catalog/reviews/search/home rail/cart deep-link/wishlist = API; chrome estático em `src/lib/site.ts`.
-- **Env prod:** Stripe + shipping; auth; orders; products; media S3; content; inventory. Flag `NEXT_PUBLIC_USE_API_CATALOG` **deprecated** (ignorada).
+- **Prod healthy:** web + api Railway; H–M validated; inventory `stock_qty` on Postgres.
+- **Fase N:** trust pages EN reais (`/about` `/help` `/returns` `/privacy` `/terms`); privacy/terms = operational D2C placeholders; `ErrorState` + storefront error boundary.
+- **Fase M residual:** chrome em `lib/site.ts`; content defaults offline; BE seed; `prod_009` até P; restock on cancel defer.
+- **Env prod:** Stripe + shipping; auth; orders; products; media S3; content; inventory.
 - **Contratos congelados:** Stripe Custom; guest checkout; `stripe_events` idempotency.
 - **Não recriar:** Stripe Custom checkout; guest checkout; não quebrar `stripe_events`.
-- **Residual justificado:** nav/footer/lifestyle em código (`lib/site.ts`); content defaults offline; BE seed; `prod_009` até P; restock on cancel defer.
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **N**, **O** ou **P**.
-2. Ler `PHASE_M_COMPLETE.md` se precisar de residual de mock/chrome.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **O** ou **P**.
+2. Ler `PHASE_N_COMPLETE.md` se precisar de páginas legais / error UX.
 3. Executar **só** uma fase; ao fim criar `PHASE_*_COMPLETE.md` e atualizar esta tabela.
-4. Redeploy **web** se M ainda não estiver no serviço Railway de produção.
+4. Redeploy **web** se N ainda não estiver no serviço Railway de produção.

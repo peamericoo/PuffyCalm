@@ -80,9 +80,19 @@ export async function CategoriesStrip() {
         </div>
 
         {items.length === 0 ? (
-          <div className="glass-panel rounded-[1.5rem] px-6 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">
+          <div
+            className="glass-panel rounded-[1.5rem] px-6 py-10 text-center"
+            role="status"
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Collections
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
               Collections unavailable right now
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The catalog service did not return categories. You can still open
+              the full shop.
             </p>
             <Link
               href="/category/all"
