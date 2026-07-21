@@ -75,7 +75,7 @@ async def seed_catalog(session: AsyncSession, *, reset: bool = False) -> dict[st
 
     await session.flush()
 
-    # Products — seed is always published for storefront/dev
+    # Products — respect seed `status` (Phase P: prod_009 is draft / not storefront)
     now = datetime.now(UTC)
     for raw in PRODUCTS:
         data = {
@@ -83,8 +83,13 @@ async def seed_catalog(session: AsyncSession, *, reset: bool = False) -> dict[st
             for k, v in raw.items()
             if k not in {"images", "specs", "category_slugs"}
         }
-        data.setdefault("status", ProductStatus.published.value)
-        data.setdefault("published_at", now)
+        status = str(data.get("status") or ProductStatus.published.value)
+        data["status"] = status
+        if status == ProductStatus.published.value:
+            data.setdefault("published_at", now)
+        else:
+            # Draft/archived smoke SKUs stay out of public catalog filters.
+            data.setdefault("published_at", None)
         data.setdefault("max_quantity_per_order", 9)
         data.setdefault("stock_qty", 100)
         product = await _get_product(session, raw["id"])
@@ -98,8 +103,7 @@ async def seed_catalog(session: AsyncSession, *, reset: bool = False) -> dict[st
             for key, value in data.items():
                 if key != "id":
                     setattr(product, key, value)
-            product.status = ProductStatus.published.value
-            if product.published_at is None:
+            if status == ProductStatus.published.value and product.published_at is None:
                 product.published_at = now
 
         linked: list[Category] = []

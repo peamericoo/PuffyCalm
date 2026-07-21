@@ -382,7 +382,7 @@ PRODUCTS: list[dict[str, Any]] = [
         "featured": True,
     },
     {
-        # Stripe USD minimum charge is $0.50 — use for live/test payment smoke only.
+        # Stripe USD minimum charge is $0.50 — internal smoke only (Phase P: draft / not storefront).
         "id": "prod_009",
         "slug": "stripe-min-test-charge",
         "name": "Stripe Min Test Charge ($0.50)",
@@ -392,7 +392,8 @@ PRODUCTS: list[dict[str, Any]] = [
         "description": (
             "One-time $0.50 catalog item so you can run a full card payment end-to-end. "
             "Stripe rejects amounts below $0.50 USD. Prefer free shipping when testing "
-            "this SKU alone so the charged total stays at the minimum."
+            "this SKU alone so the charged total stays at the minimum. "
+            "Go-live (Phase P): status=draft — re-publish via admin only for deliberate smoke."
         ),
         "price": Decimal("0.50"),
         "compare_at_price": None,
@@ -418,7 +419,9 @@ PRODUCTS: list[dict[str, Any]] = [
             {"label": "Note", "value": "sk_test does not pay out real bank funds"},
         ],
         "in_stock": True,
-        "featured": True,
+        "featured": False,
+        # Not sellable / not listed on storefront until admin re-publishes for smoke.
+        "status": "draft",
     },
 ]
 

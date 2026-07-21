@@ -7,6 +7,9 @@
 > **Prompts copy-paste por fase (sessões descartáveis):** [`docs/PHASE_PROMPTS.md`](./PHASE_PROMPTS.md)  
 > **Status entre IAs:** [`docs/phases/STATUS.md`](./phases/STATUS.md)  
 > **Contratos congelados + env:** [`docs/ops/CONTRACTS.md`](./ops/CONTRACTS.md) · [`docs/ops/ENV_CHECKLIST.md`](./ops/ENV_CHECKLIST.md)  
+> **Go-live ops:** [`docs/ops/SECRETS_AUDIT.md`](./ops/SECRETS_AUDIT.md) · [`docs/ops/RATE_LIMITS.md`](./ops/RATE_LIMITS.md)  
+> **Segurança (falhas conhecidas p/ IA cyber + pentest):** [`docs/security/KNOWN_VULNERABILITIES.md`](./security/KNOWN_VULNERABILITIES.md) · índice [`docs/security/README.md`](./security/README.md)  
+> **Roadmap A–P:** **completo** (2026-07-21). Estado: **MVP operável** — ver `docs/phases/STATUS.md` + `PHASE_P_COMPLETE.md`.  
 > As fases antigas 7–10 foram **substituídas** pelas fases **A–P** do master plan.  
 > **Só Frontend (craft/polish)?** Use **`/compact-fe`** ou `docs/FRONTEND_CRAFT.md`  
 > (persona **CalmCraft** — não reabre backend).
@@ -20,23 +23,29 @@ Projeto: PuffyCalm / PuffyEasy (repo peamericoo/PuffyCalm)
 Workdir Windows: C:\Users\pedro.torres\Projects\PuffyCalm
 
 Leia docs/ECOMMERCE_MASTER_PLAN.md + docs/CONTINUE.md + docs/phases/STATUS.md + AGENTS.md §4.
-Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + PHASE_E_COMPLETE.md.
+Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + docs/ops/SECRETS_AUDIT.md + docs/ops/RATE_LIMITS.md.
+Leia docs/phases/PHASE_P_COMPLETE.md.
 NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (2026-07-21, pós Fase K):
-- Fase A–J DONE — contratos, catalog, admin, products, media, CMS-lite home
-- Fase K DONE — /account/orders real (guest email+code + Google session list);
-  ver PHASE_K_COMPLETE.md · GET /orders/lookup · GET /orders/by-email
-- Redeploy **api + web** para K em prod se ainda não
-- Guest checkout sagrado
-- Owner: ADMIN_EMAILS + GOOGLE_CLIENT_ID + COOKIE_SAMESITE=none no api (Fase E)
-- Rollback storefront data: NEXT_PUBLIC_USE_API_CATALOG=0 (rebuild web)
+ESTADO ATUAL (2026-07-21, pós Fase P — FINAL roadmap A–P):
+- Fases A–P DONE — ecommerce MVP operável em produção Railway
+- Backend = fonte de verdade (catalog, reviews, search, orders, admin, content, inventory)
+- Zero mocks de domínio no FE (Phase M)
+- Admin: Google→JWT (E) + orders (F/G) + products (H) + media (I) + CMS home (J)
+- Cliente: guest checkout Stripe Custom + account orders (K)
+- Smoke SKU prod_009 = draft (fora da UI); re-publish só para smoke deliberado
+- Stripe ainda TEST mode em Railway até owner flip live
+- PayPal NÃO implementado
+- Rate limit app-level: NÃO em prod (documentado); security backlog aberto
 
-ROADMAP (master plan A–P):
-  A ✅ → B ✅ → C ✅ → D ✅ → E ✅ → F ✅ → G ✅ → H ✅ → I ✅ → J ✅ → K account orders ✅
-  L inventory → M remove mocks → N legal → O obs → P go-live
+ROADMAP (master plan A–P): TODAS ✅
+  A✅ B✅ C✅ D✅ E✅ F✅ G✅ H✅ I✅ J✅ K✅ L✅ M✅ N✅ O✅ P✅
 
-Próxima ação: execute Fase L (inventory + fulfillment). Uma fase por vez.
+Próximas ações (ops, não fases A–P):
+  1) Produtos retail / estoque / fotos no admin
+  2) Stripe live keys + webhook live quando for vender de verdade
+  3) Security backlog (rate limits PC-SEC-010 primeiro)
+  4) Email transacional / TikTok / primeiras vendas
 
 Stripe contract (não quebrar) — ver docs/ops/CONTRACTS.md:
 - Confirm SEM returnUrl no FE (return_url só no Session.create BE)
@@ -49,6 +58,7 @@ Comandos úteis:
   docker compose exec api alembic upgrade head
   docker compose exec api python -m app.infrastructure.db.seed
   docker compose exec -e REQUIRE_DB=1 api pytest -q tests/test_checkout_*.py
+  pwsh scripts/smoke-post-deploy.ps1
   stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
 ```
 

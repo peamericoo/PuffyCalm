@@ -7,12 +7,15 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase O — observability + tests) |
-| **HEAD / Fase O** | `ebc9052` |
+| **Última atualização** | 2026-07-21 (Fase P — go-live hardening) |
+| **HEAD / Fase P** | _(stamp após commit)_ |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
+| **Secrets / rate limits** | `docs/ops/SECRETS_AUDIT.md` · `docs/ops/RATE_LIMITS.md` |
+| **Security backlog** | `docs/security/KNOWN_VULNERABILITIES.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **P** (go-live hardening) |
+| **Estado do produto** | **MVP operável** |
+| **Próxima fase de roadmap A–P** | **completa** — follow-ups ops/security/live Stripe |
 
 ## Fases
 
@@ -33,21 +36,26 @@
 | M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
 | N | Legal pages + errors | **done** | `1d37eba` | `docs/phases/PHASE_N_COMPLETE.md` |
 | O | Observability + tests | **done** | `ebc9052` | `docs/phases/PHASE_O_COMPLETE.md` |
-| P | Go-live hardening | pending | — | — |
+| P | Go-live hardening | **done** | _(stamp)_ | `docs/phases/PHASE_P_COMPLETE.md` |
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy:** web + api Railway; H–N validated; smoke O: health/ready/catalog OK.
-- **Fase O:** structlog JSON em checkout create + Stripe webhook com `order_id` / `event_id`; `FiveXXLogMiddleware`; smoke `scripts/smoke-post-deploy.*`; Sentry **follow-up**.
-- **Fase N residual:** trust pages; ErrorState.
-- **Fase M residual:** chrome em `lib/site.ts`; content defaults offline; BE seed; `prod_009` até P; restock on cancel defer.
-- **Env prod:** Stripe + shipping; auth; orders; products; media S3; content; inventory.
+- **Estado:** **MVP operável** — backend fonte de verdade; admin ops pedidos/produtos/mídia/content; cliente compra guest + Stripe Custom; zero mocks de domínio.
+- **Prod healthy:** web + api Railway; catalog **8** retail SKUs; `prod_009` **draft** (fora da UI).
+- **Fase P:** secrets audit + rate-limit notes + smoke SKU off + checklist §1 assinado.
+- **Stripe:** ainda **test mode** em prod até owner colocar live keys.
+- **PayPal:** não no MVP.
 - **Contratos congelados:** Stripe Custom; guest checkout; `stripe_events` idempotency.
 - **Não recriar:** Stripe Custom checkout; guest checkout; não quebrar `stripe_events`.
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **P**.
-2. Ler `PHASE_O_COMPLETE.md` se precisar diagnosticar pedidos / smoke.
-3. Executar **só** Fase P; ao fim criar `PHASE_P_COMPLETE.md` e atualizar esta tabela.
-4. Redeploy **api** para logs O em produção (web não obrigatório para O).
+1. **Roadmap A–P fechado.** Não reabrir fases “só porque”.
+2. Prioridades pós-MVP (escolher com owner):
+   - Flip Stripe test → live + webhook live
+   - Security backlog (`docs/security/KNOWN_VULNERABILITIES.md`) — rate limits primeiro
+   - Produtos retail / fotos / estoque real no admin
+   - Email transacional / tracking
+   - PayPal se pedido
+3. Ler `PHASE_P_COMPLETE.md` + `docs/ops/*` + `CONTRACTS.md` antes de qualquer mudança de pagamento.
+4. Craft FE: `/compact-fe` ou `docs/FRONTEND_CRAFT.md` (sem reabrir BE).

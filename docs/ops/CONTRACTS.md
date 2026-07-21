@@ -79,42 +79,43 @@ total = subtotal + shipping
 
 ---
 
-## 3. Política SKU smoke `prod_009`
+## 3. Política SKU smoke `prod_009` (final — Fase P)
 
 | Campo | Valor |
 |-------|--------|
 | ID | `prod_009` |
 | Slug | `stripe-min-test-charge` |
 | Preço | **$0.50 USD** (mínimo Stripe USD) |
-| Propósito | Smoke E2E checkout (card test mode) |
+| Propósito | Smoke E2E checkout (card **test** mode) |
 | Retail | **Não** — produto interno de teste |
+| **Storefront (go-live)** | **`status=draft`** — **fora** de catalog / PDP público / search / checkout sellable |
 
 ### Onde existe
 
-- BE seed: `backend/app/infrastructure/db/seed_data.py` (FE mock fixtures removed Phase M)
-- Visível no catálogo se listado (não há flag unlisted no model ainda)
+- BE seed: `backend/app/infrastructure/db/seed_data.py` (`status: draft`, `featured: false`)
+- Migration: `p1a2b3c4d5e6_unpublish_smoke_sku_prod_009`
+- Admin: ainda listável em `/admin/products` (draft) para re-publicar se smoke deliberado
 
-### Política (congelada na Fase A, charge math Fase D)
+### Política final (Fase P)
 
-1. **Manter** em seed enquanto smoke de pagamento for necessário.
-2. Tratar como **dev / unlisted intent**: não usar em marketing, ads ou merchandising real.
-3. **Não remover** no meio das fases (IDs estáveis) até P.
-4. **Antes de go-live real (Fase P ou antes):** unpublish / hide / reseed.
-5. **Exceção de money integrity (Fase D):** com frete canônico 75/6.99, **só `prod_009` no cart** cobra:
+1. **Default go-live:** draft — **não** aparece na UI de cliente.
+2. Seed **respeita** `status` do fixture (não força `published` em reseed).
+3. ID estável `prod_009` **mantido** (histórico / smoke futuro).
+4. Reativar smoke: Admin → publish `prod_009` (ou PATCH status) **só** em test mode; depois voltar a draft.
+5. **Exceção de money integrity (Fase D)** se re-publicado e sozinho no cart:
 
 ```text
 $0.50 (produto) + $6.99 (flat shipping) = $7.49
 ```
 
-Não é bug: frete flat abaixo de $75. Cart UX e BE/session devem mostrar **$7.49**.  
-Produtos seed normais ($39–$55) → subtotal + $6.99 até atingir $75 free ship.
+Não é bug: frete flat abaixo de $75. Produtos seed normais ($39–$55) → subtotal + $6.99 até $75 free ship.
 
-### Como smoke
+### Como smoke (pós-P, deliberado)
 
 ```text
-Add prod_009 to cart → guest checkout → test card 4242…
-Charge ≈ $7.49 (não mais $0.50 com frete zero)
-Para charge mínimo absoluto: precisaria frete 0 de novo (não fazer em prod sem decisão).
+Admin publish prod_009 → add to cart → guest checkout → test card 4242…
+Charge ≈ $7.49 → unpublish (draft) de novo
+Preferir smoke em retail SKUs reais ($39+) para validar frete canônico.
 ```
 
 ---

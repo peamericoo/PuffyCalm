@@ -124,6 +124,23 @@ Local checklist (developer signs off, no values in git):
 
 ---
 
+## 4b. Sign-off (Fase P — go-live)
+
+| Check | Result | How verified |
+|-------|--------|--------------|
+| API health + ready prod | **OK** | `GET /health`, `GET /ready` (postgres+redis) |
+| Web prod | **OK** | `GET` storefront URL → 200 |
+| Secrets hygiene | **OK (residual AGENTS.md)** | `docs/ops/SECRETS_AUDIT.md` |
+| Rate limits documented | **OK (gap known)** | `docs/ops/RATE_LIMITS.md` · PC-SEC-010 |
+| Smoke SKU off storefront | **OK** | `prod_009` → `draft`; catalog total retail only |
+| Domain mocks gone | **OK** | Phase M · zero `src/lib/mock` |
+| Stripe contract intact | **OK** | No checkout rewrite in P |
+| PayPal | **Skipped** | Not trivial; not in scope P |
+
+**Signed:** Fase P · 2026-07-21 · **MVP operável** (Stripe still test mode until owner flips live keys).
+
+---
+
 ## 5. Commands (no secret output)
 
 ```bash
