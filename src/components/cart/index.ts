@@ -1,4 +1,9 @@
+export { CartCheckoutButton } from "./cart-checkout-button";
+export { CartDiscount } from "./cart-discount";
 export { CartDrawer } from "./cart-drawer";
+export { CartHeader } from "./cart-header";
+export { CartItem } from "./cart-item";
+export { CartItemQuantity } from "./cart-item-quantity";
 export { CartLineRow } from "./cart-line-row";
 export { CartPageView } from "./cart-page-view";
 export { CartSummary } from "./cart-summary";

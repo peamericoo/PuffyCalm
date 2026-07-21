@@ -4,17 +4,22 @@ import { Truck } from "lucide-react";
 import type { CartTotals } from "@/types/cart";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import styles from "./cart.module.css";
 
 interface CartSummaryProps {
   totals: CartTotals;
   className?: string;
   /** Show free-shipping progress bar */
   showProgress?: boolean;
-  /** Aggregate sale savings (optional, drawer highlights this) */
+  /** Aggregate sale savings (drawer highlights this) */
   savings?: number;
   density?: "drawer" | "page";
 }
 
+/**
+ * Order totals — used by bag drawer, bag page, and checkout.
+ * Drawer density uses the cart CSS module for tighter premium hierarchy.
+ */
 export function CartSummary({
   totals,
   className,
@@ -24,20 +29,115 @@ export function CartSummary({
 }: CartSummaryProps) {
   const progress = Math.min(
     100,
-    (totals.subtotal / totals.freeShippingThreshold) * 100,
+    (totals.subtotal / Math.max(totals.freeShippingThreshold, 1)) * 100,
   );
   const compact = density === "drawer";
 
+  if (compact) {
+    return (
+      <div className={cn(className)}>
+        {showProgress &&
+        totals.itemCount > 0 &&
+        totals.freeShippingThreshold > 0 ? (
+          <div
+            className={cn(
+              styles.shipProgress,
+              totals.qualifiesForFreeShipping && styles.shipProgressUnlocked,
+            )}
+          >
+            <p className="text-[12px] font-medium leading-snug text-foreground/90">
+              {totals.qualifiesForFreeShipping ? (
+                <>
+                  <span className="font-semibold text-success">
+                    Free shipping
+                  </span>{" "}
+                  unlocked
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-brand-deep">
+                    {formatMoney(
+                      totals.amountToFreeShipping,
+                      totals.currency,
+                    )}
+                  </span>{" "}
+                  away from free shipping
+                </>
+              )}
+            </p>
+            <div
+              className={styles.shipTrack}
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Progress to free shipping"
+            >
+              <div
+                className={styles.shipFill}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <dl className={styles.totals}>
+          <div className={styles.totalRow}>
+            <dt>Subtotal</dt>
+            <dd key={`sub-${totals.subtotal}`} className={styles.moneyTick}>
+              {formatMoney(totals.subtotal, totals.currency)}
+            </dd>
+          </div>
+
+          {savings > 0 ? (
+            <div className={cn(styles.totalRow, styles.totalRowSave)}>
+              <dt>Sale savings</dt>
+              <dd key={`save-${savings}`} className={styles.moneyTick}>
+                −{formatMoney(savings, totals.currency)}
+              </dd>
+            </div>
+          ) : null}
+
+          {totals.freeShippingThreshold > 0 || totals.shipping > 0 ? (
+            <div className={styles.totalRow}>
+              <dt>Shipping</dt>
+              <dd
+                className={cn(
+                  totals.shipping === 0 && totals.itemCount > 0
+                    ? "text-success"
+                    : undefined,
+                )}
+              >
+                {totals.itemCount === 0
+                  ? "—"
+                  : totals.shipping === 0
+                    ? "Free"
+                    : formatMoney(totals.shipping, totals.currency)}
+              </dd>
+            </div>
+          ) : null}
+
+          <div className={cn(styles.totalRow, styles.totalRowGrand)}>
+            <dt>Total</dt>
+            <dd key={`tot-${totals.total}`} className={styles.moneyTick}>
+              {formatMoney(totals.total, totals.currency)}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    );
+  }
+
+  /* Page / checkout density — Tailwind, roomier */
   return (
-    <div className={cn(compact ? "space-y-2.5" : "space-y-3", className)}>
-      {showProgress && totals.itemCount > 0 ? (
+    <div className={cn("space-y-3", className)}>
+      {showProgress && totals.itemCount > 0 && totals.freeShippingThreshold > 0 ? (
         <div
           className={cn(
-            "rounded-2xl ring-1",
+            "rounded-2xl px-3.5 py-3 ring-1",
             totals.qualifiesForFreeShipping
               ? "bg-success/10 ring-success/20"
               : "bg-brand-soft/90 ring-brand/12",
-            compact ? "px-3 py-2.5" : "px-3.5 py-3",
           )}
         >
           <div className="flex items-start gap-2.5">
@@ -63,7 +163,10 @@ export function CartSummary({
                 ) : (
                   <>
                     <span className="font-semibold text-brand-deep">
-                      {formatMoney(totals.amountToFreeShipping, totals.currency)}
+                      {formatMoney(
+                        totals.amountToFreeShipping,
+                        totals.currency,
+                      )}
                     </span>{" "}
                     away from free shipping
                   </>
@@ -92,7 +195,7 @@ export function CartSummary({
         </div>
       ) : null}
 
-      <dl className={cn("text-[13.5px]", compact ? "space-y-1.5" : "space-y-2")}>
+      <dl className="space-y-2 text-[13.5px]">
         <div className="flex justify-between gap-3">
           <dt className="text-muted-foreground">Subtotal</dt>
           <dd className="font-medium tabular-nums text-foreground">
@@ -127,12 +230,7 @@ export function CartSummary({
           </dd>
         </div>
 
-        <div
-          className={cn(
-            "flex justify-between gap-3 border-t border-border/60",
-            compact ? "pt-2" : "pt-2.5",
-          )}
-        >
+        <div className="flex justify-between gap-3 border-t border-border/60 pt-2.5">
           <dt className="text-[15px] font-semibold text-foreground">Total</dt>
           <dd className="text-[16px] font-bold tabular-nums tracking-tight text-brand-deep">
             {formatMoney(totals.total, totals.currency)}

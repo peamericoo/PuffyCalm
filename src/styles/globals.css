@@ -557,60 +557,6 @@ body {
   }
 }
 
-/* —— Bag drawer / bottom sheet micro-motion (CSS only, short, cheap) —— */
-@keyframes bag-line-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes bag-pop {
-  0% {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes bag-save-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 4px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.bag-line {
-  animation: bag-line-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.bag-pop {
-  animation: bag-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.bag-save-tag {
-  animation: bag-save-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bag-line,
-  .bag-pop,
-  .bag-save-tag {
-    animation: none;
-  }
-}
-
 /* Compact product cards — overflow visible on body so CTA never clips */
 .product-card {
   overflow: visible;

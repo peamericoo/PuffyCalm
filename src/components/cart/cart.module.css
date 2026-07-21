@@ -1,0 +1,699 @@
+/**
+ * Bag surface — presentation shell + premium micro-motion.
+ * Desktop: full-height right rail · Mobile: bottom sheet (not a narrow rail).
+ * Prefer transform/opacity only. Layout never animated.
+ */
+
+/* ── Shell ─────────────────────────────────────────────── */
+.shell {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  isolation: isolate;
+}
+
+.shellClosed {
+  pointer-events: none;
+}
+
+.shellOpen {
+  pointer-events: auto;
+}
+
+/* ── Backdrop ──────────────────────────────────────────── */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: rgb(26 35 50 / 0.32);
+  opacity: 0;
+  transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 768px) {
+  .backdrop {
+    background: rgb(26 35 50 / 0.28);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
+
+.shellOpen .backdrop {
+  opacity: 1;
+}
+
+/* ── Panel (mobile bottom sheet by default) ────────────── */
+.panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: var(--foreground);
+  will-change: transform;
+  /* Mobile sheet */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: 100%;
+  max-width: none;
+  height: min(92dvh, 100%);
+  max-height: min(92dvh, 100%);
+  border-radius: 1.5rem 1.5rem 0 0;
+  box-shadow: 0 -20px 56px -24px rgb(26 35 50 / 0.38);
+  transform: translate3d(0, 104%, 0);
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shellOpen .panel {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Desktop / tablet landscape: true full-height sidebar */
+@media (min-width: 768px) {
+  .panel {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: clamp(23.75rem, 30vw, 28.5rem); /* ~380–456px */
+    max-width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: -20px 0 48px -24px rgb(26 35 50 / 0.36);
+    border-left: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    transform: translate3d(104%, 0, 0);
+  }
+
+  .shellOpen .panel {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ── Grab handle (mobile only) ─────────────────────────── */
+.handle {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 0.65rem 0 0.15rem;
+}
+
+.handleBar {
+  display: block;
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--border) 90%, var(--muted-foreground));
+}
+
+@media (min-width: 768px) {
+  .handle {
+    display: none;
+  }
+}
+
+/* ── Header ────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 1.15rem 0.95rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 55%, transparent);
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding: 1.25rem 1.5rem 1.1rem;
+  }
+}
+
+.closeBtn {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: -0.25rem -0.35rem 0 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.closeBtn:hover {
+  background: var(--brand-soft);
+  color: var(--foreground);
+}
+
+.closeBtn:active {
+  transform: scale(0.92);
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid var(--brand-deep);
+  outline-offset: 2px;
+}
+
+/* ── Scroll body ───────────────────────────────────────── */
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .body {
+    padding: 0.85rem 1.5rem 0.75rem;
+  }
+}
+
+.lineList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .lineList {
+    gap: 0;
+  }
+}
+
+/* ── Line item ─────────────────────────────────────────── */
+.line {
+  position: relative;
+  border-radius: 1.1rem;
+  background: color-mix(in oklab, var(--brand-mist) 70%, white);
+  outline: 1px solid color-mix(in oklab, var(--border) 55%, transparent);
+  animation: bagLineIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 768px) {
+  .line {
+    border-radius: 0;
+    background: transparent;
+    outline: none;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
+  }
+
+  .line:last-child {
+    border-bottom: none;
+  }
+}
+
+.lineLeaving {
+  animation: bagLineOut 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+.lineInner {
+  display: flex;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .lineInner {
+    gap: 1rem;
+    padding: 1.1rem 0;
+  }
+}
+
+.thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 5.25rem;
+  height: 5.25rem;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  background: var(--brand-soft);
+  outline: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 768px) {
+  .thumb {
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+}
+
+.thumb:active {
+  transform: scale(0.98);
+}
+
+.saleMark {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  z-index: 1;
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.4rem;
+  background: var(--cta);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  box-shadow: 0 2px 6px -2px rgb(224 122 95 / 0.55);
+}
+
+/* ── Quantity control ──────────────────────────────────── */
+.qty {
+  display: inline-flex;
+  align-items: center;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: #fff;
+  outline: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.85) inset;
+}
+
+.qtyBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  border-radius: 999px;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.15s ease;
+}
+
+.qtyBtn:hover:not(:disabled) {
+  background: var(--brand-soft);
+}
+
+.qtyBtn:active:not(:disabled) {
+  transform: scale(0.88);
+}
+
+.qtyBtn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.qtyValue {
+  min-width: 1.4rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  animation: qtyPulse 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Remove ────────────────────────────────────────────── */
+.removeBtn {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.removeBtn:hover {
+  background: color-mix(in oklab, var(--cta) 12%, transparent);
+  color: var(--cta);
+}
+
+.removeBtn:active {
+  transform: scale(0.9);
+}
+
+/* ── Footer / summary ──────────────────────────────────── */
+.footer {
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in oklab, var(--border) 55%, transparent);
+  background: #fff;
+  padding: 0.95rem 1.15rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -12px 28px -22px rgb(26 35 50 / 0.18);
+}
+
+@media (min-width: 768px) {
+  .footer {
+    padding: 1.15rem 1.5rem 1.35rem;
+    box-shadow: none;
+  }
+}
+
+/* Savings callout — make “you’re saving” feel real */
+.savingsBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.95rem;
+  background: color-mix(in oklab, var(--cta) 10%, white);
+  outline: 1px solid color-mix(in oklab, var(--cta) 22%, transparent);
+  animation: bagSaveIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.savingsLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: color-mix(in oklab, var(--cta) 85%, var(--foreground));
+}
+
+.savingsValue {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--cta);
+  animation: moneyTick 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Totals rows */
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.totalRow dt {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.totalRow dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.totalRowSave dt {
+  color: var(--cta);
+  font-weight: 600;
+}
+
+.totalRowSave dd {
+  color: var(--cta);
+}
+
+.totalRowGrand {
+  margin-top: 0.35rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+}
+
+.totalRowGrand dt {
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+.totalRowGrand dd {
+  font-size: 1.125rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: var(--brand-deep);
+}
+
+.moneyTick {
+  animation: moneyTick 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Shipping progress (subtle) */
+.shipProgress {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.95rem;
+  background: color-mix(in oklab, var(--brand-soft) 85%, white);
+  outline: 1px solid color-mix(in oklab, var(--brand) 14%, transparent);
+}
+
+.shipProgressUnlocked {
+  background: color-mix(in oklab, var(--success) 10%, white);
+  outline-color: color-mix(in oklab, var(--success) 22%, transparent);
+}
+
+.shipTrack {
+  margin-top: 0.45rem;
+  height: 0.28rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.9);
+  outline: 1px solid rgb(0 0 0 / 0.04);
+}
+
+.shipFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand-deep);
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shipProgressUnlocked .shipFill {
+  background: var(--success);
+}
+
+/* Checkout CTA */
+.checkoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  height: 3.15rem;
+  margin-top: 0.95rem;
+  border-radius: 999px;
+  background: var(--cta);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  box-shadow: 0 10px 24px -14px rgb(224 122 95 / 0.65);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+
+.checkoutBtn:hover {
+  background: var(--cta-hover);
+  box-shadow: 0 14px 28px -14px rgb(224 122 95 / 0.7);
+  transform: translateY(-1px);
+}
+
+.checkoutBtn:active {
+  transform: scale(0.985) translateY(0);
+}
+
+.checkoutBtn:focus-visible {
+  outline: 2px solid var(--brand-deep);
+  outline-offset: 3px;
+}
+
+.checkoutTotal {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.95;
+  animation: moneyTick 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 1.15rem;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  outline: 1px solid color-mix(in oklab, var(--brand) 16%, transparent);
+  animation: bagPop 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Keyframes ─────────────────────────────────────────── */
+@keyframes bagLineIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes bagLineOut {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(8px, -4px, 0) scale(0.97);
+  }
+}
+
+@keyframes bagPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bagSaveIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes qtyPulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes moneyTick {
+  0% {
+    opacity: 0.55;
+    transform: translate3d(0, 3px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.badgePop {
+  animation: badgePop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Reduced motion ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .panel,
+  .closeBtn,
+  .thumb,
+  .qtyBtn,
+  .removeBtn,
+  .checkoutBtn,
+  .shipFill {
+    transition-duration: 0.01ms !important;
+  }
+
+  .line,
+  .lineLeaving,
+  .emptyIcon,
+  .savingsBanner,
+  .qtyValue,
+  .savingsValue,
+  .totalRowGrand dd,
+  .checkoutTotal,
+  .moneyTick,
+  .badgePop {
+    animation: none !important;
+  }
+
+  /* Instant open/close without sliding */
+  .panel {
+    transform: none !important;
+  }
+
+  .shellClosed .panel {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .shellOpen .panel {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .shellClosed .backdrop {
+    opacity: 0;
+  }
+
+  .shellOpen .backdrop {
+    opacity: 1;
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   Armchair,
@@ -76,6 +76,8 @@ export function Header() {
   const cartCount = useCartItemCount();
   const wishCount = useWishlistCount();
   const openCart = useCartStore((s) => s.openCart);
+  const [cartBadgePulse, setCartBadgePulse] = useState(false);
+  const prevCartCount = useRef(cartCount);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -83,6 +85,17 @@ export function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  /* Micro-feedback when something is added to the bag */
+  useEffect(() => {
+    if (cartCount > prevCartCount.current) {
+      setCartBadgePulse(true);
+      const t = window.setTimeout(() => setCartBadgePulse(false), 480);
+      prevCartCount.current = cartCount;
+      return () => window.clearTimeout(t);
+    }
+    prevCartCount.current = cartCount;
+  }, [cartCount]);
 
   useEffect(() => {
     if (mobileOpen || searchOpen) {
@@ -308,7 +321,13 @@ export function Header() {
             >
               <ShoppingBag className="nav-icon-svg h-[17px] w-[17px]" />
               {cartCount > 0 ? (
-                <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-cta px-1 text-[9px] font-semibold text-white">
+                <span
+                  key={cartCount}
+                  className={cn(
+                    "absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-cta px-1 text-[9px] font-semibold text-white",
+                    cartBadgePulse && "animate-cart-icon",
+                  )}
+                >
                   {cartCount > 9 ? "9+" : cartCount}
                 </span>
               ) : null}

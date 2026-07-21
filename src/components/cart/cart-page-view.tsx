@@ -8,6 +8,7 @@ import { CartLineRow } from "@/components/cart/cart-line-row";
 import { CartSummary } from "@/components/cart/cart-summary";
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
+import { computeCartSavings } from "@/lib/cart/savings";
 import { useCartStore, useCartTotals } from "@/lib/cart/store";
 import { getProductBySlug } from "@/lib/mock/products";
 import { formatMoney } from "@/lib/format";
@@ -22,16 +23,7 @@ export function CartPageView() {
   const addItemQuiet = useCartStore((s) => s.addItemQuiet);
   const openCart = useCartStore((s) => s.openCart);
   const totals = useCartTotals();
-  const savings = useMemo(
-    () =>
-      items.reduce((sum, item) => {
-        if (item.compareAtPrice && item.compareAtPrice > item.price) {
-          return sum + (item.compareAtPrice - item.price) * item.quantity;
-        }
-        return sum;
-      }, 0),
-    [items],
-  );
+  const savings = useMemo(() => computeCartSavings(items), [items]);
 
   // Back-compat: /cart?add=slug&qty=n
   useEffect(() => {
