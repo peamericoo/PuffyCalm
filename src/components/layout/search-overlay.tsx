@@ -3,11 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ArrowRight, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { searchProducts } from "@/lib/mock/products";
 import { formatMoney } from "@/lib/format";
+import { searchCatalog, SearchApiError } from "@/lib/search/service";
+import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
 interface SearchOverlayProps {
@@ -15,22 +16,31 @@ interface SearchOverlayProps {
   onClose: () => void;
 }
 
+type SearchStatus = "idle" | "loading" | "success" | "error";
+
 /**
- * Centered search stage — larger field + fluid product autocomplete.
+ * Centered search stage — larger field + fluid product autocomplete (API).
  */
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Product[]>([]);
+  const [status, setStatus] = useState<SearchStatus>("idle");
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = useId();
+  const reqId = useRef(0);
 
-  const results = useMemo(() => searchProducts(query, 6), [query]);
   const showResults = open && query.trim().length > 0;
+  const loading = status === "loading";
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setQuery("");
+    setResults([]);
+    setStatus("idle");
+    setError(null);
     onClose();
-  };
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -45,9 +55,51 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // handleClose is stable enough for overlay lifecycle (query reset + parent close)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only rebind when open flips
-  }, [open]);
+  }, [open, handleClose]);
+
+  // Debounced API search
+  useEffect(() => {
+    if (!open) return;
+
+    const q = query.trim();
+    if (!q) {
+      reqId.current += 1;
+      setResults([]);
+      setStatus("idle");
+      setError(null);
+      return;
+    }
+
+    const id = ++reqId.current;
+    setStatus("loading");
+    setError(null);
+
+    const timer = window.setTimeout(() => {
+      void searchCatalog(q, 6)
+        .then((res) => {
+          if (id !== reqId.current) return;
+          setResults(res.items);
+          setStatus("success");
+          setError(null);
+        })
+        .catch((err: unknown) => {
+          if (id !== reqId.current) return;
+          setResults([]);
+          setStatus("error");
+          const msg =
+            err instanceof SearchApiError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Search failed";
+          setError(msg);
+        });
+    }, 220);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [query, open]);
 
   return (
     <div
@@ -120,6 +172,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                 role="combobox"
                 aria-expanded={showResults}
                 aria-haspopup="listbox"
+                aria-busy={loading || undefined}
                 className={cn(
                   "h-12 w-full rounded-full border border-border/60 bg-muted/45 py-3 pl-12 pr-4",
                   "text-[15px] font-medium text-foreground placeholder:text-muted-foreground/70",
@@ -155,12 +208,47 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           >
             <div className="min-h-0 overflow-hidden">
               <div className="max-h-[min(52vh,22rem)] overflow-y-auto p-2 sm:p-2.5">
-                {results.length === 0 && showResults ? (
+                {error && showResults ? (
+                  <div className="search-result-item px-3 py-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Couldn’t search right now.
+                    </p>
+                    <p className="mt-1 text-[12px] text-muted-foreground/80">
+                      {error}
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-3 text-[13px] font-semibold text-brand-deep hover:text-foreground"
+                      onClick={() => {
+                        // Force re-run by re-setting query
+                        const current = query;
+                        setQuery("");
+                        window.requestAnimationFrame(() => setQuery(current));
+                      }}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : loading && results.length === 0 && showResults ? (
+                  <ul className="flex flex-col gap-1" aria-busy="true">
+                    {Array.from({ length: 3 }, (_, i) => (
+                      <li
+                        key={i}
+                        className="h-[4.5rem] animate-pulse rounded-2xl bg-muted/70"
+                      />
+                    ))}
+                  </ul>
+                ) : results.length === 0 && showResults && !loading ? (
                   <p className="search-result-item px-3 py-6 text-center text-sm text-muted-foreground">
                     No products match “{query.trim()}”
                   </p>
                 ) : (
-                  <ul className="flex flex-col gap-0.5">
+                  <ul
+                    className={cn(
+                      "flex flex-col gap-0.5",
+                      loading && results.length > 0 && "opacity-60",
+                    )}
+                  >
                     {results.map((product, i) => (
                       <li
                         key={product.id}

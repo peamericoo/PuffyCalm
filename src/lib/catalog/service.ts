@@ -14,6 +14,7 @@ import {
   fetchProductBySlug,
   type ProductDetailPayload,
 } from "@/lib/api/catalog";
+import { isApiCatalogEnabled } from "@/lib/api/config";
 import { buildFacets } from "@/lib/catalog/filter";
 import type { CatalogPage } from "@/lib/catalog/types";
 import { categories, getCategoryBySlug } from "@/lib/mock/categories";
@@ -24,6 +25,8 @@ import {
   products as mockProducts,
 } from "@/lib/mock/products";
 import type { Category, Product } from "@/types/product";
+
+export { isApiCatalogEnabled };
 
 const FALLBACK_ALL: Category = {
   id: "cat_all",
@@ -36,18 +39,6 @@ const FALLBACK_ALL: Category = {
   ctaLabel: "Shop All",
   productCount: 0,
 };
-
-/**
- * API catalog is ON by default (Phase B).
- * Set NEXT_PUBLIC_USE_API_CATALOG=0|false|off to force mock path.
- */
-export function isApiCatalogEnabled(): boolean {
-  const raw = process.env.NEXT_PUBLIC_USE_API_CATALOG?.trim().toLowerCase();
-  if (raw === "0" || raw === "false" || raw === "off" || raw === "no") {
-    return false;
-  }
-  return true;
-}
 
 function mockCatalogPage(categorySlug: string): CatalogPage | null {
   const slug = categorySlug.trim().toLowerCase() || "all";
