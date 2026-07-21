@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | F — Admin API ops (pedidos) |
 | **Data** | 2026-07-21 |
-| **Commit** | *(ver STATUS.md / git log)* |
+| **Commit** | `614ed17` |
 | **DoD atingido** | **SIM** (endpoints + state machine + pytest) |
 
 ---
