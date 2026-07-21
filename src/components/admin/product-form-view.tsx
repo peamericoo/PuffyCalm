@@ -14,6 +14,12 @@ import {
   type AdminProductDetail,
   type AdminProductStatus,
 } from "@/lib/api/admin-products";
+import {
+  AdminMediaApiError,
+  MEDIA_ACCEPT,
+  MEDIA_MAX_BYTES,
+  uploadAdminMedia,
+} from "@/lib/api/admin-media";
 import { revalidateCatalog } from "@/lib/admin/revalidate-catalog";
 import { ProductStatusBadge } from "@/components/admin/product-status-badge";
 import { Button } from "@/components/ui/button";
@@ -157,6 +163,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadedSlug, setLoadedSlug] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -346,6 +353,81 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       setError(err instanceof Error ? err.message : "Unpublish failed");
     } finally {
       setLifecycleBusy(false);
+    }
+  };
+
+  const onUploadFiles = async (
+    fileList: FileList | null,
+    opts: { setCover: boolean },
+  ) => {
+    if (!fileList || fileList.length === 0) return;
+    setError(null);
+    setMessage(null);
+    setUploading(true);
+    try {
+      await ensureAdminBackendSession({ googleIdToken });
+      const files = Array.from(fileList);
+      const urls: string[] = [];
+      let coverUrl: string | null = null;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]!;
+        if (file.size > MEDIA_MAX_BYTES) {
+          throw new Error(
+            `${file.name} exceeds ${MEDIA_MAX_BYTES / (1024 * 1024)} MiB limit`,
+          );
+        }
+        const wantCover = opts.setCover && i === 0;
+        const uploaded = await uploadAdminMedia({
+          file,
+          productId: productId || undefined,
+          setCover: wantCover && Boolean(productId),
+        });
+        urls.push(uploaded.url);
+        if (wantCover) coverUrl = uploaded.url;
+      }
+
+      setForm((prev) => {
+        const existing = parseLines(prev.imagesText);
+        const merged = [...existing, ...urls];
+        const nextCover =
+          coverUrl ||
+          (opts.setCover ? urls[0] : null) ||
+          prev.imageUrl ||
+          merged[0] ||
+          "";
+        return {
+          ...prev,
+          imagesText: merged.join("\n"),
+          imageUrl: nextCover,
+        };
+      });
+
+      // If product already exists, gallery was appended server-side; revalidate storefront
+      if (productId) {
+        const detail = await getAdminProduct(productId);
+        setForm(detailToForm(detail));
+        await afterMutate(detail);
+        setMessage(
+          urls.length === 1
+            ? "Image uploaded and linked to product."
+            : `${urls.length} images uploaded and linked.`,
+        );
+      } else {
+        setMessage(
+          urls.length === 1
+            ? "Image uploaded — save product to persist gallery."
+            : `${urls.length} images uploaded — save product to persist gallery.`,
+        );
+      }
+    } catch (err) {
+      const msg =
+        err instanceof AdminMediaApiError || err instanceof Error
+          ? err.message
+          : "Upload failed";
+      setError(msg);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -572,9 +654,78 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         <section className="space-y-4 rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold">Media & taxonomy</h2>
           <p className="text-xs text-muted-foreground">
-            Image URLs only — binary upload is Phase I. First gallery URL becomes
-            cover if primary is empty.
+            Upload JPEG/PNG/WebP/GIF (max 5 MiB). Files go to object storage;
+            URLs are stored on the product. First gallery URL becomes cover if
+            primary is empty.
           </p>
+
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Upload images
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex cursor-pointer">
+                <input
+                  type="file"
+                  accept={MEDIA_ACCEPT}
+                  multiple
+                  disabled={uploading || saving || lifecycleBusy}
+                  className="sr-only"
+                  onChange={(e) => {
+                    void onUploadFiles(e.target.files, { setCover: false });
+                    e.target.value = "";
+                  }}
+                />
+                <span
+                  className={cn(
+                    "inline-flex h-9 items-center rounded-xl border border-border bg-white px-3 text-sm font-medium shadow-sm",
+                    uploading
+                      ? "pointer-events-none opacity-60"
+                      : "hover:bg-muted",
+                  )}
+                >
+                  {uploading ? "Uploading…" : "Add to gallery"}
+                </span>
+              </label>
+              <label className="inline-flex cursor-pointer">
+                <input
+                  type="file"
+                  accept={MEDIA_ACCEPT}
+                  disabled={uploading || saving || lifecycleBusy}
+                  className="sr-only"
+                  onChange={(e) => {
+                    void onUploadFiles(e.target.files, { setCover: true });
+                    e.target.value = "";
+                  }}
+                />
+                <span
+                  className={cn(
+                    "inline-flex h-9 items-center rounded-xl border border-brand-deep/30 bg-brand-deep/5 px-3 text-sm font-medium text-brand-deep shadow-sm",
+                    uploading
+                      ? "pointer-events-none opacity-60"
+                      : "hover:bg-brand-deep/10",
+                  )}
+                >
+                  Upload as cover
+                </span>
+              </label>
+            </div>
+            {!productId ? (
+              <p className="text-xs text-muted-foreground">
+                New product: uploads are stored immediately; save the draft to
+                attach URLs to the product record.
+              </p>
+            ) : null}
+            {form.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- admin preview of arbitrary remote URL
+              <img
+                src={form.imageUrl}
+                alt={form.imageAlt || form.name || "Cover preview"}
+                className="mt-1 h-28 w-28 rounded-lg border border-border object-cover"
+              />
+            ) : null}
+          </div>
+
           <Field label="Primary image URL">
             <input
               value={form.imageUrl}

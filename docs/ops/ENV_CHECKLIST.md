@@ -33,6 +33,13 @@ API: `https://api-production-4f01.up.railway.app`
 | `FLAT_SHIPPING_CENTS` | Ops | Shipping math | **SET = 699** (Fase D; $6.99 flat) |
 | `CELERY_BROKER_URL` | Optional MVP | Worker | SET |
 | `CELERY_RESULT_BACKEND` | Optional MVP | Worker | SET |
+| `S3_ENDPOINT_URL` | **Yes (Fase I prod)** | S3-compatible endpoint (Railway bucket) | set on deploy |
+| `S3_BUCKET` | **Yes (Fase I prod)** | Bucket name (S3 API name) | set on deploy |
+| `S3_ACCESS_KEY_ID` | **Yes (Fase I prod)** | Bucket access key | set on deploy |
+| `S3_SECRET_ACCESS_KEY` | **Yes (Fase I prod)** | Bucket secret (never log) | set on deploy |
+| `S3_REGION` | Yes | Usually `auto` for Railway | set on deploy |
+| `S3_PUBLIC_BASE_URL` | **Yes (Fase I prod)** | **API media proxy base** (not raw bucket host). Railway buckets are private. Example: `https://api-….up.railway.app/media` | set on deploy |
+| `MEDIA_MAX_BYTES` | Optional | Max upload size (default 5 MiB = 5242880) | optional |
 
 **Rules:**
 
@@ -97,6 +104,7 @@ Local checklist (developer signs off, no values in git):
 - [ ] Auth Google redirect URIs include `http://localhost:3000/api/auth/callback/google`
 - [ ] API: `ADMIN_EMAILS` + `GOOGLE_CLIENT_ID` (same client id as `AUTH_GOOGLE_ID`)
 - [ ] Local cookies: `COOKIE_SAMESITE=lax` OK (localhost same-site)
+- [ ] Fase I media: either S3_* vars (Railway bucket) **or** leave unset for local `uploads/` + `/media`
 
 ---
 

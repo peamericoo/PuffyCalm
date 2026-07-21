@@ -78,12 +78,55 @@ class Settings(BaseSettings):
     free_shipping_threshold_cents: int = 7500
     flat_shipping_cents: int = 699
 
+    # --- Media / object storage (Phase I) — Railway S3-compatible bucket ---
+    # Prefer Railway bucket credentials (never commit secrets).
+    # When S3_BUCKET + keys set → S3 backend; else local filesystem (dev/test).
+    s3_endpoint_url: str = ""
+    s3_bucket: str = ""
+    s3_access_key_id: str = ""
+    s3_secret_access_key: str = ""
+    s3_region: str = "auto"
+    # Public URL base stored in product_images (API media proxy). Trailing slash optional.
+    # Railway buckets are private — do NOT use the raw storage endpoint as public base.
+    # Example prod: https://api-production-4f01.up.railway.app/media
+    s3_public_base_url: str = ""
+    # Max upload size in bytes (default 5 MiB)
+    media_max_bytes: int = 5 * 1024 * 1024
+    # Local fallback root (dev/test when S3 not configured)
+    media_local_dir: str = "uploads"
+    # Public base for local files when served by API (no trailing slash)
+    # e.g. http://localhost:8000/media
+    media_local_public_base_url: str = "http://localhost:8000/media"
+
     @field_validator("app_debug", mode="before")
     @classmethod
     def parse_bool(cls, value: object) -> object:
         if isinstance(value, str):
             return value.strip().lower() in {"1", "true", "yes", "on"}
         return value
+
+    @property
+    def s3_configured(self) -> bool:
+        return bool(
+            self.s3_bucket.strip()
+            and self.s3_access_key_id.strip()
+            and self.s3_secret_access_key.strip()
+            and self.s3_endpoint_url.strip()
+        )
+
+    def resolved_s3_public_base_url(self) -> str:
+        """
+        Public URL base for stored objects (served via GET /media proxy).
+
+        Prefer S3_PUBLIC_BASE_URL. Fallback: {storefront is wrong} —
+        use MEDIA_LOCAL-style path on API when only endpoint known is not enough.
+        """
+        if self.s3_public_base_url.strip():
+            return self.s3_public_base_url.strip().rstrip("/")
+        # Dev default when S3 configured but public base forgotten: local media path
+        if self.media_local_public_base_url.strip():
+            return self.media_local_public_base_url.strip().rstrip("/")
+        return ""
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -1,13 +1,18 @@
-"""Admin-gated routes (RBAC). Orders = F/G; products = Phase H."""
+"""Admin-gated routes (RBAC). Orders = F/G; products = Phase H; media = Phase I."""
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import RequireAdmin, RequireStaff, db_session
+from app.api.v1.schemas.admin_media import (
+    AdminMediaDeleteIn,
+    AdminMediaDeleteOut,
+    AdminMediaUploadOut,
+)
 from app.api.v1.schemas.admin_orders import (
     AdminOrderDetailOut,
     AdminOrderItemOut,
@@ -43,6 +48,13 @@ from app.application.admin_products.service import (
     unpublish_admin_product,
     update_admin_product,
 )
+from app.application.media.service import (
+    MediaNotFoundError,
+    MediaServiceError,
+    delete_media,
+    upload_media,
+)
+from app.application.media.validation import MediaValidationError
 from app.domain.order_rules import ALL_ORDER_STATUSES
 from app.infrastructure.db.models import Order, Product, User
 
@@ -483,3 +495,105 @@ async def admin_unpublish_product(
         _raise_product_http(exc)
         raise
     return _product_detail(product)
+
+
+# ---------------------------------------------------------------------------
+# Phase I — Admin media upload (staff + admin)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/media",
+    response_model=AdminMediaUploadOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def admin_upload_media(
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+    file: Annotated[UploadFile, File(description="Image file (jpeg/png/webp/gif)")],
+    product_id: Annotated[
+        str | None,
+        Form(alias="productId", description="Optional product id to append gallery"),
+    ] = None,
+    set_cover: Annotated[
+        bool,
+        Form(alias="setCover", description="Set as product cover image_url"),
+    ] = False,
+) -> AdminMediaUploadOut:
+    """
+    Multipart upload → object storage → public URL.
+
+    Optional ``productId`` appends a ``product_images`` row and may set cover.
+    """
+    _ = user
+    raw = await file.read()
+    try:
+        result = await upload_media(
+            session,
+            data=raw,
+            declared_content_type=file.content_type,
+            product_id=product_id,
+            set_cover=set_cover,
+        )
+    except MediaValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    except MediaNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    except MediaServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return AdminMediaUploadOut(
+        key=result.key,
+        url=result.url,
+        content_type=result.content_type,
+        size_bytes=result.size_bytes,
+        product_id=result.product_id,
+        sort_order=result.sort_order,
+        set_cover=result.set_cover,
+    )
+
+
+@router.delete("/media", response_model=AdminMediaDeleteOut)
+async def admin_delete_media(
+    body: AdminMediaDeleteIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminMediaDeleteOut:
+    """
+    Delete storage object (if owned) and detach matching product_images rows.
+
+    Provide ``key`` and/or ``url``.
+    """
+    _ = user
+    try:
+        result = await delete_media(
+            session,
+            key=body.key,
+            url=body.url,
+        )
+    except MediaValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    except MediaServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return AdminMediaDeleteOut(
+        deleted=bool(result.get("deleted")),
+        key=result.get("key") if isinstance(result.get("key"), str) else None,
+        url=result.get("url") if isinstance(result.get("url"), str) else None,
+        storage_deleted=bool(result.get("storageDeleted")),
+        images_removed=int(result.get("imagesRemoved") or 0),
+        products_touched=int(result.get("productsTouched") or 0),
+    )

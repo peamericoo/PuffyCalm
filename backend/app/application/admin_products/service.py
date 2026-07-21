@@ -433,11 +433,21 @@ async def update_admin_product(
         )
 
     if "images" in fields_set and data.get("images") is not None:
-        urls = [
-            img["url"] if isinstance(img, dict) else getattr(img, "url", str(img))
+        new_urls = [
+            str(
+                img["url"] if isinstance(img, dict) else getattr(img, "url", str(img))
+            ).strip()
             for img in data["images"]
         ]
-        _set_images(product, urls)
+        new_urls = [u for u in new_urls if u]
+        old_urls = [i.url for i in (product.images or []) if i.url]
+        orphaned = [u for u in old_urls if u not in set(new_urls)]
+        _set_images(product, new_urls)
+        # Phase I: best-effort delete owned S3/local objects no longer referenced
+        if orphaned:
+            from app.application.media.service import delete_owned_urls
+
+            delete_owned_urls(urls=orphaned)
 
     if "specs" in fields_set and data.get("specs") is not None:
         specs: list[tuple[str, str]] = []
