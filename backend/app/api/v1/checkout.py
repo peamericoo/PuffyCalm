@@ -81,6 +81,8 @@ async def create_session(
         order_id=result.order_id,
         public_code=result.public_code,
         client_secret=result.client_secret,
+        subtotal_cents=result.subtotal_cents,
+        shipping_cents=result.shipping_cents,
         total_cents=result.total_cents,
         currency="USD",
         status=result.status,

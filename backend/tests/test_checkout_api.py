@@ -100,6 +100,9 @@ async def test_checkout_session_mocked_stripe(
     assert data["publicCode"].startswith("PC-")
     assert data["clientSecret"]
     assert data["totalCents"] >= 50
+    assert "subtotalCents" in data
+    assert "shippingCents" in data
+    assert data["totalCents"] == data["subtotalCents"] + data["shippingCents"]
     assert data["currency"] == "USD"
     create_mock.assert_called_once()
 

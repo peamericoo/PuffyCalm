@@ -1,20 +1,17 @@
 /**
- * Free shipping threshold (USD) — cart UX only; BE is source of truth at pay time.
+ * Free shipping threshold (USD) — cart UX estimate; BE is source of truth at pay time.
  *
- * CURRENT (smoke): 0 — keeps prod_009 ($0.50) at Stripe minimum when BE env also has
- * FREE_SHIPPING_THRESHOLD_CENTS=0 / FLAT_SHIPPING_CENTS=0 (Railway api prod).
+ * Canonical business values (aligned with BE defaults + Railway api prod after Fase D):
+ *   FREE_SHIPPING_THRESHOLD = 75  → FREE_SHIPPING_THRESHOLD_CENTS=7500
+ *   FLAT_SHIPPING = 6.99           → FLAT_SHIPPING_CENTS=699
  *
- * CANONICAL business target (restore in Fase D — see docs/ops/CONTRACTS.md):
- *   FREE_SHIPPING_THRESHOLD = 75
- *   FLAT_SHIPPING = 6.99
- * and Railway api: FREE_SHIPPING_THRESHOLD_CENTS=7500, FLAT_SHIPPING_CENTS=699
- *
- * Do not “fix” to 75 while smoke zeros are still intentional on BE prod.
+ * Smoke SKU `prod_009` ($0.50): alone charges ~$7.49 (product + flat shipping).
+ * See docs/ops/CONTRACTS.md §2–3 and docs/phases/PHASE_D_COMPLETE.md.
  */
-export const FREE_SHIPPING_THRESHOLD = 0;
+export const FREE_SHIPPING_THRESHOLD = 75;
 
-/** Flat shipping under threshold (USD). 0 while smoke-testing min charge (Fase D). */
-export const FLAT_SHIPPING = 0;
+/** Flat shipping under threshold (USD). Matches BE `flat_shipping_cents` / 100. */
+export const FLAT_SHIPPING = 6.99;
 
 export const CART_CURRENCY = "USD" as const;
 

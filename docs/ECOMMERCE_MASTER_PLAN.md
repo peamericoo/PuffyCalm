@@ -241,7 +241,7 @@ Home / Category / PDP / Search / Reviews
 
 - Cart: `lib/cart/store.ts` (persist `puffycalm-cart`).
 - Wishlist: `lib/wishlist/store.ts` (persist `puffycalm-wishlist`).
-- **Atenção:** `FREE_SHIPPING_THRESHOLD = 0` e `FLAT_SHIPPING = 0` temporários para smoke $0.50 — desalinhados da copy $75 e do BE.
+- **Shipping (pós Fase D):** FE `FREE_SHIPPING_THRESHOLD=75` / `FLAT_SHIPPING=6.99`; BE prod 7500/699 ¢. Smoke `prod_009` sozinho ≈ $7.49.
 
 ### Auth FE
 

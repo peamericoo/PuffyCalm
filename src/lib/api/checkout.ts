@@ -22,6 +22,12 @@ export type CreateCheckoutSessionResult = {
   orderId: string;
   publicCode: string;
   clientSecret: string;
+  /**
+   * Server-priced breakdown (authoritative at payment step).
+   * Optional for brief deploy lag if an older API build is still live.
+   */
+  subtotalCents?: number;
+  shippingCents?: number;
   totalCents: number;
   currency: "USD";
   status: string;

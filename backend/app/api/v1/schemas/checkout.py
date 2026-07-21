@@ -39,6 +39,9 @@ class CreateCheckoutSessionOut(CamelModel):
     order_id: str = Field(serialization_alias="orderId")
     public_code: str = Field(serialization_alias="publicCode")
     client_secret: str = Field(serialization_alias="clientSecret")
+    # Server money breakdown (UX on payment step; Stripe charge uses same totals)
+    subtotal_cents: int = Field(serialization_alias="subtotalCents")
+    shipping_cents: int = Field(serialization_alias="shippingCents")
     total_cents: int = Field(serialization_alias="totalCents")
     currency: Literal["USD"] = "USD"
     status: str

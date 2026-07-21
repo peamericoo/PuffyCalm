@@ -33,6 +33,8 @@ interface StripePaymentSectionProps {
   /** Bump to force a new Checkout Session (cart/shipping change). */
   sessionKey: string;
   onPaid: (orderId: string, email: string) => void;
+  /** Fired once when server session is ready (authoritative money totals). */
+  onSessionReady?: (session: CreateCheckoutSessionResult) => void;
   className?: string;
 }
 
@@ -65,6 +67,7 @@ export function StripePaymentSection({
   lines,
   sessionKey,
   onPaid,
+  onSessionReady,
   className,
 }: StripePaymentSectionProps) {
   return (
@@ -73,6 +76,7 @@ export function StripePaymentSection({
       contact={contact}
       lines={lines}
       onPaid={onPaid}
+      onSessionReady={onSessionReady}
       className={className}
     />
   );
@@ -82,6 +86,7 @@ function StripePaymentInner({
   contact,
   lines,
   onPaid,
+  onSessionReady,
   className,
 }: Omit<StripePaymentSectionProps, "sessionKey">) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -107,7 +112,9 @@ function StripePaymentInner({
       },
     })
       .then((session) => {
-        if (!cancelled) setState({ status: "ready", session });
+        if (cancelled) return;
+        setState({ status: "ready", session });
+        onSessionReady?.(session);
       })
       .catch((e: unknown) => {
         if (cancelled) return;

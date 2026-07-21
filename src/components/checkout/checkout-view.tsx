@@ -17,6 +17,7 @@ import { StripePaymentSection } from "@/components/checkout/stripe-payment-secti
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { CreateCheckoutSessionResult } from "@/lib/api/checkout";
 import { useCartStore, useCartTotals } from "@/lib/cart/store";
 import {
   getCountryMeta,
@@ -28,6 +29,7 @@ import {
 } from "@/lib/checkout/address";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { CartTotals } from "@/types/cart";
 import styles from "./checkout.module.css";
 
 const selectClass =
@@ -69,13 +71,17 @@ export function CheckoutView() {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const items = useCartStore((s) => s.items);
-  const totals = useCartTotals();
+  const cartTotals = useCartTotals();
 
   const [step, setStep] = useState<Step>(1);
   const [dir, setDir] = useState<Direction>("forward");
   const [animKey, setAnimKey] = useState(0);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  /** Server money from createCheckoutSession — preferred on payment step. */
+  const [serverMoney, setServerMoney] = useState<CreateCheckoutSessionResult | null>(
+    null,
+  );
 
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -229,6 +235,45 @@ export function CheckoutView() {
       })),
     [items],
   );
+
+  // Drop stale server totals if cart/shipping identity changes before remount.
+  useEffect(() => {
+    setServerMoney(null);
+  }, [paymentSessionKey]);
+
+  /**
+   * Steps 1–2: client cart estimate (aligned constants 75 / 6.99).
+   * Step 3 with session: server subtotal/shipping/total (source of charge).
+   */
+  const totals: CartTotals = useMemo(() => {
+    if (step === 3 && serverMoney) {
+      const total = serverMoney.totalCents / 100;
+      const subtotal =
+        serverMoney.subtotalCents != null
+          ? serverMoney.subtotalCents / 100
+          : cartTotals.subtotal;
+      const shipping =
+        serverMoney.shippingCents != null
+          ? serverMoney.shippingCents / 100
+          : Math.max(0, Math.round((total - subtotal) * 100) / 100);
+      const threshold = cartTotals.freeShippingThreshold;
+      return {
+        itemCount: cartTotals.itemCount,
+        subtotal,
+        shipping,
+        total,
+        currency: serverMoney.currency,
+        freeShippingThreshold: threshold,
+        amountToFreeShipping: Math.max(0, threshold - subtotal),
+        qualifiesForFreeShipping: shipping === 0 && cartTotals.itemCount > 0,
+      };
+    }
+    return cartTotals;
+  }, [step, serverMoney, cartTotals]);
+
+  const handleSessionReady = (session: CreateCheckoutSessionResult) => {
+    setServerMoney(session);
+  };
 
   const handlePaid = (orderId: string, paidEmail: string) => {
     // Keep bag until success confirms paid (webhook may lag)
@@ -817,6 +862,7 @@ export function CheckoutView() {
                     contact={paymentContact}
                     lines={paymentLines}
                     onPaid={handlePaid}
+                    onSessionReady={handleSessionReady}
                   />
                 </div>
               ) : null}

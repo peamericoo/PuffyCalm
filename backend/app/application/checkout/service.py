@@ -59,6 +59,8 @@ class CheckoutSessionResult:
     order_id: str
     public_code: str
     client_secret: str
+    subtotal_cents: int
+    shipping_cents: int
     total_cents: int
     currency: str
     status: str
@@ -315,6 +317,8 @@ async def create_checkout_session(
         order_id=order.id,
         public_code=order.public_code,
         client_secret=client_secret,
+        subtotal_cents=subtotal,
+        shipping_cents=shipping_cents,
         total_cents=total,
         currency="USD",
         status=order.status,

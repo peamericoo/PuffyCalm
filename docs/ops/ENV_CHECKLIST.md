@@ -24,8 +24,8 @@ API: `https://api-production-4f01.up.railway.app`
 | `CORS_ORIGINS` | **Yes** | Browser origins (web URL) | **SET** |
 | `APP_ENV` | Yes | `production` vs dev cookies | **SET** |
 | `ADMIN_EMAIL` | Yes | Seed / future admin bootstrap | **SET** |
-| `FREE_SHIPPING_THRESHOLD_CENTS` | Ops | Shipping math | **SET = 0** (smoke; restore **7500** in Fase D) |
-| `FLAT_SHIPPING_CENTS` | Ops | Shipping math | **SET = 0** (smoke; restore **699** in Fase D) |
+| `FREE_SHIPPING_THRESHOLD_CENTS` | Ops | Shipping math | **SET = 7500** (Fase D; $75 free ship) |
+| `FLAT_SHIPPING_CENTS` | Ops | Shipping math | **SET = 699** (Fase D; $6.99 flat) |
 | `CELERY_BROKER_URL` | Optional MVP | Worker | SET |
 | `CELERY_RESULT_BACKEND` | Optional MVP | Worker | SET |
 
@@ -99,9 +99,10 @@ Local checklist (developer signs off, no values in git):
 | Web prod | **OK** | `GET https://web-production-ea635.up.railway.app/` → 200 |
 | Stripe keys present (api+web) | **OK** | Railway CLI keys present; prefixes `sk_test` / `pk_test` / `whsec` |
 | STOREFRONT_URL / NEXT_PUBLIC_API_URL | **OK** | Set; cross-service Railway hosts |
-| Shipping smoke zeros | **Documented** | Both FE constants and BE prod env at 0 — Fase D to restore |
+| Shipping canônico 75 / 6.99 | **OK (Fase D)** | FE constants 75/6.99; Railway api 7500/699 |
 
-**Signed:** Fase A automation · 2026-07-21 · **PASS** (prod env complete for current smoke checkout; live keys / shipping restore are later).
+**Signed:** Fase A automation · 2026-07-21 · **PASS** (prod env).  
+**Fase D update:** shipping restored to business values (2026-07-21).
 
 ---
 

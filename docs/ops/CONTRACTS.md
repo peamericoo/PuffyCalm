@@ -1,8 +1,8 @@
-# Contratos congelados (Fase A)
+# Contratos congelados (Fase A + updates D)
 
 > Fonte operacional. **Não alterar** sem decisão explícita do owner.  
 > Master plan: `docs/ECOMMERCE_MASTER_PLAN.md` · Handoff: `docs/CONTINUE.md`  
-> Congelado em: **Fase A** (`docs/phases/PHASE_A_COMPLETE.md`)
+> Congelado em: **Fase A** · Shipping alinhado em: **Fase D** (`docs/phases/PHASE_D_COMPLETE.md`)
 
 ---
 
@@ -36,45 +36,46 @@ Cart (Zustand, prices for UX only)
 ### Endpoints
 
 | Method | Path | Notas |
-|--------|------|--------|
-| POST | `/api/v1/checkout/sessions` | Guest; server prices |
+|--------|------|-------|
+| POST | `/api/v1/checkout/sessions` | Guest; server prices; response includes `subtotalCents`, `shippingCents`, `totalCents` |
 | GET | `/api/v1/orders/{id}` | `?email=` required; `?sync=true` se webhook atrasar |
 | POST | `/api/v1/webhooks/stripe` | Raw body + signature |
 
 ---
 
-## 2. Shipping FE vs BE (desalinhamento consciente)
+## 2. Shipping FE vs BE (alinhados — Fase D)
 
-### Valores canônicos de negócio (alvo pós-smoke)
+### Valores canônicos de negócio (prod + código)
 
 | Conceito | Valor | Unidade |
 |----------|-------|---------|
 | Free shipping threshold | **75** | USD (BE: **7500** cents) |
 | Flat shipping under threshold | **6.99** | USD (BE: **699** cents) |
-| Copy marketing | “free shipping over $75” | UI home/PDP |
+| Copy marketing | “free shipping over $75” | UI home/PDP/promo |
 
-### Estado atual (2026-07-21, pós Fase A)
+### Estado atual (pós Fase D)
 
 | Camada | Threshold | Flat | Notas |
 |--------|-----------|------|--------|
 | BE **defaults no código** | 7500 ¢ | 699 ¢ | `backend/app/core/config.py` |
-| BE **prod Railway env** | **0** | **0** | Override para smoke `$0.50` |
-| FE `src/lib/cart/constants.ts` | **0** | **0** | Alinhado ao override prod smoke |
-| Copy UI (home/PDP) | copy $75 | — | **Desalinhada** dos numbers atuais |
-
-### Decisão Fase A
-
-- **Não restaurar 75/6.99 ainda** — smoke `prod_009` ($0.50) exige frete zero no BE e no FE para o charge ficar no mínimo Stripe.
-- FE já está em 0/0 como o prod BE; **não** “alinhar” FE ao default do código (7500/699) enquanto o env prod for 0.
-- **Dívida Fase D (Money integrity):**
-  1. Railway `api`: `FREE_SHIPPING_THRESHOLD_CENTS=7500`, `FLAT_SHIPPING_CENTS=699`
-  2. FE: `FREE_SHIPPING_THRESHOLD = 75`, `FLAT_SHIPPING = 6.99`
-  3. Garantir copy $75 coerente com constants
-  4. Smoke com `prod_009` sozinho passará a cobrar **$0.50 + $6.99** (ou usar cupom/flag futura)
+| BE **prod Railway env** | **7500** | **699** | Restaurados na Fase D |
+| FE `src/lib/cart/constants.ts` | **75** | **6.99** | Alinhado ao BE |
+| Copy UI (home/PDP/promo) | **$75** | — | Coerente com constants |
 
 ### Fonte de verdade no pagamento
 
-Sempre o **BE** (`compute_shipping_cents`). Totais do cart Zustand são **UX only**.
+Sempre o **BE** (`compute_shipping_cents`). Totais do cart Zustand são **UX estimate** (mesma fórmula e constants).
+
+No **step de pagamento**, o FE prefere `subtotalCents` / `shippingCents` / `totalCents` da session server no order summary + botão Pay.
+
+Fórmula BE (e espelho FE):
+
+```text
+if subtotal_cents <= 0 → shipping = 0
+else if subtotal_cents >= FREE_SHIPPING_THRESHOLD_CENTS → shipping = 0
+else → shipping = FLAT_SHIPPING_CENTS
+total = subtotal + shipping
+```
 
 ---
 
@@ -90,27 +91,31 @@ Sempre o **BE** (`compute_shipping_cents`). Totais do cart Zustand são **UX onl
 
 ### Onde existe
 
-- FE mock: `src/lib/mock/products.ts` (`featured: true` hoje)
-- BE seed: `backend/app/infrastructure/db/seed_data.py` (`featured: True`)
-- Visível no catálogo mock/seed se listado (não há flag unlisted no model ainda)
+- FE mock: `src/lib/mock/products.ts`
+- BE seed: `backend/app/infrastructure/db/seed_data.py`
+- Visível no catálogo se listado (não há flag unlisted no model ainda)
 
-### Política (congelada na Fase A)
+### Política (congelada na Fase A, charge math Fase D)
 
 1. **Manter** em seed/mock enquanto smoke de pagamento for necessário.
 2. Tratar como **dev / unlisted intent**: não usar em marketing, ads ou merchandising real.
-3. **Não remover** no meio das fases B–C (IDs estáveis).
-4. **Antes de go-live real (Fase P ou antes):**  
-   - unpublish / `in_stock=false` / remover de featured; ou  
-   - apagar do seed prod e reseed; ou  
-   - gate por env (`APP_ENV` / flag) se implementado.
-5. Open question do master plan permanece até P: unlisted em prod vs remover do seed.
+3. **Não remover** no meio das fases (IDs estáveis) até P.
+4. **Antes de go-live real (Fase P ou antes):** unpublish / hide / reseed.
+5. **Exceção de money integrity (Fase D):** com frete canônico 75/6.99, **só `prod_009` no cart** cobra:
+
+```text
+$0.50 (produto) + $6.99 (flat shipping) = $7.49
+```
+
+Não é bug: frete flat abaixo de $75. Cart UX e BE/session devem mostrar **$7.49**.  
+Produtos seed normais ($39–$55) → subtotal + $6.99 até atingir $75 free ship.
 
 ### Como smoke
 
 ```text
 Add prod_009 to cart → guest checkout → test card 4242…
-Com frete 0/0: charge ≈ $0.50
-Com frete 75/6.99: charge ≈ $7.49 (mínimo produto + flat)
+Charge ≈ $7.49 (não mais $0.50 com frete zero)
+Para charge mínimo absoluto: precisaria frete 0 de novo (não fazer em prod sem decisão).
 ```
 
 ---
@@ -121,8 +126,7 @@ Obrigatório. Conta Google é opcional (account UX), nunca blocker de compra.
 
 ---
 
-## 5. Catalog mock (intocado na Fase A)
+## 5. Catalog API (pós B/C)
 
-Home / category / PDP / search / reviews ainda leem `src/lib/mock/*`.  
-API read real já existe (`GET /catalog`, `/products`, `/search`, `/reviews`).  
-Migração = **Fases B–C**. Não recriar shapes TS.
+Home / category / PDP / search / reviews leem FastAPI por default (`NEXT_PUBLIC_USE_API_CATALOG` off = mock rollback).  
+Mocks de domínio ainda existem em disco até Fase M.
