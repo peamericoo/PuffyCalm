@@ -20,7 +20,7 @@ const moodMeta: Record<
   recovery: {
     icon: Sparkles,
     accent: "from-brand-deep/70 via-brand/20 to-transparent",
-    note: "Reset after long days",
+    note: "Unknot desk-day tension",
   },
   comfort: {
     icon: Cloud,
@@ -30,7 +30,7 @@ const moodMeta: Record<
   everyday: {
     icon: SunMedium,
     accent: "from-cta/55 via-brand-deep/25 to-transparent",
-    note: "Tiny upgrades, real impact",
+    note: "Small tools, better 5pm",
   },
 };
 
@@ -73,9 +73,9 @@ export async function CategoriesStrip() {
         <div className="mb-5 flex items-end justify-between gap-4 sm:mb-8">
           <DisplayStack
             eyebrow="Collections"
-            title="Shop by mood"
-            description="Three ways in — pick how you want to feel."
-            accent="mood"
+            title="Shop how you want to feel"
+            description="Three doors in — recovery, comfort, or everyday upgrades."
+            accent="feel"
             motion="slide"
             className="max-w-md"
           />

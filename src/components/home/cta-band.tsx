@@ -15,10 +15,10 @@ export function CtaBand() {
         <div className="absolute -bottom-16 left-1/3 h-56 w-56 rounded-full bg-brand-deep/20 blur-3xl" />
 
         <DisplayStack
-          eyebrow="Ready when you are"
-          title="Feel better every day."
-          description="Guest checkout · free shipping over $75."
-          accent="day."
+          eyebrow="Ready in minutes"
+          title="Stop managing the ache."
+          description="Guest checkout · free tracked shipping over $75 · ships US, UK, AU & CA."
+          accent="ache."
           tone="on-brand"
           noReveal
           className="relative max-w-lg"
@@ -26,10 +26,10 @@ export function CtaBand() {
 
         <div className="relative mt-6 flex flex-wrap gap-3 lg:mt-0 lg:shrink-0">
           <Button asChild variant="default" size="lg" className="pressable">
-            <Link href="/category/all">Shop now</Link>
+            <Link href="/category/all">Shop the catalog</Link>
           </Button>
           <Button asChild variant="light" size="lg" className="pressable">
-            <Link href="/help">Need help?</Link>
+            <Link href="/help">Shipping & help</Link>
           </Button>
         </div>
       </Reveal>

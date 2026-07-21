@@ -33,9 +33,9 @@ const MOOD_ICONS: Record<string, LucideIcon> = {
 };
 
 const MOOD_TAGLINES: Record<string, string> = {
-  recovery: "Tension out",
-  comfort: "Soft support",
-  everyday: "Small upgrades",
+  recovery: "Unknot today",
+  comfort: "Sit softer",
+  everyday: "Upgrade daily",
 };
 
 function isRealMerchImage(url: string | undefined | null): url is string {
@@ -179,10 +179,10 @@ function CategoryRail({
       <div className="relative mb-4 px-0.5">
         <DisplayStack
           eyebrow="Browse"
-          title="Shop by mood"
-          description="Jump straight into what you need."
+          title="Pick how you want to feel"
+          description="Recovery · comfort · everyday — jump in."
           size="sm"
-          accent="mood"
+          accent="feel"
           aura
           noReveal
           className="display-stack--compact"
@@ -230,11 +230,11 @@ function CategoryRail({
           href="/category/all"
           className="pressable glass-btn-cta flex h-11 w-full items-center justify-center gap-1.5 rounded-full text-sm font-semibold text-white"
         >
-          Shop the collection
+          Shop everything
           <ArrowUpRight className="h-4 w-4" />
         </Link>
         <p className="mt-2.5 text-center text-[11px] text-muted-foreground">
-          Guest checkout · tracked shipping
+          Guest checkout · free shipping $75+
         </p>
       </div>
     </aside>
@@ -335,9 +335,9 @@ export async function ShopNow() {
         <div className="mb-5 sm:mb-8">
           <DisplayStack
             eyebrow="Shop"
-            title="What customers buy first"
-            description="Curated picks · free shipping over $75"
-            accent="first"
+            title="Start with what works"
+            description="Curated picks · free shipping over $75 · guest checkout"
+            accent="works"
             motion="rise"
             className="max-w-xl"
           />

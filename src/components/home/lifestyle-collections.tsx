@@ -24,8 +24,8 @@ export function LifestyleCollections({ tiles }: Props) {
         <div className="mb-6 lg:mb-8">
           <DisplayStack
             eyebrow="Lifestyle"
-            title="Made for real days"
-            accent="days"
+            title="Built around how you actually live"
+            accent="live"
             motion="soft"
             className="max-w-2xl"
           />
@@ -61,7 +61,7 @@ export function LifestyleCollections({ tiles }: Props) {
                       {item.title}
                     </p>
                     <p className="mt-1 text-xs text-white/75 sm:text-sm">
-                      Explore the edit
+                      Shop this vibe
                     </p>
                   </div>
                   <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-foreground opacity-0 translate-y-2 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">

@@ -9,38 +9,39 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About us",
   description:
-    "PuffyCalm is a curated store for comfort, recovery, and everyday essentials that make life lighter.",
+    "PuffyCalm curates premium comfort & recovery for desk days, long sits, and tight shoulders — guest checkout, free shipping over $75.",
 };
 
 export default function AboutPage() {
   return (
     <ContentPage
       eyebrow="Our story"
-      title="About PuffyCalm"
+      title="Comfort that ships. Recovery that works."
       description={siteConfig.description}
     >
       <ContentSection title="What we believe">
         <p>
-          Everyday life should feel a little lighter. We curate comfort,
-          recovery, and practical essentials for people who spend long hours at
-          desks, on the road, or winding down at home.
+          You should not have to live with the ache. We build a tight store of
+          comfort, recovery, and everyday tools for people who sit long hours,
+          commute hard, or finally want to wind down properly.
         </p>
         <p>
-          Our focus is simple: products that look calm, feel premium, and
-          actually help — without the noise of a giant marketplace.
+          Calm design. Premium feel. Products that actually help — without the
+          noise of a giant marketplace.
         </p>
       </ContentSection>
 
       <ContentSection title="How we shop for you">
         <p>
-          We hand-pick a tight catalog — recovery tools, seating comfort, heat
-          therapy, and desk-day upgrades — so you spend less time comparing and
-          more time feeling better.
+          We hand-pick recovery tools, seating comfort, heat therapy, and
+          desk-day upgrades so you spend less time comparing and more time
+          feeling better.
         </p>
         <ul>
-          <li>Curated assortment, not endless inventory</li>
+          <li>Tight catalog on purpose — quality over filler SKUs</li>
           <li>Clear product pages with honest specs</li>
           <li>Guest checkout anytime — no account required</li>
+          <li>Free tracked shipping on orders $75+</li>
         </ul>
       </ContentSection>
 
