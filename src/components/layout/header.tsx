@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
   Armchair,
@@ -65,19 +66,47 @@ const NAV_ICONS: Record<NavChild["icon"], LucideIcon> = {
 /**
  * Floating glass top bar — clear side gutters on mobile,
  * refined desktop nav balloons, centered search with autocomplete.
+ *
+ * Desktop megamenus are controlled state (not pure CSS :hover/:focus-within).
+ * Soft App Router navigations keep this Header mounted; CSS focus-within
+ * left the flyout open after clicking a child link. State resets on navigate.
  */
 export function Header() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  /** Desktop flyout key = top-level nav label, or null when closed */
+  const [openDesktopNav, setOpenDesktopNav] = useState<string | null>(null);
   const [openMobileSection, setOpenMobileSection] = useState<string | null>(
     null,
   );
+  /**
+   * Soft navigation keeps Header mounted. When the route changes, reset menu
+   * state during render (React-recommended pattern — not an effect), so flyouts
+   * never stick open after a submenu click.
+   */
+  const [menuRoute, setMenuRoute] = useState(pathname);
+  if (menuRoute !== pathname) {
+    setMenuRoute(pathname);
+    setOpenDesktopNav(null);
+    setMobileOpen(false);
+    setOpenMobileSection(null);
+    setSearchOpen(false);
+  }
+
   const cartCount = useCartItemCount();
   const wishCount = useWishlistCount();
   const openCart = useCartStore((s) => s.openCart);
   const [cartBadgePulse, setCartBadgePulse] = useState(false);
   const prevCartCount = useRef(cartCount);
+
+  const closeAllMenus = useCallback(() => {
+    setOpenDesktopNav(null);
+    setMobileOpen(false);
+    setOpenMobileSection(null);
+    setSearchOpen(false);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -109,13 +138,16 @@ export function Header() {
   }, [mobileOpen, searchOpen]);
 
   useEffect(() => {
-    if (!mobileOpen) return;
+    if (!mobileOpen && !openDesktopNav) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setOpenDesktopNav(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mobileOpen]);
+  }, [mobileOpen, openDesktopNav]);
 
   return (
     <>
@@ -159,36 +191,67 @@ export function Header() {
               {mainNav.map((item) => {
                 const children = item.children ?? [];
                 const hasChildren = children.length > 0;
+                const isOpen = openDesktopNav === item.label;
 
                 return (
-                  <div key={item.href} className="group/nav relative">
+                  <div
+                    key={item.href}
+                    className="relative"
+                    onMouseEnter={() => {
+                      if (hasChildren) setOpenDesktopNav(item.label);
+                    }}
+                    onMouseLeave={() => {
+                      if (hasChildren) setOpenDesktopNav(null);
+                    }}
+                    onFocusCapture={() => {
+                      if (hasChildren) setOpenDesktopNav(item.label);
+                    }}
+                    onBlurCapture={(e) => {
+                      if (!hasChildren) return;
+                      const next = e.relatedTarget as Node | null;
+                      if (next && e.currentTarget.contains(next)) return;
+                      setOpenDesktopNav(null);
+                    }}
+                  >
                     <Link
                       href={item.href}
+                      onClick={closeAllMenus}
+                      aria-expanded={hasChildren ? isOpen : undefined}
+                      aria-haspopup={hasChildren ? "menu" : undefined}
                       className={cn(
                         "pressable inline-flex items-center gap-1 rounded-full px-3 py-2 xl:px-3.5",
                         "text-[13.5px] font-semibold tracking-[-0.01em] text-foreground/88",
                         "transition-colors duration-200",
                         "hover:bg-brand-soft/90 hover:text-brand-deep",
+                        isOpen && "bg-brand-soft/90 text-brand-deep",
                       )}
                     >
                       {item.label}
                       {hasChildren ? (
-                        <ChevronDown className="h-3.5 w-3.5 text-foreground/40 transition-transform duration-300 group-hover/nav:rotate-180 group-hover/nav:text-brand-deep" />
+                        <ChevronDown
+                          className={cn(
+                            "h-3.5 w-3.5 text-foreground/40 transition-transform duration-300",
+                            isOpen && "rotate-180 text-brand-deep",
+                          )}
+                        />
                       ) : null}
                     </Link>
 
                     {hasChildren ? (
                       <div
                         className={cn(
-                          "pointer-events-none absolute left-1/2 top-full z-50 w-[18.5rem] -translate-x-1/2 pt-3",
-                          "invisible translate-y-1.5 opacity-0",
+                          "absolute left-1/2 top-full z-50 w-[18.5rem] -translate-x-1/2 pt-3",
                           "transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                          "group-hover/nav:pointer-events-auto group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100",
-                          "group-focus-within/nav:pointer-events-auto group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100",
+                          isOpen
+                            ? "pointer-events-auto visible translate-y-0 opacity-100"
+                            : "pointer-events-none invisible translate-y-1.5 opacity-0",
                         )}
                       >
                         <div className="absolute inset-x-4 top-0 h-3" aria-hidden />
-                        <div className="nav-dropdown overflow-hidden rounded-[1.35rem] border border-white/70 bg-white/96 p-2 shadow-[0_24px_50px_-20px_rgb(26_35_50/0.42)] backdrop-blur-2xl ring-1 ring-border/50">
+                        <div
+                          role="menu"
+                          className="nav-dropdown overflow-hidden rounded-[1.35rem] border border-white/70 bg-white/96 p-2 shadow-[0_24px_50px_-20px_rgb(26_35_50/0.42)] backdrop-blur-2xl ring-1 ring-border/50"
+                        >
                           <div className="mb-1 flex items-center justify-between px-2.5 pb-1.5 pt-1">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75">
                               {item.label}
@@ -200,9 +263,11 @@ export function Header() {
                             {children.map((child) => {
                               const Icon = NAV_ICONS[child.icon];
                               return (
-                                <li key={child.href + child.label}>
+                                <li key={child.href + child.label} role="none">
                                   <Link
                                     href={child.href}
+                                    role="menuitem"
+                                    onClick={closeAllMenus}
                                     className={cn(
                                       "group/item flex items-start gap-3 rounded-[1rem] px-2.5 py-2.5",
                                       "transition-all duration-200 hover:bg-brand-soft/90",
@@ -240,6 +305,8 @@ export function Header() {
                           <div className="mt-1.5 border-t border-border/40 px-1 pt-1.5">
                             <Link
                               href={item.href}
+                              role="menuitem"
+                              onClick={closeAllMenus}
                               className="flex items-center justify-between rounded-xl px-2.5 py-2.5 text-[12.5px] font-semibold text-brand-deep transition-colors hover:bg-brand-soft"
                             >
                               <span>Explore all {item.label.toLowerCase()}</span>
@@ -381,7 +448,7 @@ export function Header() {
                     <div className="flex items-center">
                       <Link
                         href={item.href}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={closeAllMenus}
                         className="flex-1 rounded-xl px-3.5 py-3 text-[15px] font-semibold text-foreground transition-colors hover:bg-brand-soft"
                       >
                         {item.label}
@@ -412,7 +479,7 @@ export function Header() {
                             <Link
                               key={child.href + child.label}
                               href={child.href}
-                              onClick={() => setMobileOpen(false)}
+                              onClick={closeAllMenus}
                               className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-brand-soft"
                             >
                               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-deep ring-1 ring-brand/12">
@@ -437,12 +504,12 @@ export function Header() {
             </nav>
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2.5">
               <Button asChild variant="outline" size="sm" className="w-full">
-                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                <Link href="/login" onClick={closeAllMenus}>
                   Sign in with Google
                 </Link>
               </Button>
               <Button asChild variant="default" size="sm" className="w-full">
-                <Link href="/register" onClick={() => setMobileOpen(false)}>
+                <Link href="/register" onClick={closeAllMenus}>
                   Create account
                 </Link>
               </Button>

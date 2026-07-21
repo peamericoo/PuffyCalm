@@ -8,8 +8,15 @@ import { PromoBar } from "@/components/layout/promo-bar";
 import { cn } from "@/lib/utils";
 
 /**
- * On homepage: no main offset — hero is full-bleed under the floating bars.
- * On all other pages: page-offset keeps content clear of the fixed chrome.
+ * Storefront chrome + page frame.
+ *
+ * Home: no top offset — hero is full-bleed under the floating bars.
+ * Internal pages: `page-offset` is padding-only (never a painted surface).
+ *
+ * Do not put `overflow-x-clip` on <main>: single-axis clip forces the other
+ * axis to auto, which creates a scroll container and breaks the body’s fixed
+ * ambient background — that was the “lighter box” under the TopBar on
+ * Product / Wishlist / Checkout / etc. Horizontal clip stays on the shell.
  */
 export function StorefrontShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,7 +28,8 @@ export function StorefrontShell({ children }: { children: React.ReactNode }) {
       <Header />
       <main
         className={cn(
-          "min-w-0 w-full max-w-[100%] flex-1 overflow-x-clip",
+          /* Transparent — ambient body gradient must show through continuously */
+          "min-w-0 w-full max-w-[100%] flex-1 bg-transparent",
           !isHome && "page-offset",
         )}
       >

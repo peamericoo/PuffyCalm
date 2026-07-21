@@ -886,9 +886,14 @@ body {
   font-family: var(--font-display), Georgia, "Times New Roman", serif;
 }
 
-/* Clears promo bar + floating nav */
+/*
+ * Clears promo bar + floating nav on internal pages.
+ * Padding only — never set background/box-shadow here. The body ambient
+ * gradient must remain continuous (Home is the visual reference).
+ */
 .page-offset {
   padding-top: calc(var(--promo-h) + var(--nav-h) + 1.35rem);
+  background: transparent;
 }
 
 .product-plate {
