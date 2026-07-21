@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/admin-content";
 import { ensureAdminBackendSession } from "@/lib/api/admin-auth";
 import { revalidateHome } from "@/lib/admin/revalidate-home";
+import { AdminImageField } from "@/components/admin/admin-image-field";
 import { Button } from "@/components/ui/button";
 import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
 import { cn } from "@/lib/utils";
@@ -285,8 +286,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
               Hero slides
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Homepage carousel only. Image URLs (https or /media/…). Max 8
-              slides.
+              Homepage carousel only. Upload images or paste URLs. Max 8 slides.
             </p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={addSlide}>
@@ -391,16 +391,14 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Image URL" className="sm:col-span-2">
-                <input
-                  className={cn(inputClass, "font-mono text-[13px]")}
-                  value={slide.imageUrl}
-                  onChange={(e) =>
-                    updateSlide(index, { imageUrl: e.target.value })
-                  }
-                  placeholder="https://… or /media/products/…"
-                />
-              </Field>
+              <AdminImageField
+                className="sm:col-span-2"
+                label="Hero image"
+                value={slide.imageUrl}
+                onChange={(url) => updateSlide(index, { imageUrl: url })}
+                googleIdToken={googleIdToken}
+                help="Upload a photo or paste a URL. Saved as public /media/… on the API."
+              />
               <Field label="CTA label">
                 <input
                   className={inputClass}
@@ -450,7 +448,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Home “Made for real days” mosaic. Empty = section hidden. Max 8.
-              Use Media upload URLs (/media/…) for images.
+              Upload images directly or paste a URL.
             </p>
           </div>
           <Button
@@ -524,20 +522,19 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   placeholder="/category/recovery"
                 />
               </Field>
-              <Field label="Image URL" className="sm:col-span-2">
-                <input
-                  className={cn(inputClass, "font-mono text-[13px]")}
-                  value={tile.imageUrl}
-                  onChange={(e) =>
-                    setLifestyle((prev) =>
-                      prev.map((t, i) =>
-                        i === index ? { ...t, imageUrl: e.target.value } : t,
-                      ),
-                    )
-                  }
-                  placeholder="/media/products/… or https://…"
-                />
-              </Field>
+              <AdminImageField
+                className="sm:col-span-2"
+                label="Tile image"
+                value={tile.imageUrl}
+                onChange={(url) =>
+                  setLifestyle((prev) =>
+                    prev.map((t, i) =>
+                      i === index ? { ...t, imageUrl: url } : t,
+                    ),
+                  )
+                }
+                googleIdToken={googleIdToken}
+              />
               <Field label="Layout span">
                 <select
                   className={inputClass}

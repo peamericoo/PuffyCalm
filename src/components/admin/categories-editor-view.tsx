@@ -9,13 +9,8 @@ import {
   updateAdminCategory,
   type AdminCategory,
 } from "@/lib/api/admin-categories";
-import {
-  AdminMediaApiError,
-  MEDIA_ACCEPT,
-  MEDIA_MAX_BYTES,
-  uploadAdminMedia,
-} from "@/lib/api/admin-media";
 import { revalidateCatalog } from "@/lib/admin/revalidate-catalog";
+import { AdminImageField } from "@/components/admin/admin-image-field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +33,6 @@ export function CategoriesEditorView({ googleIdToken }: Props) {
     {},
   );
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -116,34 +110,6 @@ export function CategoriesEditorView({ googleIdToken }: Props) {
       );
     } finally {
       setSavingId(null);
-    }
-  };
-
-  const onUpload = async (id: string, file: File | null) => {
-    if (!file) return;
-    if (file.size > MEDIA_MAX_BYTES) {
-      setMessage(`File too large (max ${Math.round(MEDIA_MAX_BYTES / 1024 / 1024)} MiB).`);
-      return;
-    }
-    setUploadingId(id);
-    setMessage(null);
-    try {
-      await ensureAdminBackendSession({ googleIdToken });
-      const result = await uploadAdminMedia({ file });
-      const url = result.url;
-      if (!url) throw new Error("Upload returned no URL");
-      patchDraft(id, { imageUrl: url });
-      setMessage("Image uploaded — click Save on this category to apply.");
-    } catch (e) {
-      setMessage(
-        e instanceof AdminMediaApiError
-          ? e.message
-          : e instanceof Error
-            ? e.message
-            : "Upload failed",
-      );
-    } finally {
-      setUploadingId(null);
     }
   };
 
@@ -239,38 +205,26 @@ export function CategoriesEditorView({ googleIdToken }: Props) {
                   onChange={(e) => patchDraft(c.id, { tagline: e.target.value })}
                 />
               </label>
-              <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-                <span className="font-medium">Image URL</span>
-                <input
-                  className={cn(inputClass, "font-mono text-[13px]")}
-                  value={d.imageUrl ?? ""}
-                  onChange={(e) =>
-                    patchDraft(c.id, { imageUrl: e.target.value })
-                  }
-                  placeholder="/media/… or https://… (empty = clean gradient)"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-                <span className="font-medium">Upload image</span>
-                <input
-                  type="file"
-                  accept={MEDIA_ACCEPT}
-                  disabled={uploadingId === c.id}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    void onUpload(c.id, f);
-                    e.target.value = "";
-                  }}
-                  className="text-sm"
-                />
-              </label>
+              <AdminImageField
+                className="sm:col-span-2"
+                label="Cover image"
+                value={d.imageUrl ?? ""}
+                onChange={(url) => {
+                  patchDraft(c.id, { imageUrl: url });
+                  setMessage(
+                    "Image set — click Save category to apply on the storefront.",
+                  );
+                }}
+                googleIdToken={googleIdToken}
+                help="Upload or paste URL. Empty = brand gradient on mood/filters."
+              />
             </div>
 
             <div className="mt-4 flex justify-end">
               <Button
                 type="button"
                 onClick={() => void onSave(c.id)}
-                disabled={savingId === c.id || uploadingId === c.id}
+                disabled={savingId === c.id}
               >
                 {savingId === c.id ? (
                   <>
