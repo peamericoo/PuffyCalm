@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | L — Fulfillment + inventory hardening |
 | **Data** | 2026-07-21 |
-| **Commit** | *(ver STATUS.md após commit)* |
+| **Commit** | `03a4e15` |
 | **DoD atingido** | **SIM** — `stock_qty` + decremento no paid path idempotente; qty 0 bloqueia checkout; pytest green |
 
 ---
