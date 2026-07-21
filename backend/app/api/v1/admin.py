@@ -1,12 +1,30 @@
-"""Admin-gated routes (RBAC smoke). Full admin UI is Phase 8."""
+"""Admin-gated routes (RBAC). Orders ops = Phase F; full admin UI = Phase G."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from typing import Annotated
 
-from app.api.deps import RequireAdmin, RequireStaff
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import RequireAdmin, RequireStaff, db_session
+from app.api.v1.schemas.admin_orders import (
+    AdminOrderDetailOut,
+    AdminOrderItemOut,
+    AdminOrderListItemOut,
+    AdminOrderListOut,
+    AdminOrderPatchIn,
+)
 from app.api.v1.schemas.auth import AdminPingOut
-from app.infrastructure.db.models import User
+from app.application.admin_orders.service import (
+    AdminOrderNotFoundError,
+    AdminOrderUpdateError,
+    get_admin_order,
+    list_admin_orders,
+    update_admin_order,
+)
+from app.domain.order_rules import ALL_ORDER_STATUSES
+from app.infrastructure.db.models import Order, User
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -31,3 +49,169 @@ async def only_admin(user: RequireAdmin) -> AdminPingOut:
         role=user.role,
         message="admin-only endpoint",
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase F — Admin orders API (staff + admin)
+# ---------------------------------------------------------------------------
+
+
+def _iso(dt: object | None) -> str | None:
+    if dt is None:
+        return None
+    iso = getattr(dt, "isoformat", None)
+    if callable(iso):
+        return str(iso())
+    return str(dt)
+
+
+def _list_item(order: Order) -> AdminOrderListItemOut:
+    return AdminOrderListItemOut(
+        id=order.id,
+        public_code=order.public_code,
+        email=order.email,
+        status=order.status,
+        currency=order.currency or "USD",
+        subtotal_cents=order.subtotal_cents,
+        shipping_cents=order.shipping_cents,
+        total_cents=order.total_cents,
+        item_count=len(order.items) if order.items is not None else 0,
+        paid_at=_iso(order.paid_at),
+        created_at=_iso(order.created_at) or "",
+        updated_at=_iso(order.updated_at) or "",
+    )
+
+
+def _detail(order: Order) -> AdminOrderDetailOut:
+    return AdminOrderDetailOut(
+        id=order.id,
+        public_code=order.public_code,
+        email=order.email,
+        status=order.status,
+        currency=order.currency or "USD",
+        subtotal_cents=order.subtotal_cents,
+        shipping_cents=order.shipping_cents,
+        total_cents=order.total_cents,
+        shipping_address=order.shipping_address or {},
+        admin_notes=order.admin_notes,
+        stripe_checkout_session_id=order.stripe_checkout_session_id,
+        stripe_payment_intent_id=order.stripe_payment_intent_id,
+        items=[
+            AdminOrderItemOut(
+                id=i.id,
+                product_id=i.product_id,
+                product_slug=i.product_slug,
+                product_name=i.product_name,
+                quantity=i.quantity,
+                unit_price_cents=i.unit_price_cents,
+                line_total_cents=i.line_total_cents,
+                image_url=i.image_url or "",
+            )
+            for i in (order.items or [])
+        ],
+        paid_at=_iso(order.paid_at),
+        created_at=_iso(order.created_at) or "",
+        updated_at=_iso(order.updated_at) or "",
+    )
+
+
+@router.get("/orders", response_model=AdminOrderListOut)
+async def admin_list_orders(
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+    status_filter: Annotated[
+        str | None,
+        Query(
+            alias="status",
+            description="Exact order status filter (optional)",
+        ),
+    ] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(alias="pageSize", ge=1, le=100)] = 20,
+) -> AdminOrderListOut:
+    """List orders (newest first). Staff or admin."""
+    _ = user
+    if status_filter is not None and status_filter.strip():
+        if status_filter.strip() not in ALL_ORDER_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": f"Unknown status filter: {status_filter}",
+                    "code": "invalid_status",
+                },
+            )
+
+    result = await list_admin_orders(
+        session,
+        status=status_filter,
+        page=page,
+        page_size=page_size,
+    )
+    return AdminOrderListOut(
+        items=[_list_item(o) for o in result.items],
+        page=result.page,
+        page_size=result.page_size,
+        total_items=result.total_items,
+        total_pages=result.total_pages,
+        has_next=result.has_next,
+        has_prev=result.has_prev,
+    )
+
+
+@router.get("/orders/{order_id}", response_model=AdminOrderDetailOut)
+async def admin_get_order(
+    order_id: str,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminOrderDetailOut:
+    """Order detail with items, shipping, payment ids, notes. Staff or admin."""
+    _ = user
+    try:
+        order = await get_admin_order(session, order_id)
+    except AdminOrderNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": str(exc), "code": exc.code},
+        ) from exc
+    return _detail(order)
+
+
+@router.patch("/orders/{order_id}", response_model=AdminOrderDetailOut)
+async def admin_patch_order(
+    order_id: str,
+    body: AdminOrderPatchIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminOrderDetailOut:
+    """
+    Update status (allowed transitions only) and/or admin_notes.
+
+    Payment statuses (paid/failed) are not set here — Stripe owns those.
+    """
+    _ = user
+    fields = body.model_fields_set
+    try:
+        order = await update_admin_order(
+            session,
+            order_id,
+            status=body.status,
+            admin_notes=body.admin_notes,
+            fields_set=fields,
+        )
+    except AdminOrderNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": str(exc), "code": exc.code},
+        ) from exc
+    except AdminOrderUpdateError as exc:
+        if exc.code == "illegal_status_transition":
+            code = status.HTTP_409_CONFLICT
+        elif exc.code == "empty_patch":
+            code = status.HTTP_400_BAD_REQUEST
+        else:
+            code = status.HTTP_400_BAD_REQUEST
+        raise HTTPException(
+            status_code=code,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return _detail(order)

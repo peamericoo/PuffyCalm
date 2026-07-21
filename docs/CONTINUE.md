@@ -23,27 +23,24 @@ Leia docs/ECOMMERCE_MASTER_PLAN.md + docs/CONTINUE.md + docs/phases/STATUS.md + 
 Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + PHASE_E_COMPLETE.md.
 NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (2026-07-21, pós Fase E):
-- Fase A–D DONE — contratos, catalog/reviews/search FE→API, money integrity shipping
-- Fase E DONE — E1 Google→JWT cookies; POST /auth/google-exchange; ADMIN_EMAILS no api
-  (FE /admin bridge prova GET /admin/ping com credentials:include)
-- Prod Railway SUCCESS: web https://web-production-ea635.up.railway.app
-  api https://api-production-4f01.up.railway.app (health+ready OK)
-- BE: catalog/reviews/search REAL; admin JWT+RBAC + Google bridge REAL;
+ESTADO ATUAL (2026-07-21, pós Fase F):
+- Fase A–E DONE — contratos, catalog/reviews/search, money, admin Google→JWT bridge
+- Fase F DONE — GET/PATCH /admin/orders + state machine (RequireStaff); ver PHASE_F_COMPLETE.md
+- Prod Railway: web + api Online; redeploy **api** para levar Fase F a prod
+- BE: catalog/reviews/search REAL; admin auth REAL; admin orders API REAL;
   checkout Stripe Custom + webhook + order GET REAL
 - FE: catalog + reviews + search REAL; cart money; checkout real; admin bridge REAL
-- Admin ops (orders CRUD) ainda não — Fase F+
+- Admin UI pedidos ainda não — Fase G
 - Guest checkout sagrado
-- Owner: setar no api Railway ADMIN_EMAILS + GOOGLE_CLIENT_ID + COOKIE_SAMESITE=none
+- Owner: ADMIN_EMAILS + GOOGLE_CLIENT_ID + COOKIE_SAMESITE=none no api (Fase E)
 - Rollback storefront data: NEXT_PUBLIC_USE_API_CATALOG=0 (rebuild web)
 
 ROADMAP (master plan A–P):
-  A ✅ → B ✅ → C ✅ → D ✅ → E admin auth ✅
-  F admin orders API → G admin orders UI
-  H products admin → I media → J CMS-lite → K account orders → L inventory
-  M remove mocks → N legal pages → O observability → P go-live
+  A ✅ → B ✅ → C ✅ → D ✅ → E admin auth ✅ → F admin orders API ✅
+  G admin orders UI → H products admin → I media → J CMS-lite
+  K account orders → L inventory → M remove mocks → N legal → O obs → P go-live
 
-Próxima ação: execute Fase F (admin orders API). Uma fase por vez.
+Próxima ação: execute Fase G (admin orders UI). Uma fase por vez.
 
 Stripe contract (não quebrar) — ver docs/ops/CONTRACTS.md:
 - Confirm SEM returnUrl no FE (return_url só no Session.create BE)

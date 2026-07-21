@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase E concluída) |
-| **HEAD / Fase E** | `d65aedb` |
+| **Última atualização** | 2026-07-21 (Fase F concluída) |
+| **HEAD / Fase F** | *(preencher no commit)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **F** (admin orders API) |
+| **Próxima fase** | **G** (admin orders UI) |
 
 ## Fases
 
@@ -23,7 +23,7 @@
 | C | Reviews + Search → API | **done** | `ec2012e` | `docs/phases/PHASE_C_COMPLETE.md` |
 | D | Money integrity cart | **done** | `6efe45f` | `docs/phases/PHASE_D_COMPLETE.md` |
 | E | Admin auth bridge | **done** | `d65aedb` | `docs/phases/PHASE_E_COMPLETE.md` |
-| F | Admin orders API | pending | — | — |
+| F | Admin orders API | **done** | *(commit)* | `docs/phases/PHASE_F_COMPLETE.md` |
 | G | Admin orders UI | pending | — | — |
 | H | Admin products API+UI | pending | — | — |
 | I | Media / storage | pending | — | — |
@@ -38,15 +38,15 @@
 ## Estado do sistema (resumo)
 
 - **Prod healthy:** web + api Railway Online; `/health` ok; `/ready` postgres+redis true.
-- **Env prod:** Stripe + shipping 7500/699; **Fase E:** owner deve setar `ADMIN_EMAILS`, `GOOGLE_CLIENT_ID`, `COOKIE_SAMESITE=none` no **api**.
+- **Env prod:** Stripe + shipping; Fase E auth bridge; **Fase F:** `GET/PATCH /admin/orders` no BE (deploy api para prod).
 - **Contratos congelados:** Stripe Custom; guest checkout; `docs/ops/CONTRACTS.md`.
-- **BE:** catalog/search/reviews real; checkout real; **admin Google bridge + JWT cookies** (`POST /auth/google-exchange`, `/admin/ping`).
-- **FE:** catalog+reviews+search API; cart money; checkout real; **/admin** com bridge que prova ping.
-- **Admin UI:** shell + backend session proof only (sem CRUD pedidos/produtos).
+- **BE:** catalog/search/reviews; checkout; admin auth; **admin orders list/get/patch + state machine**.
+- **FE:** catalog+reviews+search API; cart money; checkout real; admin bridge (sem UI pedidos ainda).
+- **Admin UI:** shell + ping only — pedidos = Fase G.
 - **Não recriar:** Stripe Custom checkout; guest checkout.
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **F**.
-2. Ler `PHASE_E_COMPLETE.md` + `docs/ops/CONTRACTS.md` + `docs/ops/ENV_CHECKLIST.md`.
-3. Executar **só** a Fase F; ao fim criar `PHASE_F_COMPLETE.md` e atualizar esta tabela.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **G**.
+2. Ler `PHASE_E_COMPLETE.md` + `PHASE_F_COMPLETE.md` + contracts.
+3. Executar **só** a Fase G; ao fim criar `PHASE_G_COMPLETE.md` e atualizar esta tabela.
