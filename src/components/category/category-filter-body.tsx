@@ -6,6 +6,7 @@ import type { CatalogFacets, StockFilter } from "@/lib/catalog/types";
 import type { Category } from "@/types/product";
 import { CatalogLink } from "@/components/category/catalog-link";
 import { useCatalogUrl } from "@/components/category/use-catalog-url";
+import { categoryDisplayImage } from "@/lib/catalog/category-image";
 import { cn } from "@/lib/utils";
 import styles from "./category-filters.module.css";
 
@@ -172,13 +173,20 @@ export function CategoryFilterBody({
                   )}
                 >
                   <span className={styles.moodThumb}>
-                    <Image
-                      src={c.imageUrl}
-                      alt=""
-                      fill
-                      sizes="48px"
-                      className={styles.moodThumbImg}
-                    />
+                    {categoryDisplayImage(c.imageUrl) ? (
+                      <Image
+                        src={categoryDisplayImage(c.imageUrl)!}
+                        alt=""
+                        fill
+                        sizes="48px"
+                        className={styles.moodThumbImg}
+                      />
+                    ) : (
+                      <span
+                        className="absolute inset-0 brand-gradient opacity-90"
+                        aria-hidden
+                      />
+                    )}
                     <span className={styles.moodThumbOverlay} />
                   </span>
                   <span className={styles.moodMeta}>

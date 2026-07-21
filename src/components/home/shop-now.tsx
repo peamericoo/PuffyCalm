@@ -11,6 +11,7 @@ import {
 import { ProductCard } from "@/components/product/product-card";
 import { Reveal } from "@/components/shared/reveal";
 import { DisplayStack } from "@/components/shared/section-heading";
+import { categoryDisplayImage } from "@/lib/catalog/category-image";
 import { getHomeProductRail, listCategories } from "@/lib/catalog/service";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
@@ -38,9 +39,7 @@ const MOOD_TAGLINES: Record<string, string> = {
 };
 
 function isRealMerchImage(url: string | undefined | null): url is string {
-  if (!url?.trim()) return false;
-  if (url.includes("unsplash.com")) return false;
-  return true;
+  return categoryDisplayImage(url) != null;
 }
 
 async function buildShopCategories(

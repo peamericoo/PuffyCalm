@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { categoryDisplayImage } from "@/lib/catalog/category-image";
 import type { Category } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -52,13 +53,20 @@ export function CategoryMoodRail({
                       : "ring-1 ring-border/70 group-hover:ring-foreground/25",
                   )}
                 >
-                  <Image
-                    src={c.imageUrl}
-                    alt=""
-                    fill
-                    sizes="140px"
-                    className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
-                  />
+                  {categoryDisplayImage(c.imageUrl) ? (
+                    <Image
+                      src={categoryDisplayImage(c.imageUrl)!}
+                      alt=""
+                      fill
+                      sizes="140px"
+                      className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
+                    />
+                  ) : (
+                    <span
+                      className="absolute inset-0 brand-gradient opacity-90"
+                      aria-hidden
+                    />
+                  )}
                 </span>
                 <span
                   className={cn(
