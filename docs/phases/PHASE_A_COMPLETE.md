@@ -5,7 +5,7 @@
 | **Fase** | A — Contratos + higiene |
 | **Data** | 2026-07-21 |
 | **Timezone** | America/local owner (data do handoff) |
-| **Commit** | `e01af6e` (`e01af6e56c8110eab685780d78b075ddce783021`) |
+| **Commit** | `e01af6e` (docs/ops + constants comments; follow-up stamp commits on `main`) |
 | **DoD atingido** | **SIM** |
 
 ---

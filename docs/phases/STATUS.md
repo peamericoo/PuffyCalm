@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase A concluída) |
-| **HEAD / baseline app** | Ver `git log -1` · prod layout `996b448` + cart premium; docs master `157fd75`+ |
+| **HEAD / Fase A** | `e01af6e` (+ stamps em `main`) · app prod layout `996b448` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -18,7 +18,7 @@
 
 | Fase | Nome | Status | Commit | Log |
 |------|------|--------|--------|-----|
-| A | Contratos + higiene | **done** | `e01af6e` (+ stamp) | `docs/phases/PHASE_A_COMPLETE.md` |
+| A | Contratos + higiene | **done** | `e01af6e` | `docs/phases/PHASE_A_COMPLETE.md` |
 | B | Catalog FE → API | **pending** | — | — |
 | C | Reviews + Search → API | pending | — | — |
 | D | Money integrity cart | pending | — | — |
