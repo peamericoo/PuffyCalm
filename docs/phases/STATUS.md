@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase H concluída no código) |
-| **HEAD / Fase H** | *(preenchido no commit)* |
+| **HEAD / Fase H** | `05c6d0c` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -25,7 +25,7 @@
 | E | Admin auth bridge | **done** | `d65aedb` | `docs/phases/PHASE_E_COMPLETE.md` |
 | F | Admin orders API | **done** | `614ed17` | `docs/phases/PHASE_F_COMPLETE.md` |
 | G | Admin orders UI | **done** | `e34999c` | `docs/phases/PHASE_G_COMPLETE.md` |
-| H | Admin products API+UI | **done** | *(este commit)* | `docs/phases/PHASE_H_COMPLETE.md` |
+| H | Admin products API+UI | **done** | `05c6d0c` | `docs/phases/PHASE_H_COMPLETE.md` |
 | I | Media / storage | pending | — | — |
 | J | CMS-lite home | pending | — | — |
 | K | Account orders | pending | — | — |

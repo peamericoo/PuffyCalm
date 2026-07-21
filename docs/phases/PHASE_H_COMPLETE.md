@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | H — Admin API + UI produtos |
 | **Data** | 2026-07-21 |
-| **Commit** | *(ver STATUS.md após commit)* |
+| **Commit** | `05c6d0c` |
 | **DoD atingido** | **SIM** (código + unit validation + tsc; integração DB via Docker) |
 
 ---
