@@ -6,6 +6,7 @@
 > **Roadmap canônico (auditoria 2026-07-21):** [`docs/ECOMMERCE_MASTER_PLAN.md`](./ECOMMERCE_MASTER_PLAN.md)  
 > **Prompts copy-paste por fase (sessões descartáveis):** [`docs/PHASE_PROMPTS.md`](./PHASE_PROMPTS.md)  
 > **Status entre IAs:** [`docs/phases/STATUS.md`](./phases/STATUS.md)  
+> **Contratos congelados + env:** [`docs/ops/CONTRACTS.md`](./ops/CONTRACTS.md) · [`docs/ops/ENV_CHECKLIST.md`](./ops/ENV_CHECKLIST.md)  
 > As fases antigas 7–10 foram **substituídas** pelas fases **A–P** do master plan.  
 > **Só Frontend (craft/polish)?** Use **`/compact-fe`** ou `docs/FRONTEND_CRAFT.md`  
 > (persona **CalmCraft** — não reabre backend).
@@ -18,30 +19,32 @@
 Projeto: PuffyCalm / PuffyEasy (repo peamericoo/PuffyCalm)
 Workdir Windows: C:\Users\pedro.torres\Projects\PuffyCalm
 
-Leia docs/ECOMMERCE_MASTER_PLAN.md (fonte de verdade do roadmap) + docs/CONTINUE.md + AGENTS.md §4.
+Leia docs/ECOMMERCE_MASTER_PLAN.md + docs/CONTINUE.md + docs/phases/STATUS.md + AGENTS.md §4.
+Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md (Fase A).
 NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (2026-07-21):
+ESTADO ATUAL (2026-07-21, pós Fase A):
+- Fase A DONE — contratos + checklist env + política prod_009 + shipping debt → docs/ops/*
 - Prod Railway SUCCESS: web https://web-production-ea635.up.railway.app
-  api https://api-production-4f01.up.railway.app
-- Baseline deploy: commit 996b448 (layout bg + TopBar menus) + ae339ed (cart premium)
+  api https://api-production-4f01.up.railway.app (health+ready OK)
+- Baseline app: commit 996b448 (layout) + cart premium; master plan em docs/
 - BE: FastAPI catalog/reviews/search REAL; admin JWT+RBAC probes REAL;
-  checkout Stripe Custom + webhook + order GET REAL (fases 0–6 históricas ✅)
-- FE: catálogo/home/search/reviews AINDA mock (src/lib/mock); cart/wishlist Zustand;
+  checkout Stripe Custom + webhook + order GET REAL
+- FE: catálogo/home/search/reviews AINDA mock; cart/wishlist Zustand;
   checkout payment + success REAL
+- Shipping FE+BE prod = 0/0 (smoke prod_009); restaurar 75/6.99 na Fase D
 - Admin UI: shell /admin (Auth.js email allowlist FE) — ops API/UI ainda não
 - Guest checkout sagrado; admin alvo: paletot.business@gmail.com no BE (Fase E)
 
-ROADMAP (master plan A–P — não usar 7–10 antigos como “agora”):
-  A higiene/contratos → B catalog FE→API → C reviews+search → D money integrity
+ROADMAP (master plan A–P):
+  A higiene/contratos ✅ → B catalog FE→API → C reviews+search → D money integrity
   E admin auth bridge → F admin orders API → G admin orders UI
   H products admin → I media → J CMS-lite → K account orders → L inventory
   M remove mocks → N legal pages → O observability → P go-live
 
-Próxima ação: owner escolhe fase (ex. “execute Fase A” ou “execute Fase B”).
-NÃO implementar várias fases de uma vez.
+Próxima ação: execute Fase B (catalog FE→API). Uma fase por vez.
 
-Stripe contract (não quebrar):
+Stripe contract (não quebrar) — ver docs/ops/CONTRACTS.md:
 - Confirm SEM returnUrl no FE (return_url só no Session.create BE)
 - Session create 1x por sessionKey
 - GET /orders/{id}?sync=true se webhook atrasar
