@@ -5,7 +5,7 @@
 | **Fase** | A — Contratos + higiene |
 | **Data** | 2026-07-21 |
 | **Timezone** | America/local owner (data do handoff) |
-| **Commit** | _(preenchido no commit final — ver `git log -1 --oneline` / STATUS.md)_ |
+| **Commit** | `e01af6e` (`e01af6e56c8110eab685780d78b075ddce783021`) |
 | **DoD atingido** | **SIM** |
 
 ---

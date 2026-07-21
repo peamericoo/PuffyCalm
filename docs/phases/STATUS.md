@@ -18,7 +18,7 @@
 
 | Fase | Nome | Status | Commit | Log |
 |------|------|--------|--------|-----|
-| A | Contratos + higiene | **done** | _(ver `git log -1` após commit da fase)_ | `docs/phases/PHASE_A_COMPLETE.md` |
+| A | Contratos + higiene | **done** | `e01af6e` (+ stamp) | `docs/phases/PHASE_A_COMPLETE.md` |
 | B | Catalog FE → API | **pending** | — | — |
 | C | Reviews + Search → API | pending | — | — |
 | D | Money integrity cart | pending | — | — |
