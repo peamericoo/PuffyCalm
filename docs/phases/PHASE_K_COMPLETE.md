@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | K — Conta cliente + my orders |
 | **Data** | 2026-07-21 |
-| **Commit** | *(ver git log / STATUS)* |
+| **Commit** | `db6a5a0` |
 | **DoD atingido** | **SIM** |
 
 ---

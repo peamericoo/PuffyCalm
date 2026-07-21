@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase K — account orders) |
-| **HEAD / Fase K** | *(commit desta sessão)* |
+| **HEAD / Fase K** | `db6a5a0` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -28,7 +28,7 @@
 | H | Admin products API+UI | **done** (prod smoke 22/22) | `8ec7062` | `docs/phases/PHASE_H_COMPLETE.md` |
 | I | Media / storage | **done** | `aa6767b` | `docs/phases/PHASE_I_COMPLETE.md` |
 | J | CMS-lite home | **done** | `99fe3dd` | `docs/phases/PHASE_J_COMPLETE.md` |
-| K | Account orders | **done** | *(HEAD)* | `docs/phases/PHASE_K_COMPLETE.md` |
+| K | Account orders | **done** | `db6a5a0` | `docs/phases/PHASE_K_COMPLETE.md` |
 | L | Inventory + fulfillment | pending | — | — |
 | M | Remove domain mocks | pending | — | — |
 | N | Legal pages + errors | pending | — | — |
