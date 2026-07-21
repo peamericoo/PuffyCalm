@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | I — Media / storage upload |
 | **Data** | 2026-07-21 |
-| **Commit** | *(preenchido após commit)* |
+| **Commit** | `aa6767b` |
 | **DoD atingido** | **SIM** (código + unit tests + bucket creds na api; deploy redeploy opcional) |
 
 ---

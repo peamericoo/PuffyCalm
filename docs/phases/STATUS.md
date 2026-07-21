@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase I — media / Railway bucket) |
-| **HEAD / Fase I** | *(preenchido após commit)* |
+| **HEAD / Fase I** | `aa6767b` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -26,7 +26,7 @@
 | F | Admin orders API | **done** | `614ed17` | `docs/phases/PHASE_F_COMPLETE.md` |
 | G | Admin orders UI | **done** | `e34999c` | `docs/phases/PHASE_G_COMPLETE.md` |
 | H | Admin products API+UI | **done** (prod smoke 22/22) | `8ec7062` | `docs/phases/PHASE_H_COMPLETE.md` |
-| I | Media / storage | **done** | *(commit)* | `docs/phases/PHASE_I_COMPLETE.md` |
+| I | Media / storage | **done** | `aa6767b` | `docs/phases/PHASE_I_COMPLETE.md` |
 | J | CMS-lite home | pending | — | — |
 | K | Account orders | pending | — | — |
 | L | Inventory + fulfillment | pending | — | — |
