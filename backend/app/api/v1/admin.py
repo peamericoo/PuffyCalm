@@ -1,4 +1,4 @@
-"""Admin-gated routes (RBAC). Orders ops = Phase F; full admin UI = Phase G."""
+"""Admin-gated routes (RBAC). Orders = F/G; products = Phase H."""
 
 from __future__ import annotations
 
@@ -15,6 +15,15 @@ from app.api.v1.schemas.admin_orders import (
     AdminOrderListOut,
     AdminOrderPatchIn,
 )
+from app.api.v1.schemas.admin_products import (
+    AdminProductCreateIn,
+    AdminProductDetailOut,
+    AdminProductImageOut,
+    AdminProductListItemOut,
+    AdminProductListOut,
+    AdminProductSpecOut,
+    AdminProductUpdateIn,
+)
 from app.api.v1.schemas.auth import AdminPingOut
 from app.application.admin_orders.service import (
     AdminOrderNotFoundError,
@@ -23,8 +32,19 @@ from app.application.admin_orders.service import (
     list_admin_orders,
     update_admin_order,
 )
+from app.application.admin_products.service import (
+    AdminProductConflictError,
+    AdminProductNotFoundError,
+    AdminProductValidationError,
+    create_admin_product,
+    get_admin_product,
+    list_admin_products,
+    publish_admin_product,
+    unpublish_admin_product,
+    update_admin_product,
+)
 from app.domain.order_rules import ALL_ORDER_STATUSES
-from app.infrastructure.db.models import Order, User
+from app.infrastructure.db.models import Order, Product, User
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -215,3 +235,251 @@ async def admin_patch_order(
             detail={"message": exc.message, "code": exc.code},
         ) from exc
     return _detail(order)
+
+
+# ---------------------------------------------------------------------------
+# Phase H — Admin products API (staff + admin)
+# ---------------------------------------------------------------------------
+
+
+def _real_category_slugs(product: Product) -> list[str]:
+    return [
+        c.slug
+        for c in (product.categories or [])
+        if not c.is_virtual and c.slug != "all"
+    ]
+
+
+def _product_list_item(product: Product) -> AdminProductListItemOut:
+    return AdminProductListItemOut(
+        id=product.id,
+        slug=product.slug,
+        name=product.name,
+        status=product.status,
+        price=float(product.price),
+        currency=product.currency or "USD",
+        image_url=product.image_url or "",
+        in_stock=product.in_stock,
+        featured=bool(product.featured),
+        category_slugs=_real_category_slugs(product),
+        published_at=_iso(product.published_at),
+        created_at=_iso(product.created_at) or "",
+        updated_at=_iso(product.updated_at) or "",
+    )
+
+
+def _product_detail(product: Product) -> AdminProductDetailOut:
+    images = [
+        AdminProductImageOut(url=img.url, sort_order=img.sort_order)
+        for img in (product.images or [])
+    ]
+    specs = [
+        AdminProductSpecOut(label=s.label, value=s.value, sort_order=s.sort_order)
+        for s in (product.specs or [])
+    ]
+    compare = (
+        float(product.compare_at_price) if product.compare_at_price is not None else None
+    )
+    return AdminProductDetailOut(
+        id=product.id,
+        slug=product.slug,
+        name=product.name,
+        status=product.status,
+        short_description=product.short_description or "",
+        description=product.description or "",
+        price=float(product.price),
+        compare_at_price=compare,
+        currency=product.currency or "USD",
+        image_url=product.image_url or "",
+        image_alt=product.image_alt or "",
+        images=images,
+        category_slugs=_real_category_slugs(product),
+        category_label=product.category_label,
+        badges=list(product.badges or []),
+        features=list(product.features or []),
+        specs=specs,
+        in_stock=product.in_stock,
+        featured=bool(product.featured),
+        max_quantity_per_order=product.max_quantity_per_order,
+        purchase_limit_per_customer=product.purchase_limit_per_customer,
+        seo_title=product.seo_title,
+        seo_description=product.seo_description,
+        rating=float(product.rating or 0),
+        review_count=int(product.review_count or 0),
+        published_at=_iso(product.published_at),
+        created_at=_iso(product.created_at) or "",
+        updated_at=_iso(product.updated_at) or "",
+    )
+
+
+def _raise_product_http(exc: Exception) -> None:
+    if isinstance(exc, AdminProductNotFoundError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": str(exc), "code": exc.code},
+        ) from exc
+    if isinstance(exc, AdminProductConflictError):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    if isinstance(exc, AdminProductValidationError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    raise exc
+
+
+@router.get("/products", response_model=AdminProductListOut)
+async def admin_list_products(
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+    status_filter: Annotated[
+        str | None,
+        Query(alias="status", description="draft | published | archived"),
+    ] = None,
+    q: Annotated[
+        str | None,
+        Query(description="Search name, slug, or product id"),
+    ] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(alias="pageSize", ge=1, le=100)] = 20,
+) -> AdminProductListOut:
+    """List products (all statuses). Staff or admin."""
+    _ = user
+    try:
+        result = await list_admin_products(
+            session,
+            status=status_filter,
+            q=q,
+            page=page,
+            page_size=page_size,
+        )
+    except AdminProductValidationError as exc:
+        _raise_product_http(exc)
+        raise  # unreachable; satisfies type checker
+    return AdminProductListOut(
+        items=[_product_list_item(p) for p in result.items],
+        page=result.page,
+        page_size=result.page_size,
+        total_items=result.total_items,
+        total_pages=result.total_pages,
+        has_next=result.has_next,
+        has_prev=result.has_prev,
+    )
+
+
+@router.get("/products/{product_id}", response_model=AdminProductDetailOut)
+async def admin_get_product(
+    product_id: str,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminProductDetailOut:
+    """Product detail including draft/archived. Staff or admin."""
+    _ = user
+    try:
+        product = await get_admin_product(session, product_id)
+    except AdminProductNotFoundError as exc:
+        _raise_product_http(exc)
+        raise
+    return _product_detail(product)
+
+
+@router.post(
+    "/products",
+    response_model=AdminProductDetailOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def admin_create_product(
+    body: AdminProductCreateIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminProductDetailOut:
+    """
+    Create product (default status draft).
+
+    Optional ``id`` is the SKU-like primary key; auto-generated if omitted.
+    Images are URL + order only (binary upload = Phase I).
+    """
+    _ = user
+    payload = body.model_dump(by_alias=False)
+    # Normalize nested models to plain dicts for service
+    payload["images"] = [{"url": i.url} for i in body.images]
+    payload["specs"] = [{"label": s.label, "value": s.value} for s in body.specs]
+    try:
+        product = await create_admin_product(session, data=payload)
+    except (
+        AdminProductConflictError,
+        AdminProductValidationError,
+    ) as exc:
+        _raise_product_http(exc)
+        raise
+    return _product_detail(product)
+
+
+@router.patch("/products/{product_id}", response_model=AdminProductDetailOut)
+async def admin_update_product(
+    product_id: str,
+    body: AdminProductUpdateIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminProductDetailOut:
+    """Partial update. Nested images/specs fully replace when provided."""
+    _ = user
+    fields = set(body.model_fields_set)
+    payload = body.model_dump(by_alias=False, exclude_unset=True)
+    if "images" in fields and body.images is not None:
+        payload["images"] = [{"url": i.url} for i in body.images]
+    if "specs" in fields and body.specs is not None:
+        payload["specs"] = [{"label": s.label, "value": s.value} for s in body.specs]
+    try:
+        product = await update_admin_product(
+            session,
+            product_id,
+            data=payload,
+            fields_set=fields,
+        )
+    except (
+        AdminProductNotFoundError,
+        AdminProductConflictError,
+        AdminProductValidationError,
+    ) as exc:
+        _raise_product_http(exc)
+        raise
+    return _product_detail(product)
+
+
+@router.post("/products/{product_id}/publish", response_model=AdminProductDetailOut)
+async def admin_publish_product(
+    product_id: str,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminProductDetailOut:
+    """Set status=published → visible on storefront catalog."""
+    _ = user
+    try:
+        product = await publish_admin_product(session, product_id)
+    except (
+        AdminProductNotFoundError,
+        AdminProductValidationError,
+    ) as exc:
+        _raise_product_http(exc)
+        raise
+    return _product_detail(product)
+
+
+@router.post("/products/{product_id}/unpublish", response_model=AdminProductDetailOut)
+async def admin_unpublish_product(
+    product_id: str,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminProductDetailOut:
+    """Set status=draft → removed from public catalog/search/PDP."""
+    _ = user
+    try:
+        product = await unpublish_admin_product(session, product_id)
+    except AdminProductNotFoundError as exc:
+        _raise_product_http(exc)
+        raise
+    return _product_detail(product)

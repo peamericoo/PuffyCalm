@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 /**
  * Admin entry — Auth.js Google (UX allowlist) + Phase E backend JWT bridge.
- * Phase G: orders UI at /admin/orders (real API data only).
+ * Phase G: orders · Phase H: products.
  */
 export default async function AdminPage() {
   const session = await auth();
@@ -103,6 +103,18 @@ export default async function AdminPage() {
               </span>
             </li>
             <li>
+              <Link
+                className="font-medium text-brand-deep hover:underline"
+                href="/admin/products"
+              >
+                Products
+              </Link>
+              <span className="text-muted-foreground">
+                {" "}
+                — CRUD, publish / unpublish (Phase H)
+              </span>
+            </li>
+            <li>
               <Link className="text-brand-deep hover:underline" href="/">
                 Storefront home
               </Link>
@@ -112,15 +124,13 @@ export default async function AdminPage() {
                 My account (storefront)
               </Link>
             </li>
-            <li>
-              <span className="text-muted-foreground">
-                Next: products admin (Phase H)
-              </span>
-            </li>
           </ul>
           <div className="flex flex-col gap-2 pt-2 sm:flex-row">
             <Button asChild variant="default" className="flex-1">
-              <Link href="/admin/orders">Open orders</Link>
+              <Link href="/admin/products">Open products</Link>
+            </Button>
+            <Button asChild variant="outline" className="flex-1">
+              <Link href="/admin/orders">Orders</Link>
             </Button>
             <SignOutButton className="flex-1" />
           </div>

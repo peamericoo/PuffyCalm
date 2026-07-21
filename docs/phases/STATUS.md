@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase G concluída) |
-| **HEAD / Fase G** | `e34999c` |
+| **Última atualização** | 2026-07-21 (Fase H concluída no código) |
+| **HEAD / Fase H** | *(preenchido no commit)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **H** (admin products API+UI) |
+| **Próxima fase** | **I** (media / storage upload) |
 
 ## Fases
 
@@ -25,7 +25,7 @@
 | E | Admin auth bridge | **done** | `d65aedb` | `docs/phases/PHASE_E_COMPLETE.md` |
 | F | Admin orders API | **done** | `614ed17` | `docs/phases/PHASE_F_COMPLETE.md` |
 | G | Admin orders UI | **done** | `e34999c` | `docs/phases/PHASE_G_COMPLETE.md` |
-| H | Admin products API+UI | pending | — | — |
+| H | Admin products API+UI | **done** | *(este commit)* | `docs/phases/PHASE_H_COMPLETE.md` |
 | I | Media / storage | pending | — | — |
 | J | CMS-lite home | pending | — | — |
 | K | Account orders | pending | — | — |
@@ -37,16 +37,17 @@
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy:** web + api Railway Online; `/health` ok; `/ready` postgres+redis true.
-- **Env prod:** Stripe + shipping; Fase E auth bridge; Fase F admin orders API; **Fase G:** UI `/admin/orders` no web (deploy web).
+- **Prod healthy (pré-deploy H):** web + api Railway Online; Fase H **no git** — redeploy **api + web** para expor admin products em prod.
+- **Env prod:** Stripe + shipping; auth bridge E; orders F/G; **products H** após deploy.
 - **Contratos congelados:** Stripe Custom; guest checkout; `docs/ops/CONTRACTS.md`.
-- **BE:** catalog/search/reviews; checkout; admin auth; admin orders list/get/patch.
-- **FE:** catalog+reviews+search API; cart money; checkout real; admin bridge; **admin orders UI**.
-- **Admin UI:** shell + bridge + **orders list/detail/status** — products = Fase H.
+- **BE:** catalog/search/reviews; checkout; admin auth; admin orders; **admin products CRUD + publish**.
+- **FE:** catalog+reviews+search API; cart money; checkout real; admin bridge; orders UI; **products admin UI + revalidate**.
+- **Admin UI:** shell + bridge + orders + **products list/form/publish**.
 - **Não recriar:** Stripe Custom checkout; guest checkout.
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **H**.
-2. Ler `PHASE_E_COMPLETE.md` + `PHASE_B_COMPLETE.md` + contracts (storefront já lê catálogo API).
-3. Executar **só** a Fase H; ao fim criar `PHASE_H_COMPLETE.md` e atualizar esta tabela.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **I**.
+2. Ler `PHASE_H_COMPLETE.md` (image URLs já no model; falta upload binário).
+3. Executar **só** a Fase I; ao fim criar `PHASE_I_COMPLETE.md` e atualizar esta tabela.
+4. Preferir storage já disponível (Railway bucket / S3 / R2) — não inventar se já houver.

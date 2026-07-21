@@ -23,26 +23,23 @@ Leia docs/ECOMMERCE_MASTER_PLAN.md + docs/CONTINUE.md + docs/phases/STATUS.md + 
 Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + PHASE_E_COMPLETE.md.
 NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (2026-07-21, pós Fase G):
-- Fase A–E DONE — contratos, catalog/reviews/search, money, admin Google→JWT bridge
-- Fase F DONE — GET/PATCH /admin/orders + state machine; ver PHASE_F_COMPLETE.md
-- Fase G DONE — /admin/orders + /admin/orders/[id] UI real; ver PHASE_G_COMPLETE.md
-- Prod Railway: web + api Online; redeploy **web** para levar Fase G a prod
-- BE: catalog/reviews/search REAL; admin auth REAL; admin orders API REAL;
-  checkout Stripe Custom + webhook + order GET REAL
-- FE: catalog + reviews + search REAL; cart money; checkout real; admin bridge REAL;
-  admin orders list/detail/status REAL
-- Admin products ainda não — Fase H
+ESTADO ATUAL (2026-07-21, pós Fase H):
+- Fase A–G DONE — contratos, catalog/reviews/search, money, admin bridge, orders API+UI
+- Fase H DONE — admin products CRUD + publish/unpublish + UI + revalidate;
+  ver PHASE_H_COMPLETE.md
+- Prod Railway: redeploy **api + web** para levar Fase H a prod (código no git)
+- BE: catalog REAL; admin orders REAL; **admin products REAL** (após deploy)
+- FE: catalog REAL; admin orders UI; **admin products UI** + `/api/admin/revalidate`
 - Guest checkout sagrado
 - Owner: ADMIN_EMAILS + GOOGLE_CLIENT_ID + COOKIE_SAMESITE=none no api (Fase E)
 - Rollback storefront data: NEXT_PUBLIC_USE_API_CATALOG=0 (rebuild web)
 
 ROADMAP (master plan A–P):
-  A ✅ → B ✅ → C ✅ → D ✅ → E admin auth ✅ → F admin orders API ✅ → G orders UI ✅
-  H products admin → I media → J CMS-lite
+  A ✅ → B ✅ → C ✅ → D ✅ → E ✅ → F ✅ → G ✅ → H products admin ✅
+  I media → J CMS-lite
   K account orders → L inventory → M remove mocks → N legal → O obs → P go-live
 
-Próxima ação: execute Fase H (admin products API+UI). Uma fase por vez.
+Próxima ação: execute Fase I (media/storage upload). Uma fase por vez.
 
 Stripe contract (não quebrar) — ver docs/ops/CONTRACTS.md:
 - Confirm SEM returnUrl no FE (return_url só no Session.create BE)
