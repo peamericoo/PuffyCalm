@@ -48,6 +48,7 @@ from app.application.admin_categories.service import (
     list_admin_categories,
     update_admin_category,
 )
+from app.application.admin_dashboard.service import build_dashboard
 from app.application.admin_orders.service import (
     AdminOrderNotFoundError,
     AdminOrderUpdateError,
@@ -99,6 +100,20 @@ async def admin_ping(user: RequireStaff) -> AdminPingOut:
         role=user.role,
         message="admin area reachable",
     )
+
+
+@router.get("/dashboard")
+async def admin_dashboard(
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+    days: Annotated[int, Query(ge=7, le=90)] = 30,
+) -> dict:
+    """
+    Ops dashboard: revenue KPIs, order funnel, fulfillment queue,
+    catalog health, daily series for charts.
+    """
+    _ = user
+    return await build_dashboard(session, days=days)
 
 
 @router.get("/only-admin", response_model=AdminPingOut)
