@@ -209,9 +209,9 @@ export function HeroCarousel({ slides }: Props) {
                     )}
                   />
                 </div>
-                {/* Light scrim for text only — full wash used to crush designed banners */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/55 via-[#1a2332]/22 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/40 via-transparent to-[#1a2332]/12" />
+                {/* Barely-there scrim — designed banners stay visible; text keeps soft shadow below */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/14 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/16 via-transparent to-transparent" />
               </div>
             );
           })}
