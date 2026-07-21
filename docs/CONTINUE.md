@@ -1,9 +1,11 @@
 # CONTINUE — Handoff para agentes (compact / nova sessão)
 
 > **Use este arquivo** após compactar o chat, em `/new`, ou quando o contexto estiver cheio.  
-> Cole o bloco **PROMPT DE RETOMADA** no início da mensagem + diga o que fazer (ex.: “fase 3”).
+> Cole o bloco **PROMPT DE RETOMADA** no início da mensagem + diga o que fazer (ex.: “execute Fase B”).
 >
-> **Só Frontend (melhoria / refator)?** Use **`/compact-fe`** ou `docs/FRONTEND_CRAFT.md`  
+> **Roadmap canônico (auditoria 2026-07-21):** [`docs/ECOMMERCE_MASTER_PLAN.md`](./ECOMMERCE_MASTER_PLAN.md)  
+> As fases antigas 7–10 abaixo foram **substituídas** pelas fases **A–P** do master plan.  
+> **Só Frontend (craft/polish)?** Use **`/compact-fe`** ou `docs/FRONTEND_CRAFT.md`  
 > (persona **CalmCraft** — não reabre backend).
 
 ---
@@ -13,50 +15,35 @@
 ```text
 Projeto: PuffyCalm / PuffyEasy (repo peamericoo/PuffyCalm)
 Workdir Windows: C:\Users\pedro.torres\Projects\PuffyCalm
-Workdir Mac (legado): /Users/paletotcode/Documents/Projects/PuffCalm
 
-Leia docs/CONTINUE.md e AGENTS.md §4 (stack). NÃO recomeçar o backend do zero.
+Leia docs/ECOMMERCE_MASTER_PLAN.md (fonte de verdade do roadmap) + docs/CONTINUE.md + AGENTS.md §4.
+NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (já feito):
-- Tag estável mock FE: v1.0-frontend-mock-complete → commit 0f3e8be
-- Etapa 1 commit: 67237eb — FastAPI scaffold + Docker Compose (postgres, redis, api, worker, nginx)
-- Fase 2 commit: 6540c1e — models SQLAlchemy + Alembic d0f5da7772b5 + seed (4 cats, 8 products, 96 reviews)
-- Fase 3 commit: catalog/reviews read API (camelCase)
-- Fase 4: admin JWT+RBAC com **HttpOnly cookies** (pc_access/pc_refresh) + Bearer opcional; roles admin/staff; refresh jti no Redis; migration users a1b2c3d4e5f6
-- Fases 5–6 BE + FE checkout Stripe Custom (ui_mode=custom) + webhook + smoke SKU prod_009
-- HEAD main: dc3f224 — fix checkout email on Stripe Custom Checkout
-- Stack BE: Python 3.12, FastAPI, SQLAlchemy async, Alembic, Redis, Celery, Nginx gateway :8080
-- FE: Next.js 16 mock em src/ — AINDA usa src/lib/mock (não migrar até Fase 9)
-- Admin UI: será Next.js app/admin consumindo API com credentials:include (não Django Admin)
-- Auth admin BE: cookies HttpOnly JWT; storefront: Auth.js Google OAuth (client PuffyCalm Web)
-- Admin Google: paletot.business@gmail.com → role admin; guest checkout intacto
-- Prod Railway ONLINE: web https://web-production-ea635.up.railway.app · api https://api-production-4f01.up.railway.app
+ESTADO ATUAL (2026-07-21):
+- Prod Railway SUCCESS: web https://web-production-ea635.up.railway.app
+  api https://api-production-4f01.up.railway.app
+- Baseline deploy: commit 996b448 (layout bg + TopBar menus) + ae339ed (cart premium)
+- BE: FastAPI catalog/reviews/search REAL; admin JWT+RBAC probes REAL;
+  checkout Stripe Custom + webhook + order GET REAL (fases 0–6 históricas ✅)
+- FE: catálogo/home/search/reviews AINDA mock (src/lib/mock); cart/wishlist Zustand;
+  checkout payment + success REAL
+- Admin UI: shell /admin (Auth.js email allowlist FE) — ops API/UI ainda não
+- Guest checkout sagrado; admin alvo: paletot.business@gmail.com no BE (Fase E)
 
-OBJETIVO FINAL:
-Backend real + painel admin com operação/vendas ao vivo + storefront sem mock,
-integrado a Postgres/Redis, Celery, pagamentos (Stripe/PayPal), guest checkout.
-MVP vendável dropshipping PuffyEasy (US/UK/AU/CA), copy em inglês.
+ROADMAP (master plan A–P — não usar 7–10 antigos como “agora”):
+  A higiene/contratos → B catalog FE→API → C reviews+search → D money integrity
+  E admin auth bridge → F admin orders API → G admin orders UI
+  H products admin → I media → J CMS-lite → K account orders → L inventory
+  M remove mocks → N legal pages → O observability → P go-live
 
-ROADMAP:
-0–4 ✅ tag, scaffold, seed, catalog API, JWT+RBAC cookies
-5 ✅ orders + checkout session create (server prices)
-6 ✅ Stripe Checkout Session (ui_mode=custom) + webhooks + order GET
-7 WebSockets vendas ao vivo  ← AGORA (opcional)
-8 Admin UI Next
-9 FE Payment Element + success poll order  ← próximo storefront
-10 observabilidade (Prometheus/Grafana opcional)
+Próxima ação: owner escolhe fase (ex. “execute Fase A” ou “execute Fase B”).
+NÃO implementar várias fases de uma vez.
 
-FASE 4 (concluída):
-POST /auth/login|refresh|logout, GET /auth/me, GET /admin/ping|only-admin
-— cookies HttpOnly + optional Bearer; seed admin@ / staff@
-
-FASES 5–6 (concluídas no BE):
-POST /api/v1/checkout/sessions — guest, productId+qty only; Stripe Session custom
-GET  /api/v1/orders/{id}?email= — guest lookup
-POST /api/v1/webhooks/stripe — signature + idempotent stripe_events
-Migration e7f8a9b0c1d2 (orders, order_items, stripe_events)
-Env: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STOREFRONT_URL
-FE: Payment Element no step 3 + poll GET order no success (dumb FE)
+Stripe contract (não quebrar):
+- Confirm SEM returnUrl no FE (return_url só no Session.create BE)
+- Session create 1x por sessionKey
+- GET /orders/{id}?sync=true se webhook atrasar
+- Lines: productId+qty only (preço no BE)
 
 Comandos úteis:
   docker compose up -d --build
@@ -64,16 +51,6 @@ Comandos úteis:
   docker compose exec api python -m app.infrastructure.db.seed
   docker compose exec -e REQUIRE_DB=1 api pytest -q tests/test_checkout_*.py
   stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
-  curl -s -X POST http://localhost:8080/api/v1/checkout/sessions \
-    -H 'Content-Type: application/json' \
-    -d '{"email":"buyer@example.com","lines":[{"productId":"prod_001","quantity":1}],"shipping":{"fullName":"A","line1":"1 St","city":"SF","region":"CA","postal":"94105","country":"US"}}'
-
-Próxima ação pós-fix pagamento (2026-07-20 Windows):
-- Confirm SEM returnUrl (return_url só no Session.create BE, com email na query)
-- Session create 1x por sessionKey (sem re-effect a cada render)
-- GET /orders/{id}?sync=true reconcilia com Stripe se webhook atrasar
-- Métodos MVP: Card + Link + Apple/Google Pay; desligar Cash App / Amazon Pay no Dashboard
-- Configurar STRIPE_WEBHOOK_SECRET no Railway api se ainda faltar
 ```
 
 ---
