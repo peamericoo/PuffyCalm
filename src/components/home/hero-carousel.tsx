@@ -183,13 +183,16 @@ export function HeroCarousel({ slides }: Props) {
               >
                 <div
                   className={cn(
-                    "absolute inset-0 md:inset-[-3%]",
-                    allowParallax && "will-change-transform transition-transform duration-500 ease-out",
+                    /* Slight overscan only for parallax room — not a hard crop zoom */
+                    "absolute inset-0 md:inset-[-1%]",
+                    allowParallax &&
+                      "will-change-transform transition-transform duration-500 ease-out",
                   )}
                   style={
                     allowParallax && isActive
                       ? {
-                          transform: `translate3d(${px * -10}px, ${py * -8}px, 0) scale(1.05)`,
+                          /* Soft mouse parallax; keep scale tiny so banners stay sharp */
+                          transform: `translate3d(${px * -6}px, ${py * -4}px, 0) scale(1.015)`,
                         }
                       : undefined
                   }
@@ -201,13 +204,14 @@ export function HeroCarousel({ slides }: Props) {
                     priority={i === 0}
                     sizes="100vw"
                     className={cn(
-                      "object-cover object-[center_30%]",
+                      "object-cover object-center",
                       isActive && allowParallax && "hero-kenburns",
                     )}
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/90 via-[#1a2332]/52 to-[#1a2332]/18" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/80 via-transparent to-[#1a2332]/28" />
+                {/* Light scrim for text only — full wash used to crush designed banners */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/55 via-[#1a2332]/22 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1a2332]/40 via-transparent to-[#1a2332]/12" />
               </div>
             );
           })}

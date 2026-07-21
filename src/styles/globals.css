@@ -963,12 +963,13 @@ body {
   }
 }
 
+/* Subtle push-in — designed banners stay readable (was 1.08, too aggressive). */
 @keyframes hero-kenburns {
   from {
     transform: scale(1);
   }
   to {
-    transform: scale(1.08);
+    transform: scale(1.025);
   }
 }
 
