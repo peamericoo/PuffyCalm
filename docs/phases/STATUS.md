@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase J — CMS-lite home) |
-| **HEAD / Fase J** | `99fe3dd` (+ docs stamp `2a9355d`) |
+| **Última atualização** | 2026-07-21 (Fase K — account orders) |
+| **HEAD / Fase K** | *(commit desta sessão)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **K** (account orders) — ou **L** se priorizar inventory |
+| **Próxima fase** | **L** (inventory + fulfillment) |
 
 ## Fases
 
@@ -28,7 +28,7 @@
 | H | Admin products API+UI | **done** (prod smoke 22/22) | `8ec7062` | `docs/phases/PHASE_H_COMPLETE.md` |
 | I | Media / storage | **done** | `aa6767b` | `docs/phases/PHASE_I_COMPLETE.md` |
 | J | CMS-lite home | **done** | `99fe3dd` | `docs/phases/PHASE_J_COMPLETE.md` |
-| K | Account orders | pending | — | — |
+| K | Account orders | **done** | *(HEAD)* | `docs/phases/PHASE_K_COMPLETE.md` |
 | L | Inventory + fulfillment | pending | — | — |
 | M | Remove domain mocks | pending | — | — |
 | N | Legal pages + errors | pending | — | — |
@@ -37,16 +37,16 @@
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy:** web + api Railway; H validated; I media ready.
-- **Fase J:** `content_blocks` + `GET/PUT` home content; admin `/admin/content`; storefront promo+hero via API.
-- **Env prod:** Stripe + shipping; auth; orders; products; media S3; content table migrated on Railway Postgres.
+- **Prod healthy:** web + api Railway; H–J validated.
+- **Fase K:** `/account/orders` real — guest lookup (email+publicCode) + Google list by session email; guest checkout intact.
+- **Env prod:** Stripe + shipping; auth; orders; products; media S3; content; customer order read APIs (redeploy api+web para K).
 - **Contratos congelados:** Stripe Custom; guest checkout.
 - **Não recriar:** Stripe Custom checkout; guest checkout.
-- **Ainda mock:** nav/footer/lifestyle (não J); account orders (K).
+- **Ainda mock / deferred:** nav/footer/lifestyle; inventory rules (L); domain mock cleanup (M).
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **K** (account orders).
-2. Ler `PHASE_J_COMPLETE.md` se precisar de content tags; `PHASE_F_COMPLETE` para orders.
-3. Executar **só** a Fase K; ao fim criar `PHASE_K_COMPLETE.md` e atualizar esta tabela.
-4. Redeploy api+web se Fase J ainda não estiver em prod.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **L** (inventory).
+2. Ler `PHASE_K_COMPLETE.md` se precisar de order read paths; webhook checkout + H products para stock.
+3. Executar **só** a Fase L; ao fim criar `PHASE_L_COMPLETE.md` e atualizar esta tabela.
+4. Redeploy **api + web** para expor endpoints/UI da Fase K em prod.

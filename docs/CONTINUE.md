@@ -23,22 +23,20 @@ Leia docs/ECOMMERCE_MASTER_PLAN.md + docs/CONTINUE.md + docs/phases/STATUS.md + 
 Leia docs/ops/CONTRACTS.md + docs/ops/ENV_CHECKLIST.md + PHASE_E_COMPLETE.md.
 NÃO recomeçar o backend do zero. NÃO recriar o checkout Stripe.
 
-ESTADO ATUAL (2026-07-21, pós Fase J):
-- Fase A–I DONE — contratos, catalog/reviews/search, money, admin, orders, products, media
-- Fase J DONE — CMS-lite home: promo ticker + hero slides (content_blocks);
-  ver PHASE_J_COMPLETE.md · admin /admin/content · GET /api/v1/content/home
-- Prod Railway: migration content_blocks aplicada; redeploy **api + web** para código J
-- BE: catalog + products + media + **home content REAL**
-- FE: home/promo consomem API; revalidate tags `home`/`content`
+ESTADO ATUAL (2026-07-21, pós Fase K):
+- Fase A–J DONE — contratos, catalog, admin, products, media, CMS-lite home
+- Fase K DONE — /account/orders real (guest email+code + Google session list);
+  ver PHASE_K_COMPLETE.md · GET /orders/lookup · GET /orders/by-email
+- Redeploy **api + web** para K em prod se ainda não
 - Guest checkout sagrado
 - Owner: ADMIN_EMAILS + GOOGLE_CLIENT_ID + COOKIE_SAMESITE=none no api (Fase E)
 - Rollback storefront data: NEXT_PUBLIC_USE_API_CATALOG=0 (rebuild web)
 
 ROADMAP (master plan A–P):
-  A ✅ → B ✅ → C ✅ → D ✅ → E ✅ → F ✅ → G ✅ → H ✅ → I ✅ → J CMS-lite ✅
-  K account orders → L inventory → M remove mocks → N legal → O obs → P go-live
+  A ✅ → B ✅ → C ✅ → D ✅ → E ✅ → F ✅ → G ✅ → H ✅ → I ✅ → J ✅ → K account orders ✅
+  L inventory → M remove mocks → N legal → O obs → P go-live
 
-Próxima ação: execute Fase K (account orders) ou L (inventory). Uma fase por vez.
+Próxima ação: execute Fase L (inventory + fulfillment). Uma fase por vez.
 
 Stripe contract (não quebrar) — ver docs/ops/CONTRACTS.md:
 - Confirm SEM returnUrl no FE (return_url só no Session.create BE)

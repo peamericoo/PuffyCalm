@@ -70,3 +70,33 @@ class OrderOut(CamelModel):
     items: list[OrderItemOut]
     paid_at: str | None = Field(default=None, serialization_alias="paidAt")
     created_at: str = Field(serialization_alias="createdAt")
+
+
+# --- Phase K: customer account / guest track ---
+
+
+class CustomerOrderListItemOut(CamelModel):
+    """Summary row for my-orders list (no admin notes / Stripe ids)."""
+
+    id: str
+    public_code: str = Field(serialization_alias="publicCode")
+    email: str
+    status: str
+    currency: Literal["USD"] = "USD"
+    subtotal_cents: int = Field(serialization_alias="subtotalCents")
+    shipping_cents: int = Field(serialization_alias="shippingCents")
+    total_cents: int = Field(serialization_alias="totalCents")
+    item_count: int = Field(serialization_alias="itemCount")
+    paid_at: str | None = Field(default=None, serialization_alias="paidAt")
+    created_at: str = Field(serialization_alias="createdAt")
+    items: list[OrderItemOut]
+
+
+class CustomerOrderListOut(CamelModel):
+    items: list[CustomerOrderListItemOut]
+    page: int
+    page_size: int = Field(serialization_alias="pageSize")
+    total_items: int = Field(serialization_alias="totalItems")
+    total_pages: int = Field(serialization_alias="totalPages")
+    has_next: bool = Field(serialization_alias="hasNext")
+    has_prev: bool = Field(serialization_alias="hasPrev")

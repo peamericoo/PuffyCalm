@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import quote
 
 import stripe
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -343,6 +343,98 @@ async def get_order_for_guest(
         if order.email.lower() != email.strip().lower():
             return None
     return order
+
+
+def normalize_public_code(code: str) -> str:
+    """Normalize guest-facing order codes (PC-XXXXXXXX)."""
+    raw = (code or "").strip().upper().replace(" ", "")
+    if not raw:
+        return ""
+    if raw.startswith("PC-"):
+        return raw
+    # Bare hex suffix from success email / support scripts
+    if len(raw) == 8 and all(c in "0123456789ABCDEF" for c in raw):
+        return f"PC-{raw}"
+    return raw
+
+
+async def get_order_by_public_code(
+    session: AsyncSession,
+    public_code: str,
+    *,
+    email: str,
+) -> Order | None:
+    """
+    Guest track-order: public_code + checkout email (both required).
+    Same privacy model as GET /orders/{id}?email=.
+    """
+    code = normalize_public_code(public_code)
+    email_norm = email.strip().lower()
+    if not code or not email_norm:
+        return None
+    result = await session.execute(
+        select(Order)
+        .options(selectinload(Order.items))
+        .where(func.upper(Order.public_code) == code)
+    )
+    order = result.scalar_one_or_none()
+    if order is None:
+        return None
+    if order.email.lower() != email_norm:
+        return None
+    return order
+
+
+@dataclass(frozen=True)
+class CustomerOrderListResult:
+    items: list[Order]
+    page: int
+    page_size: int
+    total_items: int
+
+
+async def list_orders_for_email(
+    session: AsyncSession,
+    *,
+    email: str,
+    page: int = 1,
+    page_size: int = 20,
+) -> CustomerOrderListResult:
+    """
+    List orders for a storefront email (Google session linkage by email match).
+
+    Privacy: caller must only pass an authenticated session email (Next RSC)
+    or accept the same email-as-proof model as single-order guest GET.
+    """
+    email_norm = email.strip().lower()
+    if not email_norm:
+        return CustomerOrderListResult(
+            items=[], page=page, page_size=page_size, total_items=0
+        )
+
+    page = max(1, page)
+    page_size = min(max(1, page_size), 50)
+
+    filters = [func.lower(Order.email) == email_norm]
+    count_stmt = select(func.count()).select_from(Order).where(*filters)
+    total = int(await session.scalar(count_stmt) or 0)
+
+    offset = (page - 1) * page_size
+    result = await session.execute(
+        select(Order)
+        .options(selectinload(Order.items))
+        .where(*filters)
+        .order_by(Order.created_at.desc(), Order.id.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    items = list(result.scalars().unique().all())
+    return CustomerOrderListResult(
+        items=items,
+        page=page,
+        page_size=page_size,
+        total_items=total,
+    )
 
 
 async def mark_order_paid(
