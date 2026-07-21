@@ -28,9 +28,21 @@ class HeroSlideOut(CamelModel):
     image_alt: str = Field(serialization_alias="imageAlt")
 
 
+class LifestyleTileOut(CamelModel):
+    id: str
+    title: str
+    href: str
+    image_url: str = Field(serialization_alias="imageUrl")
+    span: str = "square"
+
+
 class HomeContentOut(CamelModel):
     promo_messages: list[str] = Field(serialization_alias="promoMessages")
     hero_slides: list[HeroSlideOut] = Field(serialization_alias="heroSlides")
+    lifestyle_collections: list[LifestyleTileOut] = Field(
+        default_factory=list,
+        serialization_alias="lifestyleCollections",
+    )
     updated_at: str | None = Field(default=None, serialization_alias="updatedAt")
 
 
@@ -63,10 +75,30 @@ class HeroSlideIn(CamelModel):
         return v
 
 
+class LifestyleTileIn(CamelModel):
+    id: str | None = None
+    title: str = Field(min_length=1, max_length=80)
+    href: str = Field(min_length=1, max_length=512)
+    image_url: str = Field(alias="imageUrl", min_length=1, max_length=1024)
+    span: str = Field(default="square", max_length=16)
+
+    @field_validator("title", "href", "image_url", mode="before")
+    @classmethod
+    def strip_life(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+
 class HomeContentIn(CamelModel):
     # Empty arrays allowed — clean storefront until admin adds CMS content.
     promo_messages: list[str] = Field(alias="promoMessages", min_length=0, max_length=20)
     hero_slides: list[HeroSlideIn] = Field(alias="heroSlides", min_length=0, max_length=8)
+    lifestyle_collections: list[LifestyleTileIn] = Field(
+        default_factory=list,
+        alias="lifestyleCollections",
+        max_length=8,
+    )
 
     @field_validator("promo_messages")
     @classmethod

@@ -5,11 +5,12 @@
 
 import { getApiBaseUrl } from "@/lib/api/config";
 import { normalizeHomeContent } from "@/lib/api/content";
-import type { HeroSlide, HomeContent } from "@/types/content";
+import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
 
 export type HomeContentInput = {
   promoMessages: string[];
   heroSlides: HeroSlide[];
+  lifestyleCollections: LifestyleTile[];
 };
 
 export class AdminContentApiError extends Error {
@@ -82,6 +83,13 @@ export async function saveAdminHomeContent(
         secondaryHref: s.secondaryHref ?? null,
         imageUrl: s.imageUrl,
         imageAlt: s.imageAlt,
+      })),
+      lifestyleCollections: input.lifestyleCollections.map((t) => ({
+        id: t.id,
+        title: t.title,
+        href: t.href,
+        imageUrl: t.imageUrl,
+        span: t.span,
       })),
     }),
   });

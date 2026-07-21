@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import db_session
-from app.api.v1.schemas.content import HeroSlideOut, HomeContentOut
+from app.api.v1.schemas.content import HeroSlideOut, HomeContentOut, LifestyleTileOut
 from app.application.content.service import get_home_content
 
 router = APIRouter(prefix="/content", tags=["content"])
@@ -32,9 +32,23 @@ def _to_out(data: dict) -> HomeContentOut:
                 image_alt=str(s.get("imageAlt") or s.get("image_alt") or ""),
             )
         )
+    lifestyle = []
+    for t in data.get("lifestyleCollections") or data.get("lifestyle_collections") or []:
+        if not isinstance(t, dict):
+            continue
+        lifestyle.append(
+            LifestyleTileOut(
+                id=str(t.get("id") or ""),
+                title=str(t.get("title") or ""),
+                href=str(t.get("href") or ""),
+                image_url=str(t.get("imageUrl") or t.get("image_url") or ""),
+                span=str(t.get("span") or "square"),
+            )
+        )
     return HomeContentOut(
         promo_messages=list(data.get("promoMessages") or []),
         hero_slides=slides,
+        lifestyle_collections=lifestyle,
         updated_at=data.get("updatedAt"),
     )
 

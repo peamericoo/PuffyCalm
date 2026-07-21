@@ -23,6 +23,7 @@ import {
 import { revalidateCatalog } from "@/lib/admin/revalidate-catalog";
 import { ProductStatusBadge } from "@/components/admin/product-status-badge";
 import { Button } from "@/components/ui/button";
+import { ProductReviewsEditor } from "@/components/admin/product-reviews-editor";
 import { fetchCategories } from "@/lib/api/catalog";
 import type { Category } from "@/types/product";
 import { cn } from "@/lib/utils";
@@ -813,6 +814,14 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
           </Field>
         </section>
       </div>
+
+      {productId ? (
+        <ProductReviewsEditor
+          productId={productId}
+          productSlug={form.slug || undefined}
+          googleIdToken={googleIdToken}
+        />
+      ) : null}
     </form>
   );
 }

@@ -117,13 +117,25 @@ export default async function AdminPage() {
             <li>
               <Link
                 className="font-medium text-brand-deep hover:underline"
+                href="/admin/categories"
+              >
+                Categories
+              </Link>
+              <span className="text-muted-foreground">
+                {" "}
+                — mood / filter covers &amp; names
+              </span>
+            </li>
+            <li>
+              <Link
+                className="font-medium text-brand-deep hover:underline"
                 href="/admin/content"
               >
                 Home content
               </Link>
               <span className="text-muted-foreground">
                 {" "}
-                — promo ticker + hero slides (Phase J)
+                — promo, hero, lifestyle tiles
               </span>
             </li>
             <li>
@@ -140,6 +152,9 @@ export default async function AdminPage() {
           <div className="flex flex-col gap-2 pt-2 sm:flex-row">
             <Button asChild variant="default" className="flex-1">
               <Link href="/admin/products">Open products</Link>
+            </Button>
+            <Button asChild variant="outline" className="flex-1">
+              <Link href="/admin/categories">Categories</Link>
             </Button>
             <Button asChild variant="outline" className="flex-1">
               <Link href="/admin/content">Content</Link>

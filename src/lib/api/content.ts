@@ -5,7 +5,7 @@
 
 import { getApiBaseUrl } from "@/lib/api/config";
 import { fallbackHomeContent } from "@/lib/content/defaults";
-import type { HeroSlide, HomeContent } from "@/types/content";
+import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
 
 const DEFAULT_REVALIDATE = 60;
 
@@ -49,9 +49,24 @@ function normalizeSlide(raw: Record<string, unknown>): HeroSlide | null {
   return slide;
 }
 
+function normalizeLifestyle(raw: Record<string, unknown>): LifestyleTile | null {
+  const id = asString(raw.id);
+  const title = asString(raw.title);
+  const href = asString(raw.href);
+  const imageUrl = asString(raw.imageUrl ?? raw.image_url);
+  if (!id || !title || !href || !imageUrl) return null;
+  const spanRaw = asString(raw.span, "square").toLowerCase();
+  const span =
+    spanRaw === "tall" || spanRaw === "wide" || spanRaw === "square"
+      ? spanRaw
+      : "square";
+  return { id, title, href, imageUrl, span };
+}
+
 export function normalizeHomeContent(raw: Record<string, unknown>): HomeContent {
   const promosRaw = raw.promoMessages ?? raw.promo_messages;
   const slidesRaw = raw.heroSlides ?? raw.hero_slides;
+  const lifeRaw = raw.lifestyleCollections ?? raw.lifestyle_collections;
 
   const promoMessages = Array.isArray(promosRaw)
     ? promosRaw
@@ -70,9 +85,20 @@ export function normalizeHomeContent(raw: Record<string, unknown>): HomeContent 
     }
   }
 
+  const lifestyleCollections: LifestyleTile[] = [];
+  if (Array.isArray(lifeRaw)) {
+    for (const item of lifeRaw) {
+      if (item && typeof item === "object") {
+        const tile = normalizeLifestyle(item as Record<string, unknown>);
+        if (tile) lifestyleCollections.push(tile);
+      }
+    }
+  }
+
   return {
     promoMessages,
     heroSlides,
+    lifestyleCollections,
     updatedAt:
       raw.updatedAt == null && raw.updated_at == null
         ? null

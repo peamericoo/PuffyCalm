@@ -10,7 +10,7 @@ import {
 import { ensureAdminBackendSession } from "@/lib/api/admin-auth";
 import { revalidateHome } from "@/lib/admin/revalidate-home";
 import { Button } from "@/components/ui/button";
-import type { HeroSlide, HomeContent } from "@/types/content";
+import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -56,6 +56,16 @@ function emptySlide(index: number): HeroSlide {
   };
 }
 
+function emptyLife(index: number): LifestyleTile {
+  return {
+    id: `life_${Date.now().toString(36)}_${index}`,
+    title: "",
+    href: "/category/all",
+    imageUrl: "",
+    span: index === 0 ? "tall" : index === 1 ? "wide" : "square",
+  };
+}
+
 export function ContentEditorView({ googleIdToken }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,6 +73,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [promoText, setPromoText] = useState("");
   const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [lifestyle, setLifestyle] = useState<LifestyleTile[]>([]);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -73,6 +84,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
       const data: HomeContent = await fetchAdminHomeContent();
       setPromoText(data.promoMessages.join("\n"));
       setSlides(data.heroSlides.map((s) => ({ ...s })));
+      setLifestyle(data.lifestyleCollections.map((t) => ({ ...t })));
       setUpdatedAt(data.updatedAt ?? null);
     } catch (e) {
       const msg =
@@ -126,14 +138,20 @@ export function ContentEditorView({ googleIdToken }: Props) {
       .map((l) => l.trim())
       .filter(Boolean);
 
-    // Empty promo + hero is allowed (clean storefront). Slides present must be complete.
+    // Empty promo/hero/lifestyle is allowed. Present items must be complete.
     for (const s of slides) {
       if (!s.titleLine1.trim() || !s.titleLine2.trim()) {
         setMessage("Each slide needs title lines.");
         return;
       }
       if (!s.imageUrl.trim()) {
-        setMessage("Each slide needs an image URL (upload in Media, then paste /media/… or https URL).");
+        setMessage("Each slide needs an image URL (upload via Media, paste /media/… or https).");
+        return;
+      }
+    }
+    for (const t of lifestyle) {
+      if (!t.title.trim() || !t.href.trim() || !t.imageUrl.trim()) {
+        setMessage("Each lifestyle tile needs title, link, and image URL.");
         return;
       }
     }
@@ -150,9 +168,11 @@ export function ContentEditorView({ googleIdToken }: Props) {
           secondaryLabel: s.secondaryLabel?.trim() || undefined,
           secondaryHref: s.secondaryHref?.trim() || undefined,
         })),
+        lifestyleCollections: lifestyle.map((t) => ({ ...t })),
       });
       setPromoText(saved.promoMessages.join("\n"));
       setSlides(saved.heroSlides.map((s) => ({ ...s })));
+      setLifestyle(saved.lifestyleCollections.map((t) => ({ ...t })));
       setUpdatedAt(saved.updatedAt ?? null);
 
       const rev = await revalidateHome();
@@ -200,7 +220,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          Edits apply to the storefront promo ticker (all pages) and home hero.
+          Promo (all pages), home hero, and lifestyle tiles. Leave empty for a
+          clean storefront — fill when ready to launch.
           {updatedAt ? (
             <>
               {" "}
@@ -313,11 +334,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className={cn(
-                    "h-8 w-8 text-destructive hover:text-destructive",
-                    slides.length <= 1 && "opacity-40",
-                  )}
-                  disabled={slides.length <= 1}
+                  className="h-8 w-8 text-destructive hover:text-destructive"
                   onClick={() => removeSlide(index)}
                   aria-label="Remove slide"
                 >
@@ -419,6 +436,129 @@ export function ContentEditorView({ googleIdToken }: Props) {
                     updateSlide(index, { secondaryHref: e.target.value })
                   }
                 />
+              </Field>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight">
+              Lifestyle tiles
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Home “Made for real days” mosaic. Empty = section hidden. Max 8.
+              Use Media upload URLs (/media/…) for images.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (lifestyle.length >= 8) {
+                setMessage("Maximum 8 lifestyle tiles.");
+                return;
+              }
+              setLifestyle((prev) => [...prev, emptyLife(prev.length + 1)]);
+            }}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add tile
+          </Button>
+        </div>
+
+        {lifestyle.length === 0 ? (
+          <p className="rounded-[1.25rem] border border-dashed border-border/80 bg-white/60 px-4 py-6 text-center text-sm text-muted-foreground">
+            No lifestyle tiles — storefront hides this block until you add some.
+          </p>
+        ) : null}
+
+        {lifestyle.map((tile, index) => (
+          <div
+            key={tile.id}
+            className="rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+              <p className="text-sm font-semibold">Tile {index + 1}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive"
+                onClick={() =>
+                  setLifestyle((prev) => prev.filter((_, i) => i !== index))
+                }
+                aria-label="Remove tile"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Field label="Title">
+                <input
+                  className={inputClass}
+                  value={tile.title}
+                  onChange={(e) =>
+                    setLifestyle((prev) =>
+                      prev.map((t, i) =>
+                        i === index ? { ...t, title: e.target.value } : t,
+                      ),
+                    )
+                  }
+                />
+              </Field>
+              <Field label="Link href">
+                <input
+                  className={cn(inputClass, "font-mono text-[13px]")}
+                  value={tile.href}
+                  onChange={(e) =>
+                    setLifestyle((prev) =>
+                      prev.map((t, i) =>
+                        i === index ? { ...t, href: e.target.value } : t,
+                      ),
+                    )
+                  }
+                  placeholder="/category/recovery"
+                />
+              </Field>
+              <Field label="Image URL" className="sm:col-span-2">
+                <input
+                  className={cn(inputClass, "font-mono text-[13px]")}
+                  value={tile.imageUrl}
+                  onChange={(e) =>
+                    setLifestyle((prev) =>
+                      prev.map((t, i) =>
+                        i === index ? { ...t, imageUrl: e.target.value } : t,
+                      ),
+                    )
+                  }
+                  placeholder="/media/products/… or https://…"
+                />
+              </Field>
+              <Field label="Layout span">
+                <select
+                  className={inputClass}
+                  value={tile.span}
+                  onChange={(e) =>
+                    setLifestyle((prev) =>
+                      prev.map((t, i) =>
+                        i === index
+                          ? {
+                              ...t,
+                              span: e.target.value as LifestyleTile["span"],
+                            }
+                          : t,
+                      ),
+                    )
+                  }
+                >
+                  <option value="tall">tall</option>
+                  <option value="wide">wide</option>
+                  <option value="square">square</option>
+                </select>
               </Field>
             </div>
           </div>

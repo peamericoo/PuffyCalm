@@ -1,4 +1,4 @@
-/** CMS-lite home content shapes (Phase J) — mirrors FastAPI /content/home. */
+/** CMS-lite home content shapes — mirrors FastAPI /content/home. */
 
 export type HeroSlide = {
   id: string;
@@ -14,8 +14,17 @@ export type HeroSlide = {
   imageAlt: string;
 };
 
+export type LifestyleTile = {
+  id: string;
+  title: string;
+  href: string;
+  imageUrl: string;
+  span: "tall" | "wide" | "square";
+};
+
 export type HomeContent = {
   promoMessages: string[];
   heroSlides: HeroSlide[];
+  lifestyleCollections: LifestyleTile[];
   updatedAt?: string | null;
 };

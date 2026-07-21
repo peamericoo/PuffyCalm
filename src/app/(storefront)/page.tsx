@@ -21,7 +21,7 @@ export default async function HomePage() {
 
       <div className="relative z-0 bg-background">
         <CategoriesStrip />
-        <LifestyleCollections />
+        <LifestyleCollections tiles={content.lifestyleCollections} />
         <CtaBand />
       </div>
     </>

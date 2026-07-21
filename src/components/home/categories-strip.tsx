@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 import { DisplayStack } from "@/components/shared/section-heading";
-import { getHomeProductRail, listCategories } from "@/lib/catalog/service";
+import { listCategories } from "@/lib/catalog/service";
 import type { Category } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -42,14 +42,8 @@ const moodMeta: Record<
 export async function CategoriesStrip() {
   let items: Category[] = [];
   try {
-    const [cats, rail] = await Promise.all([
-      listCategories(),
-      getHomeProductRail(1),
-    ]);
-    // No merch yet → skip mood tiles (avoids seed Unsplash category cards).
-    if (rail.length === 0) {
-      return null;
-    }
+    const cats = await listCategories();
+    // Only categories with real cover images (Admin → Categories). No Unsplash seed.
     items = cats.filter(
       (c) =>
         c.slug !== "all" &&

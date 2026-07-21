@@ -102,10 +102,50 @@ def _normalize_slide(raw: dict[str, Any], *, index: int) -> dict[str, Any]:
     return out
 
 
+_LIFESTYLE_SPANS = frozenset({"tall", "wide", "square"})
+
+
+def _normalize_lifestyle(raw: dict[str, Any], *, index: int) -> dict[str, Any]:
+    lid = str(raw.get("id") or "").strip() or f"life_{index + 1}_{uuid4().hex[:6]}"
+    if not _ID_RE.match(lid):
+        raise ContentValidationError("invalid_lifestyle_id", f"Invalid lifestyle id: {lid!r}")
+    title = str(raw.get("title") or "").strip()
+    href = str(raw.get("href") or "").strip()
+    image_url = str(raw.get("imageUrl") or raw.get("image_url") or "").strip()
+    span = str(raw.get("span") or "square").strip().lower()
+    if not title:
+        raise ContentValidationError("invalid_lifestyle", f"Lifestyle {index + 1}: title required")
+    if not href or not _HREF_RE.match(href):
+        raise ContentValidationError("invalid_lifestyle", f"Lifestyle {index + 1}: invalid href")
+    if not image_url or not (
+        image_url.startswith("http://")
+        or image_url.startswith("https://")
+        or image_url.startswith("/media/")
+    ):
+        raise ContentValidationError(
+            "invalid_lifestyle",
+            f"Lifestyle {index + 1}: imageUrl must be http(s) or /media/…",
+        )
+    if span not in _LIFESTYLE_SPANS:
+        span = "square"
+    return {
+        "id": lid,
+        "title": title[:80],
+        "href": href[:512],
+        "imageUrl": image_url[:1024],
+        "span": span,
+    }
+
+
 def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
     """Validate and normalize home CMS payload."""
     promos_raw = raw.get("promoMessages") if "promoMessages" in raw else raw.get("promo_messages")
     slides_raw = raw.get("heroSlides") if "heroSlides" in raw else raw.get("hero_slides")
+    life_raw = (
+        raw.get("lifestyleCollections")
+        if "lifestyleCollections" in raw
+        else raw.get("lifestyle_collections")
+    )
 
     if promos_raw is None:
         raise ContentValidationError("invalid_payload", "promoMessages is required")
@@ -115,6 +155,12 @@ def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
         raise ContentValidationError("invalid_payload", "heroSlides is required")
     if not isinstance(slides_raw, list):
         raise ContentValidationError("invalid_payload", "heroSlides must be an array")
+    if life_raw is None:
+        life_raw = []
+    if not isinstance(life_raw, list):
+        raise ContentValidationError(
+            "invalid_payload", "lifestyleCollections must be an array"
+        )
 
     promo_messages: list[str] = []
     for i, item in enumerate(promos_raw):
@@ -130,7 +176,7 @@ def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
             )
         promo_messages.append(text)
 
-    # Empty promo/hero is valid (clean storefront until admin publishes content).
+    # Empty promo/hero/lifestyle is valid (clean storefront until admin fills).
     if len(promo_messages) > 20:
         raise ContentValidationError("invalid_promo", "Maximum 20 promo messages")
 
@@ -148,9 +194,28 @@ def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
         seen_ids.add(slide["id"])
         hero_slides.append(slide)
 
+    if len(life_raw) > 8:
+        raise ContentValidationError("invalid_lifestyle", "Maximum 8 lifestyle tiles")
+
+    lifestyle: list[dict[str, Any]] = []
+    seen_life: set[str] = set()
+    for i, item in enumerate(life_raw):
+        if not isinstance(item, dict):
+            raise ContentValidationError(
+                "invalid_lifestyle", f"lifestyleCollections[{i}] must be an object"
+            )
+        tile = _normalize_lifestyle(item, index=i)
+        if tile["id"] in seen_life:
+            raise ContentValidationError(
+                "invalid_lifestyle_id", f"Duplicate lifestyle id: {tile['id']}"
+            )
+        seen_life.add(tile["id"])
+        lifestyle.append(tile)
+
     return {
         "promoMessages": promo_messages,
         "heroSlides": hero_slides,
+        "lifestyleCollections": lifestyle,
     }
 
 
@@ -187,9 +252,19 @@ async def get_home_content(session: AsyncSession) -> dict[str, Any]:
     else:
         slides_raw = defaults["heroSlides"]
 
+    if "lifestyleCollections" in payload:
+        life_raw = payload.get("lifestyleCollections")
+    elif "lifestyle_collections" in payload:
+        life_raw = payload.get("lifestyle_collections")
+    else:
+        life_raw = defaults.get("lifestyleCollections", [])
+
     return {
         "promoMessages": promo_raw if isinstance(promo_raw, list) else defaults["promoMessages"],
         "heroSlides": slides_raw if isinstance(slides_raw, list) else defaults["heroSlides"],
+        "lifestyleCollections": (
+            life_raw if isinstance(life_raw, list) else defaults.get("lifestyleCollections", [])
+        ),
         "updatedAt": _iso(block.updated_at),
     }
 
@@ -211,6 +286,7 @@ async def update_home_content(
     return {
         "promoMessages": normalized["promoMessages"],
         "heroSlides": normalized["heroSlides"],
+        "lifestyleCollections": normalized.get("lifestyleCollections") or [],
         "updatedAt": _iso(block.updated_at),
     }
 

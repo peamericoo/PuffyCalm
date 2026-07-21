@@ -2,11 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { Reveal } from "@/components/shared/reveal";
 import { DisplayStack } from "@/components/shared/section-heading";
-import { lifestyleCollections } from "@/lib/site";
+import type { LifestyleTile } from "@/types/content";
 import { cn } from "@/lib/utils";
 
-export function LifestyleCollections() {
-  if (lifestyleCollections.length === 0) {
+type Props = {
+  tiles: LifestyleTile[];
+};
+
+/**
+ * Home lifestyle mosaic — tiles from CMS (Admin → Content).
+ * Renders nothing when empty (clean launch).
+ */
+export function LifestyleCollections({ tiles }: Props) {
+  if (tiles.length === 0) {
     return null;
   }
 
@@ -24,7 +32,7 @@ export function LifestyleCollections() {
         </div>
 
         <div className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[200px] sm:gap-4 lg:auto-rows-[220px] lg:grid-cols-4">
-          {lifestyleCollections.map((item, index) => (
+          {tiles.map((item, index) => (
             <Reveal
               key={item.id}
               delay={80 + index * 60}

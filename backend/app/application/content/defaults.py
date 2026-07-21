@@ -15,8 +15,12 @@ DEFAULT_PROMO_MESSAGES: list[str] = []
 DEFAULT_HERO_SLIDES: list[dict[str, Any]] = []
 
 
+DEFAULT_LIFESTYLE_COLLECTIONS: list[dict[str, Any]] = []
+
+
 def default_home_payload() -> dict[str, Any]:
     return {
         "promoMessages": list(DEFAULT_PROMO_MESSAGES),
         "heroSlides": [dict(s) for s in DEFAULT_HERO_SLIDES],
+        "lifestyleCollections": [dict(s) for s in DEFAULT_LIFESTYLE_COLLECTIONS],
     }

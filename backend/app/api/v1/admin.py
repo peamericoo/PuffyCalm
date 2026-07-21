@@ -30,7 +30,24 @@ from app.api.v1.schemas.admin_products import (
     AdminProductUpdateIn,
 )
 from app.api.v1.schemas.auth import AdminPingOut
-from app.api.v1.schemas.content import HeroSlideOut, HomeContentIn, HomeContentOut
+from app.api.v1.schemas.admin_categories import (
+    AdminCategoryCreateIn,
+    AdminCategoryOut,
+    AdminCategoryUpdateIn,
+)
+from app.api.v1.schemas.admin_reviews import AdminReviewCreateIn, AdminReviewOut
+from app.api.v1.schemas.content import (
+    HeroSlideOut,
+    HomeContentIn,
+    HomeContentOut,
+    LifestyleTileOut,
+)
+from app.application.admin_categories.service import (
+    AdminCategoryError,
+    create_admin_category,
+    list_admin_categories,
+    update_admin_category,
+)
 from app.application.admin_orders.service import (
     AdminOrderNotFoundError,
     AdminOrderUpdateError,
@@ -48,6 +65,12 @@ from app.application.admin_products.service import (
     publish_admin_product,
     unpublish_admin_product,
     update_admin_product,
+)
+from app.application.admin_reviews.service import (
+    AdminReviewError,
+    create_admin_review,
+    delete_admin_review,
+    list_admin_reviews,
 )
 from app.application.content.service import (
     ContentValidationError,
@@ -632,10 +655,61 @@ def _home_content_out(data: dict) -> HomeContentOut:
                 image_alt=str(s.get("imageAlt") or s.get("image_alt") or ""),
             )
         )
+    lifestyle: list[LifestyleTileOut] = []
+    for t in data.get("lifestyleCollections") or data.get("lifestyle_collections") or []:
+        if not isinstance(t, dict):
+            continue
+        lifestyle.append(
+            LifestyleTileOut(
+                id=str(t.get("id") or ""),
+                title=str(t.get("title") or ""),
+                href=str(t.get("href") or ""),
+                image_url=str(t.get("imageUrl") or t.get("image_url") or ""),
+                span=str(t.get("span") or "square"),
+            )
+        )
     return HomeContentOut(
         promo_messages=list(data.get("promoMessages") or []),
         hero_slides=slides,
+        lifestyle_collections=lifestyle,
         updated_at=data.get("updatedAt"),
+    )
+
+
+def _category_out(cat: object) -> AdminCategoryOut:
+    return AdminCategoryOut(
+        id=str(getattr(cat, "id", "")),
+        slug=str(getattr(cat, "slug", "")),
+        name=str(getattr(cat, "name", "")),
+        description=str(getattr(cat, "description", "") or ""),
+        tagline=str(getattr(cat, "tagline", "") or ""),
+        image_url=str(getattr(cat, "image_url", "") or ""),
+        cta_label=str(getattr(cat, "cta_label", "") or "Shop"),
+        is_virtual=bool(getattr(cat, "is_virtual", False)),
+        sort_order=int(getattr(cat, "sort_order", 0) or 0),
+    )
+
+
+def _review_out(r: object) -> AdminReviewOut:
+    created = getattr(r, "created_at", None)
+    created_s = created.isoformat() if created is not None else ""
+    tags = getattr(r, "tags", None) or []
+    if not isinstance(tags, list):
+        tags = []
+    return AdminReviewOut(
+        id=str(getattr(r, "id", "")),
+        product_id=str(getattr(r, "product_id", "")),
+        author=str(getattr(r, "author", "")),
+        initials=str(getattr(r, "initials", "") or ""),
+        rating=int(getattr(r, "rating", 0) or 0),
+        title=str(getattr(r, "title", "") or ""),
+        body=str(getattr(r, "body", "") or ""),
+        date_label=str(getattr(r, "date_label", "") or ""),
+        verified=bool(getattr(r, "verified", False)),
+        helpful=int(getattr(r, "helpful", 0) or 0),
+        tags=[str(t) for t in tags if t],
+        featured=bool(getattr(r, "featured", False)),
+        created_at=created_s,
     )
 
 
@@ -644,7 +718,7 @@ async def admin_get_home_content(
     user: RequireStaff,
     session: Annotated[AsyncSession, Depends(db_session)],
 ) -> HomeContentOut:
-    """Staff: read editable home promo + hero content."""
+    """Staff: read editable home promo + hero + lifestyle content."""
     _ = user
     data = await get_home_content(session)
     return _home_content_out(data)
@@ -656,7 +730,7 @@ async def admin_put_home_content(
     user: RequireStaff,
     session: Annotated[AsyncSession, Depends(db_session)],
 ) -> HomeContentOut:
-    """Staff: replace home promo messages + hero slides (full payload)."""
+    """Staff: replace home promo + hero + lifestyle (full payload)."""
     _ = user
     raw = {
         "promoMessages": body.promo_messages,
@@ -676,6 +750,16 @@ async def admin_put_home_content(
             }
             for s in body.hero_slides
         ],
+        "lifestyleCollections": [
+            {
+                "id": t.id,
+                "title": t.title,
+                "href": t.href,
+                "imageUrl": t.image_url,
+                "span": t.span,
+            }
+            for t in body.lifestyle_collections
+        ],
     }
     try:
         data = await update_home_content(session, raw)
@@ -685,3 +769,154 @@ async def admin_put_home_content(
             detail={"message": exc.message, "code": exc.code},
         ) from exc
     return _home_content_out(data)
+
+
+# ---------------------------------------------------------------------------
+# Categories — Shop by Mood / Filters cover images
+# ---------------------------------------------------------------------------
+
+
+@router.get("/categories", response_model=list[AdminCategoryOut])
+async def admin_list_categories(
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> list[AdminCategoryOut]:
+    _ = user
+    cats = await list_admin_categories(session)
+    return [_category_out(c) for c in cats]
+
+
+@router.post(
+    "/categories",
+    response_model=AdminCategoryOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def admin_create_category(
+    body: AdminCategoryCreateIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminCategoryOut:
+    _ = user
+    try:
+        cat = await create_admin_category(
+            session,
+            slug=body.slug,
+            name=body.name,
+            tagline=body.tagline,
+            description=body.description,
+            image_url=body.image_url,
+            cta_label=body.cta_label,
+            is_virtual=body.is_virtual,
+        )
+    except AdminCategoryError as exc:
+        code = (
+            status.HTTP_404_NOT_FOUND
+            if exc.code == "not_found"
+            else status.HTTP_409_CONFLICT
+            if exc.code == "slug_taken"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(
+            status_code=code,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return _category_out(cat)
+
+
+@router.patch("/categories/{category_id}", response_model=AdminCategoryOut)
+async def admin_patch_category(
+    category_id: str,
+    body: AdminCategoryUpdateIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminCategoryOut:
+    _ = user
+    data = body.model_dump(by_alias=False, exclude_unset=True)
+    try:
+        cat = await update_admin_category(session, category_id, data)
+    except AdminCategoryError as exc:
+        code = (
+            status.HTTP_404_NOT_FOUND
+            if exc.code == "not_found"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(
+            status_code=code,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return _category_out(cat)
+
+
+# ---------------------------------------------------------------------------
+# Product reviews (replace seed demo reviews)
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/products/{product_id}/reviews",
+    response_model=list[AdminReviewOut],
+)
+async def admin_list_product_reviews(
+    product_id: str,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> list[AdminReviewOut]:
+    _ = user
+    try:
+        rows = await list_admin_reviews(session, product_id)
+    except AdminReviewError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return [_review_out(r) for r in rows]
+
+
+@router.post(
+    "/products/{product_id}/reviews",
+    response_model=AdminReviewOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def admin_create_product_review(
+    product_id: str,
+    body: AdminReviewCreateIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AdminReviewOut:
+    _ = user
+    try:
+        review = await create_admin_review(
+            session,
+            product_id,
+            body.model_dump(by_alias=False),
+        )
+    except AdminReviewError as exc:
+        code = (
+            status.HTTP_404_NOT_FOUND
+            if exc.code == "not_found"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(
+            status_code=code,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return _review_out(review)
+
+
+@router.delete(
+    "/reviews/{review_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def admin_delete_review(
+    review_id: str,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> None:
+    _ = user
+    try:
+        await delete_admin_review(session, review_id)
+    except AdminReviewError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
