@@ -43,6 +43,7 @@ API: `https://api-production-4f01.up.railway.app`
 | Variable | Required | Purpose | Fase A prod |
 |----------|----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | **Yes** | Browser → FastAPI base | **SET** (api Railway public URL) |
+| `NEXT_PUBLIC_USE_API_CATALOG` | Optional | Catalog FE: default **API ON**; set `0`/`false` to force mock | unset = API (Fase B) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Yes** | Stripe.js / Elements | **SET** (test `pk_test…`) |
 | `AUTH_SECRET` | **Yes** | Auth.js | **SET** |
 | `AUTH_GOOGLE_ID` | **Yes** | Google OAuth | **SET** |
@@ -83,6 +84,7 @@ Local checklist (developer signs off, no values in git):
 - [ ] `STRIPE_WEBHOOK_SECRET` from `stripe listen`
 - [ ] `STOREFRONT_URL=http://localhost:3000`
 - [ ] `NEXT_PUBLIC_API_URL=http://localhost:8080` (or `:8000` if no nginx)
+- [ ] Catalog API on by default; optional `NEXT_PUBLIC_USE_API_CATALOG=0` for mock rollback
 - [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (test) in `.env.local`
 - [ ] Auth Google redirect URIs include `http://localhost:3000/api/auth/callback/google`
 

@@ -7,20 +7,20 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase A concluída) |
-| **HEAD / Fase A** | `e01af6e` (+ stamps em `main`) · app prod layout `996b448` |
+| **Última atualização** | 2026-07-21 (Fase B concluída) |
+| **HEAD / Fase B** | _(hash após commit)_ |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **B** |
+| **Próxima fase** | **C** |
 
 ## Fases
 
 | Fase | Nome | Status | Commit | Log |
 |------|------|--------|--------|-----|
 | A | Contratos + higiene | **done** | `e01af6e` | `docs/phases/PHASE_A_COMPLETE.md` |
-| B | Catalog FE → API | **pending** | — | — |
-| C | Reviews + Search → API | pending | — | — |
+| B | Catalog FE → API | **done** | _(após commit)_ | `docs/phases/PHASE_B_COMPLETE.md` |
+| C | Reviews + Search → API | **pending** | — | — |
 | D | Money integrity cart | pending | — | — |
 | E | Admin auth bridge | pending | — | — |
 | F | Admin orders API | pending | — | — |
@@ -43,12 +43,12 @@
 - **Shipping:** FE e BE **prod** em frete **0/0** de propósito (smoke `prod_009`); defaults de código BE 7500/699 ¢; copy UI ainda “$75” — restaurar na **Fase D**.
 - **SKU smoke `prod_009`:** mantido seed+mock; política unlisted/go-live documentada; não remover até P (ou decisão owner).
 - **BE:** catalog/search/reviews read real; checkout Stripe real; admin JWT probes only.
-- **FE:** catalog/home/search/reviews **ainda mock**; cart Zustand; checkout+success **real**.
+- **FE (pós-B):** **catalog / category / PDP / home rails → API** (flag `NEXT_PUBLIC_USE_API_CATALOG` default ON). Search + reviews **ainda mock**. Cart Zustand; checkout+success **real**.
 - **Admin UI:** shell only (allowlist email FE).
 - **Não recriar:** Stripe Custom checkout; guest checkout.
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase em **Próxima fase** (= **B**).
-2. Ler `PHASE_A_COMPLETE.md` + `docs/ops/CONTRACTS.md` + `docs/ops/ENV_CHECKLIST.md`.
-3. Executar **só** a Fase B; ao fim criar `PHASE_B_COMPLETE.md` e atualizar esta tabela.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase em **Próxima fase** (= **C**).
+2. Ler `PHASE_B_COMPLETE.md` + `docs/ops/CONTRACTS.md` + `docs/ops/ENV_CHECKLIST.md`.
+3. Executar **só** a Fase C; ao fim criar `PHASE_C_COMPLETE.md` e atualizar esta tabela.

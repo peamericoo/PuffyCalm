@@ -12,21 +12,9 @@ import {
 import { ProductCard } from "@/components/product/product-card";
 import { Reveal } from "@/components/shared/reveal";
 import { DisplayStack } from "@/components/shared/section-heading";
-import { products } from "@/lib/mock/products";
+import { getHomeProductRail, listCategories } from "@/lib/catalog/service";
+import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
-
-/**
- * Conversion sort: sale first, then rating + volume.
- * Module-level — sorted once, not on every render.
- */
-const conversionCatalog = [...products]
-  .sort((a, b) => {
-    const saleA = a.compareAtPrice ? 1 : 0;
-    const saleB = b.compareAtPrice ? 1 : 0;
-    if (saleB !== saleA) return saleB - saleA;
-    return b.rating - a.rating || b.reviewCount - a.reviewCount;
-  })
-  .slice(0, 6);
 
 type ShopCategory = {
   label: string;
@@ -37,56 +25,108 @@ type ShopCategory = {
   count: string;
 };
 
-const shopCategories: ShopCategory[] = [
-  {
-    label: "Recovery",
-    href: "/category/recovery",
-    tagline: "Tension out",
-    icon: Sparkles,
-    imageUrl:
-      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=70",
-    count: "4",
-  },
-  {
-    label: "Comfort",
-    href: "/category/comfort",
-    tagline: "Soft support",
-    icon: Cloud,
-    // Stable Unsplash id (previous 161662818… returned 404 and stalled decode)
-    imageUrl:
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=200&q=70",
-    count: "3",
-  },
-  {
-    label: "Everyday",
-    href: "/category/everyday",
-    tagline: "Small upgrades",
-    icon: SunMedium,
-    imageUrl:
-      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=200&q=70",
-    count: "2",
-  },
-  {
-    label: "Under $50",
-    href: "/category/all",
-    tagline: "Easy picks",
-    icon: Tag,
-    imageUrl:
-      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=200&q=70",
-    count: "5+",
-  },
-  {
-    label: "All products",
-    href: "/category/all",
-    tagline: "Full edit",
-    icon: LayoutGrid,
-    imageUrl:
-      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=200&q=70",
-    count: String(products.length),
-  },
-];
+const MOOD_ICONS: Record<string, LucideIcon> = {
+  recovery: Sparkles,
+  comfort: Cloud,
+  everyday: SunMedium,
+};
 
-function CategoryRail({ className }: { className?: string }) {
+const MOOD_TAGLINES: Record<string, string> = {
+  recovery: "Tension out",
+  comfort: "Soft support",
+  everyday: "Small upgrades",
+};
+
+async function buildShopCategories(
+  fallbackTotal: number,
+): Promise<ShopCategory[]> {
+  let recoveryCount = "4";
+  let comfortCount = "3";
+  let everydayCount = "2";
+  let allCount = String(fallbackTotal || "—");
+  let recoveryImg =
+    "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=70";
+  let comfortImg =
+    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=200&q=70";
+  let everydayImg =
+    "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=200&q=70";
+
+  try {
+    const cats = await listCategories();
+    for (const c of cats) {
+      if (c.slug === "recovery") {
+        recoveryCount = String(c.productCount);
+        if (c.imageUrl) recoveryImg = c.imageUrl;
+      }
+      if (c.slug === "comfort") {
+        comfortCount = String(c.productCount);
+        if (c.imageUrl) comfortImg = c.imageUrl;
+      }
+      if (c.slug === "everyday") {
+        everydayCount = String(c.productCount);
+        if (c.imageUrl) everydayImg = c.imageUrl;
+      }
+      if (c.slug === "all") {
+        allCount = String(c.productCount);
+      }
+    }
+  } catch {
+    /* keep defaults */
+  }
+
+  return [
+    {
+      label: "Recovery",
+      href: "/category/recovery",
+      tagline: MOOD_TAGLINES.recovery,
+      icon: MOOD_ICONS.recovery,
+      imageUrl: recoveryImg,
+      count: recoveryCount,
+    },
+    {
+      label: "Comfort",
+      href: "/category/comfort",
+      tagline: MOOD_TAGLINES.comfort,
+      icon: MOOD_ICONS.comfort,
+      imageUrl: comfortImg,
+      count: comfortCount,
+    },
+    {
+      label: "Everyday",
+      href: "/category/everyday",
+      tagline: MOOD_TAGLINES.everyday,
+      icon: MOOD_ICONS.everyday,
+      imageUrl: everydayImg,
+      count: everydayCount,
+    },
+    {
+      label: "Under $50",
+      href: "/category/all",
+      tagline: "Easy picks",
+      icon: Tag,
+      imageUrl:
+        "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=200&q=70",
+      count: "5+",
+    },
+    {
+      label: "All products",
+      href: "/category/all",
+      tagline: "Full edit",
+      icon: LayoutGrid,
+      imageUrl:
+        "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=200&q=70",
+      count: allCount,
+    },
+  ];
+}
+
+function CategoryRail({
+  shopCategories,
+  className,
+}: {
+  shopCategories: ShopCategory[];
+  className?: string;
+}) {
   return (
     <aside
       className={cn(
@@ -188,8 +228,11 @@ function CategoryRail({ className }: { className?: string }) {
   );
 }
 
-/** Mobile-only compact horizontal mood scroller — doesn't steal first contact */
-function MobileMoodStrip() {
+function MobileMoodStrip({
+  shopCategories,
+}: {
+  shopCategories: ShopCategory[];
+}) {
   return (
     <div className="lg:hidden">
       <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
@@ -244,15 +287,44 @@ function MobileMoodStrip() {
   );
 }
 
+function CatalogUnavailable() {
+  return (
+    <div className="glass-panel rounded-[1.5rem] px-6 py-10 text-center">
+      <p className="text-sm font-medium text-foreground">
+        Catalog temporarily unavailable
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Please refresh in a moment — guest checkout still works once products load.
+      </p>
+      <Link
+        href="/category/all"
+        className="mt-4 inline-flex text-sm font-semibold text-brand-deep underline-offset-4 hover:underline"
+      >
+        Try the collection
+      </Link>
+    </div>
+  );
+}
+
 /**
  * Premium shop stage:
  * Desktop — glass category rail left + product grid.
  * Mobile  — products first, compact mood strip after (no tall rail).
  *
- * Perf: one Reveal for the grid (stagger via CSS), precomputed catalog,
- * carousel mounts ≤2 images + pauses off-screen (see ProductImageCarousel).
+ * Products from catalog service (API Phase B).
  */
-export function ShopNow() {
+export async function ShopNow() {
+  let conversionCatalog: Product[] = [];
+  let catalogError = false;
+
+  try {
+    conversionCatalog = await getHomeProductRail(6);
+  } catch {
+    catalogError = true;
+  }
+
+  const shopCategories = await buildShopCategories(conversionCatalog.length);
+
   return (
     <section className="relative overflow-x-clip px-[var(--shell-gutter)] pb-10 pt-2 sm:px-5 sm:pb-14 sm:pt-4">
       <div className="mx-auto max-w-[1440px]">
@@ -268,43 +340,40 @@ export function ShopNow() {
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-          {/* Desktop rail only */}
           <Reveal
             delay={60}
             className="hidden lg:sticky lg:top-[calc(var(--promo-h)+5.5rem)] lg:block lg:self-start"
           >
-            <CategoryRail />
+            <CategoryRail shopCategories={shopCategories} />
           </Reveal>
 
-          {/* Products — first contact after title on mobile */}
           <div className="min-w-0 order-1 lg:order-none">
-            {/*
-              Single Reveal + CSS stagger keeps the same rise/blur entrance
-              without 6 IntersectionObservers + 6 client Reveal islands.
-            */}
-            <Reveal delay={60} className="shop-now-grid">
-              <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
-                {conversionCatalog.map((product, i) => (
-                  <div
-                    key={product.id}
-                    className="shop-now-grid__item h-full min-h-0"
-                    style={{ transitionDelay: `${60 + i * 35}ms` }}
-                  >
-                    <ProductCard
-                      product={product}
-                      compact
-                      priority={i < 2}
-                    />
-                  </div>
-                ))}
-              </div>
-            </Reveal>
+            {catalogError || conversionCatalog.length === 0 ? (
+              <CatalogUnavailable />
+            ) : (
+              <Reveal delay={60} className="shop-now-grid">
+                <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
+                  {conversionCatalog.map((product, i) => (
+                    <div
+                      key={product.id}
+                      className="shop-now-grid__item h-full min-h-0"
+                      style={{ transitionDelay: `${60 + i * 35}ms` }}
+                    >
+                      <ProductCard
+                        product={product}
+                        compact
+                        priority={i < 2}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Reveal>
+            )}
 
-            {/* Mobile mood strip after products */}
             <div className="mt-6 lg:hidden">
               <Reveal delay={120}>
                 <div className="glass-panel rounded-[1.25rem] px-3 py-3.5">
-                  <MobileMoodStrip />
+                  <MobileMoodStrip shopCategories={shopCategories} />
                 </div>
               </Reveal>
             </div>
