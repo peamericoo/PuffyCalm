@@ -4,7 +4,7 @@
 |-------|--------|
 | **Fase** | G — Admin UI pedidos |
 | **Data** | 2026-07-21 |
-| **Commit** | *(ver git log / STATUS.md)* |
+| **Commit** | `e34999c` |
 | **DoD atingido** | **SIM** (lista + detalhe + patch status; loading/empty/error; tsc clean) |
 
 ---

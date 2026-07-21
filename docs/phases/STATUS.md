@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase G concluída) |
-| **HEAD / Fase G** | *(preencher no commit — ver git log)* |
+| **HEAD / Fase G** | `e34999c` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -24,7 +24,7 @@
 | D | Money integrity cart | **done** | `6efe45f` | `docs/phases/PHASE_D_COMPLETE.md` |
 | E | Admin auth bridge | **done** | `d65aedb` | `docs/phases/PHASE_E_COMPLETE.md` |
 | F | Admin orders API | **done** | `614ed17` | `docs/phases/PHASE_F_COMPLETE.md` |
-| G | Admin orders UI | **done** | *(commit G)* | `docs/phases/PHASE_G_COMPLETE.md` |
+| G | Admin orders UI | **done** | `e34999c` | `docs/phases/PHASE_G_COMPLETE.md` |
 | H | Admin products API+UI | pending | — | — |
 | I | Media / storage | pending | — | — |
 | J | CMS-lite home | pending | — | — |
