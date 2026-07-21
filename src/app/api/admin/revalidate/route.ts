@@ -1,10 +1,13 @@
 /**
- * Phase H — invalidate Next.js catalog cache after admin product mutations.
+ * Invalidate Next.js cache after admin mutations.
  *
- * Tags (see src/lib/api/catalog.ts):
+ * Phase H — catalog tags (see src/lib/api/catalog.ts):
  *   catalog | catalog:{slug} | categories | product:{slug}
- * Paths:
- *   / | /product/{slug} | /category/{slug}
+ * Paths: / | /product/{slug} | /category/{slug}
+ *
+ * Phase J — home content (see src/lib/api/content.ts):
+ *   tags: home | content · path: /
+ *   Body: { home: true } for CMS-only; product body still revalidates `/`.
  *
  * Auth: Auth.js session with role admin|staff (UX gate).
  * Fallback: ISR revalidate=60 still expires stale pages if this is skipped.
@@ -20,6 +23,8 @@ export const dynamic = "force-dynamic";
 type Body = {
   productSlugs?: string[];
   categorySlugs?: string[];
+  /** Phase J — revalidate home promo + hero only (or in addition). */
+  home?: boolean;
 };
 
 function cleanSlugs(raw: unknown): string[] {
@@ -55,21 +60,39 @@ export async function POST(request: Request) {
 
   const productSlugs = cleanSlugs(body.productSlugs);
   const categorySlugs = cleanSlugs(body.categorySlugs);
+  const homeOnly =
+    body.home === true && productSlugs.length === 0 && categorySlugs.length === 0;
 
-  const tags = new Set<string>(["catalog", "categories"]);
+  const tags = new Set<string>();
   const paths = new Set<string>(["/"]);
 
-  for (const slug of productSlugs) {
-    tags.add(`product:${slug}`);
-    paths.add(`/product/${slug}`);
+  if (homeOnly) {
+    tags.add("home");
+    tags.add("content");
+  } else {
+    tags.add("catalog");
+    tags.add("categories");
+    tags.add("catalog:all");
+    paths.add("/category/all");
+    // Product mutations also refresh home shelves (featured etc.)
+    tags.add("home");
+    tags.add("content");
+
+    for (const slug of productSlugs) {
+      tags.add(`product:${slug}`);
+      paths.add(`/product/${slug}`);
+    }
+    for (const slug of categorySlugs) {
+      tags.add(`catalog:${slug}`);
+      paths.add(`/category/${slug}`);
+    }
   }
-  for (const slug of categorySlugs) {
-    tags.add(`catalog:${slug}`);
-    paths.add(`/category/${slug}`);
+
+  // Explicit home flag always includes home tags (even with product slugs)
+  if (body.home === true) {
+    tags.add("home");
+    tags.add("content");
   }
-  // Always refresh the virtual "all" shelf
-  tags.add("catalog:all");
-  paths.add("/category/all");
 
   const tagList = [...tags];
   const pathList = [...paths];

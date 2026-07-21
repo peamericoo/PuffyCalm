@@ -181,6 +181,10 @@ async def _run(reset: bool, *, users_only: bool = False) -> int:
             if not users_only:
                 counts = await seed_catalog(session, reset=reset)
                 print("Catalog seed complete:", counts)
+                from app.application.content.service import seed_home_content
+
+                home_seeded = await seed_home_content(session, force=reset)
+                print("Home content seed:", "updated" if home_seeded else "kept")
             from app.application.auth.service import seed_admin_users
 
             users = await seed_admin_users(session, settings=settings)

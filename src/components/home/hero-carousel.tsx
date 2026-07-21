@@ -4,23 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { heroSlides } from "@/lib/mock/site";
 import { cn } from "@/lib/utils";
+import type { HeroSlide } from "@/types/content";
 
 const AUTO_MS = 6500;
+
+type Props = {
+  slides: HeroSlide[];
+};
 
 /**
  * Editorial commerce opener.
  * Desktop: soft pointer parallax. Mobile: static, clipped, no extra motion cost.
+ * Slides from CMS-lite API (Phase J) — passed by the home RSC.
  */
-export function HeroCarousel() {
+export function HeroCarousel({ slides }: Props) {
+  const heroSlides = slides.length > 0 ? slides : [];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [allowParallax, setAllowParallax] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const count = heroSlides.length;
-  const active = heroSlides[index];
+  const active = heroSlides[index] ?? heroSlides[0];
 
   const go = useCallback(
     (next: number) => {
@@ -41,7 +47,7 @@ export function HeroCarousel() {
   }, []);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || count < 2) return;
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % count);
     }, AUTO_MS);
@@ -80,6 +86,10 @@ export function HeroCarousel() {
 
   const px = allowParallax ? parallax.x : 0;
   const py = allowParallax ? parallax.y : 0;
+
+  if (!active || count === 0) {
+    return null;
+  }
 
   return (
     <section

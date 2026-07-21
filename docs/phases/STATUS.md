@@ -7,12 +7,12 @@
 
 | Campo | Valor |
 |-------|--------|
-| **Última atualização** | 2026-07-21 (Fase I — media / Railway bucket) |
-| **HEAD / Fase I** | `aa6767b` (+ docs stamp `dc4a448`) |
+| **Última atualização** | 2026-07-21 (Fase J — CMS-lite home) |
+| **HEAD / Fase J** | *(stamp after commit)* |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
-| **Próxima fase** | **J** (CMS-lite home) — ou **K** se priorizar conta cliente |
+| **Próxima fase** | **K** (account orders) — ou **L** se priorizar inventory |
 
 ## Fases
 
@@ -27,7 +27,7 @@
 | G | Admin orders UI | **done** | `e34999c` | `docs/phases/PHASE_G_COMPLETE.md` |
 | H | Admin products API+UI | **done** (prod smoke 22/22) | `8ec7062` | `docs/phases/PHASE_H_COMPLETE.md` |
 | I | Media / storage | **done** | `aa6767b` | `docs/phases/PHASE_I_COMPLETE.md` |
-| J | CMS-lite home | pending | — | — |
+| J | CMS-lite home | **done** | *(after commit)* | `docs/phases/PHASE_J_COMPLETE.md` |
 | K | Account orders | pending | — | — |
 | L | Inventory + fulfillment | pending | — | — |
 | M | Remove domain mocks | pending | — | — |
@@ -37,17 +37,16 @@
 
 ## Estado do sistema (resumo)
 
-- **Prod healthy:** web + api Railway Online; H validated.
-- **Fase I:** Railway bucket `coordinated-foodbox` + S3_* vars na **api**; proxy público `GET /media/{key}` (bucket private).
-- **Env prod:** Stripe + shipping; auth; orders; products; **media S3 env SET** (redeploy api/web ainda necessário para código).
+- **Prod healthy:** web + api Railway; H validated; I media ready.
+- **Fase J:** `content_blocks` + `GET/PUT` home content; admin `/admin/content`; storefront promo+hero via API.
+- **Env prod:** Stripe + shipping; auth; orders; products; media S3; content table migrated on Railway Postgres.
 - **Contratos congelados:** Stripe Custom; guest checkout.
-- **BE:** catalog + admin products + **admin media upload/delete** + media proxy.
-- **FE:** admin product form **upload** + revalidate H.
 - **Não recriar:** Stripe Custom checkout; guest checkout.
+- **Ainda mock:** nav/footer/lifestyle (não J); account orders (K).
 
 ## Como a próxima IA continua
 
-1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **J** (CMS-lite).
-2. Ler `PHASE_I_COMPLETE.md` (URLs de mídia via proxy API).
-3. Executar **só** a Fase J; ao fim criar `PHASE_J_COMPLETE.md` e atualizar esta tabela.
-4. Opcional antes de J: redeploy api+web e smoke upload → PDP se ainda não feito em prod.
+1. Abrir `docs/PHASE_PROMPTS.md` → copiar prompt da fase **K** (account orders).
+2. Ler `PHASE_J_COMPLETE.md` se precisar de content tags; `PHASE_F_COMPLETE` para orders.
+3. Executar **só** a Fase K; ao fim criar `PHASE_K_COMPLETE.md` e atualizar esta tabela.
+4. Redeploy api+web se Fase J ainda não estiver em prod.

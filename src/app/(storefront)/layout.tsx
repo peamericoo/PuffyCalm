@@ -1,9 +1,15 @@
 import { StorefrontShell } from "@/components/layout/storefront-shell";
+import { getHomeContent } from "@/lib/api/content";
 
-export default function StorefrontLayout({
+export default async function StorefrontLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <StorefrontShell>{children}</StorefrontShell>;
+  const content = await getHomeContent();
+  return (
+    <StorefrontShell promoMessages={content.promoMessages}>
+      {children}
+    </StorefrontShell>
+  );
 }

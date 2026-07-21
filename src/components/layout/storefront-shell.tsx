@@ -7,6 +7,12 @@ import { Header } from "@/components/layout/header";
 import { PromoBar } from "@/components/layout/promo-bar";
 import { cn } from "@/lib/utils";
 
+type Props = {
+  children: React.ReactNode;
+  /** CMS-lite promo ticker messages (Phase J). */
+  promoMessages: string[];
+};
+
 /**
  * Storefront chrome + page frame.
  *
@@ -18,13 +24,13 @@ import { cn } from "@/lib/utils";
  * ambient background — that was the “lighter box” under the TopBar on
  * Product / Wishlist / Checkout / etc. Horizontal clip stays on the shell.
  */
-export function StorefrontShell({ children }: { children: React.ReactNode }) {
+export function StorefrontShell({ children, promoMessages }: Props) {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
   return (
     <div className="app-grain flex min-h-screen w-full max-w-[100%] flex-col overflow-x-clip">
-      <PromoBar />
+      <PromoBar messages={promoMessages} />
       <Header />
       <main
         className={cn(

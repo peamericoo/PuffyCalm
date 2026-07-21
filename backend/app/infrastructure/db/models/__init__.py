@@ -7,12 +7,14 @@ from app.infrastructure.db.models.catalog import (
     ProductSpec,
     product_categories,
 )
+from app.infrastructure.db.models.content import ContentBlock
 from app.infrastructure.db.models.order import Order, OrderItem, StripeEvent
 from app.infrastructure.db.models.review import Review
 from app.infrastructure.db.models.user import User, UserRole
 
 __all__ = [
     "Category",
+    "ContentBlock",
     "Order",
     "OrderItem",
     "Product",

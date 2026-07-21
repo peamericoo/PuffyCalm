@@ -1,4 +1,4 @@
-"""Admin-gated routes (RBAC). Orders = F/G; products = Phase H; media = Phase I."""
+"""Admin-gated routes (RBAC). Orders = F/G; products = Phase H; media = I; content = J."""
 
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ from app.api.v1.schemas.admin_products import (
     AdminProductUpdateIn,
 )
 from app.api.v1.schemas.auth import AdminPingOut
+from app.api.v1.schemas.content import HeroSlideOut, HomeContentIn, HomeContentOut
 from app.application.admin_orders.service import (
     AdminOrderNotFoundError,
     AdminOrderUpdateError,
@@ -47,6 +48,11 @@ from app.application.admin_products.service import (
     publish_admin_product,
     unpublish_admin_product,
     update_admin_product,
+)
+from app.application.content.service import (
+    ContentValidationError,
+    get_home_content,
+    update_home_content,
 )
 from app.application.media.service import (
     MediaNotFoundError,
@@ -597,3 +603,83 @@ async def admin_delete_media(
         images_removed=int(result.get("imagesRemoved") or 0),
         products_touched=int(result.get("productsTouched") or 0),
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase J — CMS-lite home content (promo ticker + hero slides)
+# ---------------------------------------------------------------------------
+
+
+def _home_content_out(data: dict) -> HomeContentOut:
+    slides: list[HeroSlideOut] = []
+    for s in data.get("heroSlides") or []:
+        if not isinstance(s, dict):
+            continue
+        slides.append(
+            HeroSlideOut(
+                id=str(s.get("id") or ""),
+                title_line1=str(s.get("titleLine1") or s.get("title_line1") or ""),
+                title_line2=str(s.get("titleLine2") or s.get("title_line2") or ""),
+                title_accent=s.get("titleAccent") or s.get("title_accent"),
+                subtitle=str(s.get("subtitle") or ""),
+                cta_label=str(s.get("ctaLabel") or s.get("cta_label") or ""),
+                cta_href=str(s.get("ctaHref") or s.get("cta_href") or ""),
+                secondary_label=s.get("secondaryLabel") or s.get("secondary_label"),
+                secondary_href=s.get("secondaryHref") or s.get("secondary_href"),
+                image_url=str(s.get("imageUrl") or s.get("image_url") or ""),
+                image_alt=str(s.get("imageAlt") or s.get("image_alt") or ""),
+            )
+        )
+    return HomeContentOut(
+        promo_messages=list(data.get("promoMessages") or []),
+        hero_slides=slides,
+        updated_at=data.get("updatedAt"),
+    )
+
+
+@router.get("/content/home", response_model=HomeContentOut)
+async def admin_get_home_content(
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> HomeContentOut:
+    """Staff: read editable home promo + hero content."""
+    _ = user
+    data = await get_home_content(session)
+    return _home_content_out(data)
+
+
+@router.put("/content/home", response_model=HomeContentOut)
+async def admin_put_home_content(
+    body: HomeContentIn,
+    user: RequireStaff,
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> HomeContentOut:
+    """Staff: replace home promo messages + hero slides (full payload)."""
+    _ = user
+    raw = {
+        "promoMessages": body.promo_messages,
+        "heroSlides": [
+            {
+                "id": s.id,
+                "titleLine1": s.title_line1,
+                "titleLine2": s.title_line2,
+                "titleAccent": s.title_accent,
+                "subtitle": s.subtitle,
+                "ctaLabel": s.cta_label,
+                "ctaHref": s.cta_href,
+                "secondaryLabel": s.secondary_label,
+                "secondaryHref": s.secondary_href,
+                "imageUrl": s.image_url,
+                "imageAlt": s.image_alt,
+            }
+            for s in body.hero_slides
+        ],
+    }
+    try:
+        data = await update_home_content(session, raw)
+    except ContentValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return _home_content_out(data)

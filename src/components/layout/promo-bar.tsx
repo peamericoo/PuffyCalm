@@ -1,11 +1,18 @@
-import { promoMessages } from "@/lib/mock/site";
-
 /**
  * Full-width commercial ticker at the very top of the site.
- * Same on every page — urgency + launch offers.
+ * Messages come from CMS-lite API (Phase J) via layout props.
  */
-export function PromoBar() {
-  const loop = [...promoMessages, ...promoMessages];
+
+type Props = {
+  messages: string[];
+};
+
+export function PromoBar({ messages }: Props) {
+  const safe =
+    messages.length > 0
+      ? messages
+      : ["Welcome to PuffyCalm — free tracked shipping on orders $75+"];
+  const loop = [...safe, ...safe];
 
   return (
     <div className="promo-bar fixed inset-x-0 top-0 z-[60] h-[var(--promo-h)] overflow-hidden text-white">

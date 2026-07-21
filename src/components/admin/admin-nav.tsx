@@ -5,6 +5,7 @@ const LINKS = [
   { href: "/admin", label: "Home", exact: true },
   { href: "/admin/orders", label: "Orders", exact: false },
   { href: "/admin/products", label: "Products", exact: false },
+  { href: "/admin/content", label: "Content", exact: false },
 ] as const;
 
 type Props = {
