@@ -64,13 +64,11 @@ class HeroSlideIn(CamelModel):
 
 
 class HomeContentIn(CamelModel):
-    promo_messages: list[str] = Field(alias="promoMessages", min_length=1, max_length=20)
-    hero_slides: list[HeroSlideIn] = Field(alias="heroSlides", min_length=1, max_length=8)
+    # Empty arrays allowed — clean storefront until admin adds CMS content.
+    promo_messages: list[str] = Field(alias="promoMessages", min_length=0, max_length=20)
+    hero_slides: list[HeroSlideIn] = Field(alias="heroSlides", min_length=0, max_length=8)
 
     @field_validator("promo_messages")
     @classmethod
     def clean_promos(cls, v: list[str]) -> list[str]:
-        out = [s.strip() for s in v if isinstance(s, str) and s.strip()]
-        if not out:
-            raise ValueError("At least one non-empty promo message is required")
-        return out
+        return [s.strip() for s in v if isinstance(s, str) and s.strip()]

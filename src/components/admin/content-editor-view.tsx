@@ -126,21 +126,14 @@ export function ContentEditorView({ googleIdToken }: Props) {
       .map((l) => l.trim())
       .filter(Boolean);
 
-    if (promoMessages.length === 0) {
-      setMessage("Add at least one promo message (one per line).");
-      return;
-    }
-    if (slides.length === 0) {
-      setMessage("Add at least one hero slide.");
-      return;
-    }
+    // Empty promo + hero is allowed (clean storefront). Slides present must be complete.
     for (const s of slides) {
       if (!s.titleLine1.trim() || !s.titleLine2.trim()) {
         setMessage("Each slide needs title lines.");
         return;
       }
       if (!s.imageUrl.trim()) {
-        setMessage("Each slide needs an image URL.");
+        setMessage("Each slide needs an image URL (upload in Media, then paste /media/… or https URL).");
         return;
       }
     }

@@ -6,6 +6,10 @@ import { lifestyleCollections } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function LifestyleCollections() {
+  if (lifestyleCollections.length === 0) {
+    return null;
+  }
+
   return (
     <section className="px-3 py-8 sm:px-5 sm:py-12">
       <div className="mx-auto max-w-[1400px]">

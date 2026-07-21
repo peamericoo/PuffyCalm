@@ -228,38 +228,14 @@ export const footerNav = {
   ],
 } as const;
 
-/** Home lifestyle module — static editorial links (not CMS product data). */
-export const lifestyleCollections = [
-  {
-    id: "life_1",
-    title: "Desk Reset",
-    href: "/category/comfort",
-    imageUrl:
-      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1000&q=80",
-    span: "tall" as const,
-  },
-  {
-    id: "life_2",
-    title: "Evening Unwind",
-    href: "/category/recovery",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1000&q=80",
-    span: "wide" as const,
-  },
-  {
-    id: "life_3",
-    title: "Better Posture",
-    href: "/category/everyday",
-    imageUrl:
-      "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1000&q=80",
-    span: "square" as const,
-  },
-  {
-    id: "life_4",
-    title: "Travel Light",
-    href: "/category/recovery",
-    imageUrl:
-      "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80",
-    span: "square" as const,
-  },
-] as const;
+/**
+ * Home lifestyle tiles — empty until you add CMS support or hardcode real assets.
+ * Component returns null when the list is empty (no Unsplash demo tiles).
+ */
+export const lifestyleCollections: readonly {
+  id: string;
+  title: string;
+  href: string;
+  imageUrl: string;
+  span: "tall" | "wide" | "square";
+}[] = [];

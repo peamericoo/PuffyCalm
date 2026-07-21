@@ -1,6 +1,7 @@
 /**
  * Full-width commercial ticker at the very top of the site.
  * Messages come from CMS-lite API (Phase J) via layout props.
+ * Hidden when empty (clean storefront — no demo copy).
  */
 
 type Props = {
@@ -8,11 +9,11 @@ type Props = {
 };
 
 export function PromoBar({ messages }: Props) {
-  const safe =
-    messages.length > 0
-      ? messages
-      : ["Welcome to PuffyCalm — free tracked shipping on orders $75+"];
-  const loop = [...safe, ...safe];
+  if (messages.length === 0) {
+    return null;
+  }
+
+  const loop = [...messages, ...messages];
 
   return (
     <div className="promo-bar fixed inset-x-0 top-0 z-[60] h-[var(--promo-h)] overflow-hidden text-white">

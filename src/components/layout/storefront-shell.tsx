@@ -27,9 +27,15 @@ type Props = {
 export function StorefrontShell({ children, promoMessages }: Props) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const hasPromo = promoMessages.length > 0;
 
   return (
-    <div className="app-grain flex min-h-screen w-full max-w-[100%] flex-col overflow-x-clip">
+    <div
+      className={cn(
+        "app-grain flex min-h-screen w-full max-w-[100%] flex-col overflow-x-clip",
+        !hasPromo && "promo-bar-collapsed",
+      )}
+    >
       <PromoBar messages={promoMessages} />
       <Header />
       <main

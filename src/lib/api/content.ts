@@ -99,20 +99,8 @@ export async function getHomeContent(): Promise<HomeContent> {
       return fallbackHomeContent();
     }
     const data = (await res.json()) as Record<string, unknown>;
-    const normalized = normalizeHomeContent(data);
-    if (normalized.promoMessages.length === 0 || normalized.heroSlides.length === 0) {
-      const fb = fallbackHomeContent();
-      return {
-        promoMessages:
-          normalized.promoMessages.length > 0
-            ? normalized.promoMessages
-            : fb.promoMessages,
-        heroSlides:
-          normalized.heroSlides.length > 0 ? normalized.heroSlides : fb.heroSlides,
-        updatedAt: normalized.updatedAt,
-      };
-    }
-    return normalized;
+    // Empty promo/hero is a valid clean storefront — do not re-inject demo fallbacks.
+    return normalizeHomeContent(data);
   } catch (e) {
     console.error("[content] home fetch error", e);
     return fallbackHomeContent();

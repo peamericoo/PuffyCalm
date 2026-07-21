@@ -50,24 +50,10 @@ def test_normalize_allows_media_proxy_url() -> None:
     assert out["heroSlides"][0]["imageUrl"].startswith("/media/")
 
 
-def test_normalize_rejects_empty_promo() -> None:
-    with pytest.raises(ContentValidationError) as ei:
-        normalize_home_payload(
-            {
-                "promoMessages": ["  ", ""],
-                "heroSlides": [
-                    {
-                        "titleLine1": "A",
-                        "titleLine2": "B",
-                        "subtitle": "S",
-                        "ctaLabel": "C",
-                        "ctaHref": "/x",
-                        "imageUrl": "https://example.com/a.jpg",
-                    }
-                ],
-            }
-        )
-    assert ei.value.code == "invalid_promo"
+def test_normalize_allows_empty_promo_and_hero() -> None:
+    out = normalize_home_payload({"promoMessages": ["  ", ""], "heroSlides": []})
+    assert out["promoMessages"] == []
+    assert out["heroSlides"] == []
 
 
 def test_normalize_rejects_bad_image() -> None:

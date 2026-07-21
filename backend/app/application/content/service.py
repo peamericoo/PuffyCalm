@@ -130,13 +130,10 @@ def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
             )
         promo_messages.append(text)
 
-    if len(promo_messages) < 1:
-        raise ContentValidationError("invalid_promo", "At least one promo message is required")
+    # Empty promo/hero is valid (clean storefront until admin publishes content).
     if len(promo_messages) > 20:
         raise ContentValidationError("invalid_promo", "Maximum 20 promo messages")
 
-    if len(slides_raw) < 1:
-        raise ContentValidationError("invalid_slide", "At least one hero slide is required")
     if len(slides_raw) > 8:
         raise ContentValidationError("invalid_slide", "Maximum 8 hero slides")
 
@@ -172,13 +169,27 @@ async def ensure_home_block(session: AsyncSession) -> ContentBlock:
 async def get_home_content(session: AsyncSession) -> dict[str, Any]:
     block = await ensure_home_block(session)
     payload = block.payload if isinstance(block.payload, dict) else {}
-    # Merge missing keys with defaults for resilience
     defaults = default_home_payload()
-    promo = payload.get("promoMessages") or payload.get("promo_messages") or defaults["promoMessages"]
-    slides = payload.get("heroSlides") or payload.get("hero_slides") or defaults["heroSlides"]
+
+    # Important: empty lists are intentional — do not treat them as missing
+    # (Python `[] or defaults` would re-inject demo content).
+    if "promoMessages" in payload:
+        promo_raw = payload.get("promoMessages")
+    elif "promo_messages" in payload:
+        promo_raw = payload.get("promo_messages")
+    else:
+        promo_raw = defaults["promoMessages"]
+
+    if "heroSlides" in payload:
+        slides_raw = payload.get("heroSlides")
+    elif "hero_slides" in payload:
+        slides_raw = payload.get("hero_slides")
+    else:
+        slides_raw = defaults["heroSlides"]
+
     return {
-        "promoMessages": promo if isinstance(promo, list) else defaults["promoMessages"],
-        "heroSlides": slides if isinstance(slides, list) else defaults["heroSlides"],
+        "promoMessages": promo_raw if isinstance(promo_raw, list) else defaults["promoMessages"],
+        "heroSlides": slides_raw if isinstance(slides_raw, list) else defaults["heroSlides"],
         "updatedAt": _iso(block.updated_at),
     }
 

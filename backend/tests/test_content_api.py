@@ -8,7 +8,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.application.auth.service import seed_admin_users
-from app.application.content.defaults import DEFAULT_PROMO_MESSAGES, default_home_payload
+from app.application.content.defaults import default_home_payload
 from app.application.content.service import seed_home_content
 from app.core.config import get_settings
 from app.infrastructure.db.session import get_session_factory
@@ -52,12 +52,11 @@ async def test_public_home_content_returns_defaults(client: AsyncClient) -> None
     data = res.json()
     assert "promoMessages" in data
     assert "heroSlides" in data
-    assert len(data["promoMessages"]) >= 1
-    assert len(data["heroSlides"]) >= 1
-    slide = data["heroSlides"][0]
-    assert "titleLine1" in slide
-    assert "ctaHref" in slide
-    assert "imageUrl" in slide
+    # Clean defaults: empty until admin fills CMS (no demo Unsplash seed).
+    assert isinstance(data["promoMessages"], list)
+    assert isinstance(data["heroSlides"], list)
+    assert data["promoMessages"] == []
+    assert data["heroSlides"] == []
 
 
 @pytest.mark.asyncio
@@ -79,7 +78,8 @@ async def test_admin_get_and_put_home_content(
     get_res = await client.get("/api/v1/admin/content/home")
     assert get_res.status_code == 200, get_res.text
     current = get_res.json()
-    assert current["promoMessages"][0] == DEFAULT_PROMO_MESSAGES[0]
+    assert current["promoMessages"] == []
+    assert current["heroSlides"] == []
 
     new_promo = ["🚀 Phase J test promo — free shipping $75+"]
     new_slides = [
@@ -93,7 +93,7 @@ async def test_admin_get_and_put_home_content(
             "ctaHref": "/category/all",
             "secondaryLabel": "Browse",
             "secondaryHref": "/category/recovery",
-            "imageUrl": "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800",
+            "imageUrl": "https://example.com/hero-test.jpg",
             "imageAlt": "Test slide",
         }
     ]
@@ -114,7 +114,7 @@ async def test_admin_get_and_put_home_content(
     assert pub.json()["promoMessages"] == new_promo
     assert pub.json()["heroSlides"][0]["titleLine1"] == "Test hero"
 
-    # Restore defaults for other suites
+    # Restore clean empty defaults for other suites
     restore = await client.put(
         "/api/v1/admin/content/home",
         json=default_home_payload(),
@@ -123,22 +123,37 @@ async def test_admin_get_and_put_home_content(
 
 
 @pytest.mark.asyncio
-async def test_admin_put_rejects_empty_promo(
+async def test_admin_put_allows_empty_home(
     client: AsyncClient, content_ready: None
 ) -> None:
-    payload = default_home_payload()
-    payload["promoMessages"] = ["   ", ""]
-    res = await client.put("/api/v1/admin/content/home", json=payload)
-    # Pydantic or service validation
-    assert res.status_code in (400, 422), res.text
+    res = await client.put(
+        "/api/v1/admin/content/home",
+        json={"promoMessages": [], "heroSlides": []},
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["promoMessages"] == []
+    assert res.json()["heroSlides"] == []
 
 
 @pytest.mark.asyncio
 async def test_admin_put_rejects_bad_image_url(
     client: AsyncClient, content_ready: None
 ) -> None:
-    payload = default_home_payload()
-    payload["heroSlides"][0]["imageUrl"] = "not-a-url"
+    payload = {
+        "promoMessages": [],
+        "heroSlides": [
+            {
+                "id": "bad_img",
+                "titleLine1": "A",
+                "titleLine2": "B",
+                "subtitle": "S",
+                "ctaLabel": "Go",
+                "ctaHref": "/category/all",
+                "imageUrl": "not-a-url",
+                "imageAlt": "x",
+            }
+        ],
+    }
     res = await client.put("/api/v1/admin/content/home", json=payload)
     assert res.status_code == 400, res.text
     detail = res.json().get("detail") or {}

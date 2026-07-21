@@ -33,6 +33,11 @@
   --shell-gutter: 1rem;
 }
 
+/* No CMS promo ticker — collapse reserved top strip so header sits at top. */
+.promo-bar-collapsed {
+  --promo-h: 0rem;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

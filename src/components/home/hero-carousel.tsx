@@ -87,8 +87,66 @@ export function HeroCarousel({ slides }: Props) {
   const px = allowParallax ? parallax.x : 0;
   const py = allowParallax ? parallax.y : 0;
 
+  /* Clean storefront: no demo images — soft brand stage until admin adds slides. */
   if (!active || count === 0) {
-    return null;
+    return (
+      <section
+        className="relative w-full max-w-[100%] overflow-x-clip pb-2 sm:pb-3 sm:pt-2"
+        aria-label="Welcome"
+      >
+        <div className="relative mx-auto w-full max-w-[min(1920px,100%)] px-0 sm:px-1.5 lg:px-2">
+          <div
+            className={cn(
+              "relative flex w-full max-w-full flex-col justify-end overflow-hidden",
+              "brand-gradient",
+              "h-[min(42dvh,340px)] min-h-[240px]",
+              "sm:h-[min(46dvh,380px)] sm:min-h-[280px] sm:rounded-[1.85rem]",
+              "lg:h-[min(48dvh,420px)] lg:min-h-[300px]",
+            )}
+          >
+            <div
+              className="pointer-events-none absolute inset-0 opacity-40"
+              style={{
+                background:
+                  "radial-gradient(ellipse 70% 60% at 70% 20%, rgba(255,255,255,0.35), transparent 55%)",
+              }}
+              aria-hidden
+            />
+            <div
+              className="relative z-10 px-5 pb-8 sm:px-8 sm:pb-10 lg:px-12"
+              style={{
+                paddingTop: "calc(var(--promo-h) + var(--nav-h) + 0.5rem)",
+              }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75">
+                PuffyCalm
+              </p>
+              <h1 className="mt-2 max-w-xl font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
+                Your store is ready.
+              </h1>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-white/85 sm:text-base">
+                Add hero images and promo messages in Admin → Content. Publish
+                products to fill the shelves below.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  href="/category/all"
+                  className="pressable inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-foreground shadow-sm"
+                >
+                  Browse shop
+                </Link>
+                <Link
+                  href="/admin/content"
+                  className="pressable inline-flex h-11 items-center rounded-full border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm"
+                >
+                  Edit home content
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
