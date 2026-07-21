@@ -4,6 +4,7 @@
 |-------|--------|
 | **Fase** | M — Remove domain mocks |
 | **Data** | 2026-07-21 |
+| **Commit** | `9122721` |
 | **DoD atingido** | **SIM** — zero imports `src/lib/mock/*`; pasta apagada; domain services API-only |
 
 ---

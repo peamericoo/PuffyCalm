@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Última atualização** | 2026-07-21 (Fase M — domain mocks removed) |
-| **HEAD / Fase M** | *(ver commit desta sessão)* |
+| **HEAD / Fase M** | `9122721` |
 | **Master plan** | `docs/ECOMMERCE_MASTER_PLAN.md` |
 | **Contratos / env** | `docs/ops/CONTRACTS.md` · `docs/ops/ENV_CHECKLIST.md` |
 | **Prompts copy-paste** | `docs/PHASE_PROMPTS.md` |
@@ -30,7 +30,7 @@
 | J | CMS-lite home | **done** | `99fe3dd` | `docs/phases/PHASE_J_COMPLETE.md` |
 | K | Account orders | **done** | `db6a5a0` | `docs/phases/PHASE_K_COMPLETE.md` |
 | L | Inventory + fulfillment | **done** | `03a4e15` | `docs/phases/PHASE_L_COMPLETE.md` |
-| M | Remove domain mocks | **done** | *(este commit)* | `docs/phases/PHASE_M_COMPLETE.md` |
+| M | Remove domain mocks | **done** | `9122721` | `docs/phases/PHASE_M_COMPLETE.md` |
 | N | Legal pages + errors | pending | — | — |
 | O | Observability + tests | pending | — | — |
 | P | Go-live hardening | pending | — | — |
