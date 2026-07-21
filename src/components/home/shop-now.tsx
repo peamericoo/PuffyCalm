@@ -6,7 +6,6 @@ import {
   LayoutGrid,
   Sparkles,
   SunMedium,
-  Tag,
   type LucideIcon,
 } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
@@ -21,7 +20,8 @@ type ShopCategory = {
   href: string;
   tagline: string;
   icon: LucideIcon;
-  imageUrl: string;
+  /** Optional real merch photo — never stock Unsplash demo. */
+  imageUrl?: string;
   count: string;
 };
 
@@ -37,41 +37,44 @@ const MOOD_TAGLINES: Record<string, string> = {
   everyday: "Small upgrades",
 };
 
+function isRealMerchImage(url: string | undefined | null): url is string {
+  if (!url?.trim()) return false;
+  if (url.includes("unsplash.com")) return false;
+  return true;
+}
+
 async function buildShopCategories(
-  fallbackTotal: number,
+  publishedTotal: number,
 ): Promise<ShopCategory[]> {
-  let recoveryCount = "4";
-  let comfortCount = "3";
-  let everydayCount = "2";
-  let allCount = String(fallbackTotal || "—");
-  let recoveryImg =
-    "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=70";
-  let comfortImg =
-    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=200&q=70";
-  let everydayImg =
-    "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=200&q=70";
+  let recoveryCount = "—";
+  let comfortCount = "—";
+  let everydayCount = "—";
+  let allCount = publishedTotal > 0 ? String(publishedTotal) : "—";
+  let recoveryImg: string | undefined;
+  let comfortImg: string | undefined;
+  let everydayImg: string | undefined;
 
   try {
     const cats = await listCategories();
     for (const c of cats) {
       if (c.slug === "recovery") {
         recoveryCount = String(c.productCount);
-        if (c.imageUrl) recoveryImg = c.imageUrl;
+        if (isRealMerchImage(c.imageUrl)) recoveryImg = c.imageUrl;
       }
       if (c.slug === "comfort") {
         comfortCount = String(c.productCount);
-        if (c.imageUrl) comfortImg = c.imageUrl;
+        if (isRealMerchImage(c.imageUrl)) comfortImg = c.imageUrl;
       }
       if (c.slug === "everyday") {
         everydayCount = String(c.productCount);
-        if (c.imageUrl) everydayImg = c.imageUrl;
+        if (isRealMerchImage(c.imageUrl)) everydayImg = c.imageUrl;
       }
       if (c.slug === "all") {
         allCount = String(c.productCount);
       }
     }
   } catch {
-    /* keep defaults */
+    /* counts stay as placeholders */
   }
 
   return [
@@ -100,24 +103,55 @@ async function buildShopCategories(
       count: everydayCount,
     },
     {
-      label: "Under $50",
-      href: "/category/all",
-      tagline: "Easy picks",
-      icon: Tag,
-      imageUrl:
-        "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=200&q=70",
-      count: "5+",
-    },
-    {
       label: "All products",
       href: "/category/all",
-      tagline: "Full edit",
+      tagline: "Full catalog",
       icon: LayoutGrid,
-      imageUrl:
-        "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=200&q=70",
       count: allCount,
     },
   ];
+}
+
+function CategoryThumb({
+  cat,
+  sizeClass,
+}: {
+  cat: ShopCategory;
+  sizeClass: string;
+}) {
+  const Icon = cat.icon;
+  return (
+    <span
+      className={cn(
+        "relative shrink-0 overflow-hidden rounded-2xl shadow-sm ring-1 ring-white/80",
+        sizeClass,
+      )}
+    >
+      {cat.imageUrl ? (
+        <Image
+          src={cat.imageUrl}
+          alt=""
+          fill
+          sizes="64px"
+          quality={65}
+          loading="lazy"
+          className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
+        />
+      ) : (
+        <span
+          className="absolute inset-0 brand-gradient opacity-90"
+          aria-hidden
+        />
+      )}
+      <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/40 to-transparent" />
+      <span className="absolute inset-0 flex items-center justify-center">
+        <Icon
+          className="h-4 w-4 text-white drop-shadow-sm"
+          strokeWidth={2.25}
+        />
+      </span>
+    </span>
+  );
 }
 
 function CategoryRail({
@@ -160,9 +194,7 @@ function CategoryRail({
         className="relative flex flex-col gap-2"
         aria-label="Shop categories"
       >
-        {shopCategories.map((cat, i) => {
-          const Icon = cat.icon;
-          return (
+        {shopCategories.map((cat, i) => (
             <Link
               key={cat.label}
               href={cat.href}
@@ -173,24 +205,7 @@ function CategoryRail({
                 i === 0 && "bg-white/50 ring-1 ring-white/70",
               )}
             >
-              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl shadow-sm ring-1 ring-white/80">
-                <Image
-                  src={cat.imageUrl}
-                  alt=""
-                  fill
-                  sizes="56px"
-                  quality={65}
-                  loading="lazy"
-                  className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
-                />
-                <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/40 to-transparent" />
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <Icon
-                    className="h-4 w-4 text-white drop-shadow-sm"
-                    strokeWidth={2.25}
-                  />
-                </span>
-              </span>
+              <CategoryThumb cat={cat} sizeClass="h-14 w-14" />
 
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
@@ -208,8 +223,7 @@ function CategoryRail({
 
               <ArrowUpRight className="h-4 w-4 shrink-0 text-brand-deep/45 transition-all duration-300 group-hover/cat:translate-x-0.5 group-hover/cat:-translate-y-0.5 group-hover/cat:text-brand-deep" />
             </Link>
-          );
-        })}
+        ))}
       </nav>
 
       <div className="relative mt-4 border-t border-white/45 pt-4">
@@ -253,41 +267,24 @@ function MobileMoodStrip({
         </Link>
       </div>
       <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1 no-scrollbar">
-        {shopCategories.map((cat) => {
-          const Icon = cat.icon;
-          return (
+        {shopCategories.map((cat) => (
             <Link
               key={cat.label}
               href={cat.href}
               className="group/mcat relative flex w-[5.25rem] shrink-0 flex-col items-center gap-1.5"
             >
-              <span className="relative h-16 w-16 overflow-hidden rounded-2xl shadow-sm ring-1 ring-white/70">
-                <Image
-                  src={cat.imageUrl}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  quality={65}
-                  loading="lazy"
-                  className="object-cover"
-                />
-                <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/45 to-transparent" />
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <Icon className="h-4 w-4 text-white" strokeWidth={2.25} />
-                </span>
-              </span>
+              <CategoryThumb cat={cat} sizeClass="h-16 w-16" />
               <span className="w-full truncate text-center text-[12px] font-medium text-foreground">
                 {cat.label}
               </span>
             </Link>
-          );
-        })}
+        ))}
       </div>
     </div>
   );
 }
 
-function CatalogUnavailable() {
+function CatalogEmpty({ isError }: { isError: boolean }) {
   return (
     <div
       className="glass-panel rounded-[1.5rem] px-6 py-10 text-center"
@@ -297,17 +294,18 @@ function CatalogUnavailable() {
         Catalog
       </p>
       <p className="mt-2 text-sm font-medium text-foreground">
-        Catalog temporarily unavailable
+        {isError ? "Catalog temporarily unavailable" : "No products published yet"}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        Please refresh in a moment — guest checkout still works once products
-        load. Your cart is unaffected.
+        {isError
+          ? "Please refresh in a moment. Your cart is unaffected."
+          : "Add products in Admin → Products, upload photos, then Publish. They appear here automatically."}
       </p>
       <Link
-        href="/category/all"
+        href={isError ? "/category/all" : "/admin/products"}
         className="mt-4 inline-flex text-sm font-semibold text-brand-deep underline-offset-4 hover:underline"
       >
-        Try the collection
+        {isError ? "Try the collection" : "Open products admin"}
       </Link>
     </div>
   );
@@ -356,7 +354,7 @@ export async function ShopNow() {
 
           <div className="min-w-0 order-1 lg:order-none">
             {catalogError || conversionCatalog.length === 0 ? (
-              <CatalogUnavailable />
+              <CatalogEmpty isError={catalogError} />
             ) : (
               <Reveal delay={60} className="shop-now-grid">
                 <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
