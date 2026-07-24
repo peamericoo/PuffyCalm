@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -117,10 +117,16 @@ async def upload_media(
     sort_order: int | None = None
     cover = False
     if product is not None:
-        existing = list(product.images or [])
-        next_order = (
-            (max((i.sort_order for i in existing), default=-1) + 1) if existing else 0
+        # Query MAX(sort_order) directly from DB to avoid stale ORM cache causing
+        # UniqueViolationError on the "uq_product_image_order" constraint when
+        # multiple uploads happen in sequence or session cache is not fresh.
+        max_result = await session.execute(
+            select(func.max(ProductImage.sort_order)).where(
+                ProductImage.product_id == pid
+            )
         )
+        current_max = max_result.scalar()
+        next_order = (current_max + 1) if current_max is not None else 0
         product.images.append(ProductImage(url=stored.url, sort_order=next_order))
         sort_order = next_order
         if set_cover or not (product.image_url or "").strip():

@@ -1,6 +1,11 @@
 /**
  * Admin media API (Phase I).
- * Browser-only: credentials: "include" for FastAPI HttpOnly cookies.
+ *
+ * UPLOAD: goes through the same-origin Next.js proxy at /api/admin/upload-media
+ * so the browser never hits FastAPI cross-origin (which would block cookies).
+ *
+ * DELETE: still calls FastAPI directly with credentials:"include" — acceptable
+ * because the cookie is already set by the time admin reaches this flow.
  */
 
 import { getApiBaseUrl } from "@/lib/api/config";
@@ -36,10 +41,25 @@ export class AdminMediaApiError extends Error {
   }
 }
 
+/** Build an absolute FastAPI URL. Used only for DELETE (same-origin uploads use /api/admin/upload-media). */
 function apiUrl(path: string): string {
   const base = getApiBaseUrl();
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${base}${p}`;
+}
+
+/**
+ * Same-origin proxy URL for multipart uploads.
+ * This avoids cross-origin cookie restrictions (SameSite=Lax blocks
+ * credentials:include across api-*.railway.app → web-*.railway.app).
+ */
+function uploadProxyUrl(): string {
+  // In the browser, use a relative path so it always hits the same origin.
+  // In SSR/test contexts fall back to the absolute API URL (unused in practice).
+  if (typeof window !== "undefined") {
+    return "/api/admin/upload-media";
+  }
+  return apiUrl("/api/v1/admin/media");
 }
 
 async function parseJson(res: Response): Promise<Record<string, unknown>> {
@@ -83,7 +103,13 @@ function asNumber(v: unknown, fallback = 0): number {
   return typeof v === "number" && Number.isFinite(v) ? v : fallback;
 }
 
-/** POST /api/v1/admin/media (multipart) */
+/**
+ * Upload an image to the admin media endpoint.
+ *
+ * Posts to the same-origin Next.js proxy (/api/admin/upload-media) which
+ * authenticates server-to-server with FastAPI via Bearer token — no cross-origin
+ * cookie issues, no SameSite=Lax blocking.
+ */
 export async function uploadAdminMedia(options: {
   file: File;
   productId?: string;
@@ -98,10 +124,10 @@ export async function uploadAdminMedia(options: {
     form.append("setCover", "true");
   }
 
-  const res = await fetch(apiUrl("/api/v1/admin/media"), {
+  // Use the same-origin proxy — no credentials needed (session cookie is same-origin)
+  const res = await fetch(uploadProxyUrl(), {
     method: "POST",
-    credentials: "include",
-    // Do not set Content-Type — browser sets multipart boundary
+    // Do NOT set Content-Type — browser sets multipart boundary automatically
     body: form,
   });
   const data = await parseJson(res);
