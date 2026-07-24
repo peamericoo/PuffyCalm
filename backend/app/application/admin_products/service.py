@@ -460,6 +460,13 @@ async def update_admin_product(
         new_urls = [u for u in new_urls if u]
         old_urls = [i.url for i in (product.images or []) if i.url]
         orphaned = [u for u in old_urls if u not in set(new_urls)]
+
+        # Flush orphan removals before inserting the replacement gallery.  PostgreSQL
+        # enforces (product_id, sort_order) immediately, whereas SQLAlchemy may try
+        # to INSERT the new rows before deleting the cleared relationship rows.
+        # That made product saves after an upload fail with a 500 / "Failed to fetch".
+        product.images.clear()
+        await session.flush()
         _set_images(product, new_urls)
         # Phase I: best-effort delete owned S3/local objects no longer referenced
         if orphaned:
