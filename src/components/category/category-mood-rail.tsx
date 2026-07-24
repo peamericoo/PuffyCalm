@@ -38,6 +38,7 @@ export function CategoryMoodRail({
             <li key={c.id} className="w-[7.5rem] shrink-0 sm:w-[8.75rem]">
               <Link
                 href={`/category/${c.slug}`}
+                prefetch={false}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "group block text-center outline-none",

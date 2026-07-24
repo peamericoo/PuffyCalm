@@ -2,6 +2,8 @@
 
 .panel {
   position: relative;
+  view-transition-name: none;
+  isolation: isolate;
   overflow: hidden;
   border-radius: 1.5rem;
   /* Solid-leaning glass — cheap paint, still premium */
@@ -117,6 +119,10 @@
 .section {
   padding: 0.85rem 0;
   border-bottom: 1px solid rgb(212 226 236 / 0.45);
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
 }
 
 .section:last-child {
@@ -135,6 +141,193 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+.priceSection {
+  position: relative;
+}
+
+.priceHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.priceSummary {
+  margin-top: -0.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.priceReset {
+  margin-top: -0.15rem;
+  border-radius: 9999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--brand-deep);
+  background: rgb(232 244 250 / 0.72);
+  border: 1px solid rgb(126 184 212 / 0.22);
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease;
+}
+
+.priceReset:hover {
+  background: white;
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.priceReset:disabled {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.priceInputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.priceInputWrap {
+  display: flex;
+  min-width: 0;
+  height: 3.05rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.95rem;
+  padding: 0 0.75rem;
+  background: rgb(255 255 255 / 0.68);
+  border: 1px solid rgb(212 226 236 / 0.62);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.84) inset;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.priceInputWrap:focus-within {
+  border-color: rgb(58 124 165 / 0.45);
+  background: white;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.9) inset,
+    0 0 0 3px rgb(126 184 212 / 0.18);
+}
+
+.priceInputWrap span {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.priceInputWrap input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  outline: 0;
+}
+
+.priceInputWrap input::placeholder {
+  color: rgb(92 107 122 / 0.45);
+}
+
+.rangeWrap {
+  --range-left: 0%;
+  --range-right: 0%;
+  position: relative;
+  height: 1.55rem;
+  margin-top: 0.9rem;
+}
+
+.rangeTrack {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  top: 50%;
+  height: 0.38rem;
+  border-radius: 9999px;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(
+      90deg,
+      rgb(212 226 236 / 0.68) 0 var(--range-left),
+      var(--brand-deep) var(--range-left)
+        calc(100% - var(--range-right)),
+      rgb(212 226 236 / 0.68) calc(100% - var(--range-right)) 100%
+    );
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.75) inset;
+}
+
+.rangeInput {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  appearance: none;
+  background: transparent;
+  outline: 0;
+}
+
+.rangeInput::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  height: 1.35rem;
+  width: 1.35rem;
+  border-radius: 9999px;
+  border: 3px solid white;
+  background: var(--brand-deep);
+  box-shadow:
+    0 10px 18px -10px rgb(26 35 50 / 0.42),
+    0 0 0 1px rgb(58 124 165 / 0.25);
+  cursor: grab;
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.16s ease;
+}
+
+.rangeInput::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 12px 22px -10px rgb(26 35 50 / 0.48),
+    0 0 0 5px rgb(126 184 212 / 0.16);
+}
+
+.rangeInput::-moz-range-thumb {
+  pointer-events: auto;
+  height: 1.35rem;
+  width: 1.35rem;
+  border-radius: 9999px;
+  border: 3px solid white;
+  background: var(--brand-deep);
+  box-shadow:
+    0 10px 18px -10px rgb(26 35 50 / 0.42),
+    0 0 0 1px rgb(58 124 165 / 0.25);
+  cursor: grab;
+}
+
+.priceTicks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.2rem;
+  padding: 0 0.1rem;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Collection mood tiles ── */
@@ -254,6 +447,10 @@
 
 .checkRow:hover {
   background: rgb(255 255 255 / 0.55);
+}
+
+.checkRow:active {
+  background: rgb(232 244 250 / 0.78);
 }
 
 .checkRowDisabled {
@@ -410,6 +607,7 @@
 /* ── Mobile trigger ── */
 
 .trigger {
+  view-transition-name: none;
   display: inline-flex;
   height: 2.5rem;
   align-items: center;
@@ -430,6 +628,29 @@
     background 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.triggerToolbar {
+  height: 2.85rem;
+  min-width: 6.8rem;
+  justify-content: center;
+  border-radius: 0.9rem;
+  padding: 0 1.05rem;
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.92) 0%,
+    rgb(245 250 252 / 0.86) 100%
+  );
+  border-color: rgb(126 184 212 / 0.32);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.95) inset,
+    0 10px 20px -16px rgb(26 35 50 / 0.24);
+}
+
+.triggerToolbar:hover {
+  border-color: rgb(58 124 165 / 0.42);
 }
 
 .trigger:hover {
@@ -460,22 +681,27 @@
 /* ── Mobile sheet ── */
 
 .sheetBackdrop {
+  view-transition-name: none;
   position: fixed;
   inset: 0;
-  z-index: 60;
-  background: rgb(26 35 50 / 0.35);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  z-index: 80;
+  background: rgb(26 35 50 / 0.46);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   animation: fadeIn 0.22s ease both;
 }
 
 .sheet {
+  view-transition-name: none;
+  isolation: isolate;
+  contain: layout paint style;
   position: fixed;
-  z-index: 61;
+  z-index: 81;
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: 88vh;
+  height: min(82vh, 46rem);
+  max-height: calc(100vh - var(--promo-h) - 0.75rem);
   display: flex;
   flex-direction: column;
   border-radius: 1.5rem 1.5rem 0 0;
@@ -486,6 +712,7 @@
   );
   box-shadow: 0 -20px 50px -20px rgb(26 35 50 / 0.35);
   animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
 }
 
 @media (min-width: 640px) {
@@ -495,10 +722,90 @@
     bottom: auto;
     top: 50%;
     width: min(26rem, calc(100vw - 2rem));
-    max-height: min(85vh, 40rem);
+    height: min(82vh, 40rem);
+    max-height: calc(100vh - 2rem);
     border-radius: 1.5rem;
     transform: translate(-50%, -50%);
     animation: sheetPop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sheetDesktop {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: calc(var(--promo-h) + var(--nav-h) + 1.15rem);
+    width: min(52rem, calc(100vw - 4rem));
+    height: min(39rem, calc(100vh - var(--promo-h) - var(--nav-h) - 2.5rem));
+    max-height: calc(100vh - var(--promo-h) - var(--nav-h) - 2.5rem);
+    border-radius: 1.4rem;
+    transform: translateX(-50%);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.92) inset,
+      0 28px 70px -34px rgb(26 35 50 / 0.48),
+      0 0 0 1px rgb(255 255 255 / 0.72);
+    animation: sheetDrop 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .sheetDesktop .sheetHandle {
+    display: none;
+  }
+
+  .sheetDesktop .sheetHead {
+    padding: 1rem 1.25rem 0.9rem;
+  }
+
+  .sheetDesktop .sheetBodyDesktop {
+    padding: 1rem 1.15rem 1.2rem;
+    overflow-y: auto;
+  }
+
+  .sheetDesktop .sheetFoot {
+    padding: 0.9rem 1.15rem 1rem;
+  }
+
+  .desktopFilterBody {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .desktopFilterBody .chipRow {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+
+  .desktopFilterBody .section {
+    min-width: 0;
+    border: 1px solid rgb(212 226 236 / 0.58);
+    border-radius: 1rem;
+    padding: 0.9rem;
+    background: rgb(255 255 255 / 0.56);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.78) inset;
+  }
+
+  .desktopFilterBody .priceSection {
+    grid-column: 1 / -1;
+  }
+
+  .desktopFilterBody .section:first-of-type {
+    padding-top: 0.9rem;
+  }
+
+  .desktopFilterBody .section:last-child {
+    padding-bottom: 0.9rem;
+  }
+
+  .desktopFilterBody .moodList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .desktopFilterBody .moodItem {
+    min-width: 0;
   }
 }
 
@@ -520,6 +827,7 @@
 }
 
 .sheetBody {
+  min-height: 0;
   flex: 1;
   overflow-y: auto;
   padding: 1rem 1.15rem 1.25rem;
@@ -529,10 +837,11 @@
 .sheetFoot {
   display: flex;
   gap: 0.6rem;
+  flex-shrink: 0;
   padding: 0.85rem 1.15rem calc(0.85rem + env(safe-area-inset-bottom));
   border-top: 1px solid rgb(212 226 236 / 0.5);
   background: rgb(255 255 255 / 0.85);
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
 }
 
 .sheetBtnGhost {
@@ -549,6 +858,11 @@
 
 .sheetBtnGhost:hover {
   background: rgb(232 244 250);
+}
+
+.sheetBtnGhost:disabled {
+  opacity: 0.42;
+  pointer-events: none;
 }
 
 .sheetBtnPrimary {
@@ -616,6 +930,17 @@
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes sheetDrop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.5rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
   }
 }
 

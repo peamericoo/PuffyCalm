@@ -5,6 +5,7 @@ interface ProductMediaTransitionProps {
   productId: string;
   children: ReactNode;
   className?: string;
+  enabled?: boolean;
 }
 
 /**
@@ -16,12 +17,21 @@ export function ProductMediaTransition({
   productId,
   children,
   className,
+  enabled = true,
 }: ProductMediaTransitionProps) {
+  const content = (
+    <div className={className ?? "absolute inset-0 h-full w-full"}>
+      {children}
+    </div>
+  );
+
+  if (!enabled) {
+    return content;
+  }
+
   return (
     <ViewTransition name={`product-media-${productId}`} share="product-morph">
-      <div className={className ?? "absolute inset-0 h-full w-full"}>
-        {children}
-      </div>
+      {content}
     </ViewTransition>
   );
 }

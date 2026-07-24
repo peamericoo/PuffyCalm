@@ -82,6 +82,7 @@ export async function CategoriesStrip() {
           <Reveal delay={80} variant="fade" once={false} className="hidden sm:block">
             <Link
               href="/category/all"
+              prefetch={false}
               className="pressable glass-btn inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-brand-deep"
             >
               Browse all
@@ -100,6 +101,7 @@ export async function CategoriesStrip() {
                 <Link
                   key={category.id}
                   href={`/category/${category.slug}`}
+                  prefetch={false}
                   className={cn(
                     "group relative shrink-0 snap-center overflow-hidden rounded-[1.4rem]",
                     "w-[min(78vw,300px)] h-[300px]",
@@ -223,6 +225,7 @@ function MoodTile({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(
         "group relative flex h-full min-h-[200px] overflow-hidden rounded-[1.5rem]",
         "shadow-[0_18px_44px_-28px_rgb(26_35_50/0.3)]",

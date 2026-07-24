@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties, Dispatch, SetStateAction } from "react";
 import Image from "next/image";
 import { Check } from "lucide-react";
 import type { CatalogFacets, StockFilter } from "@/lib/catalog/types";
@@ -17,7 +18,62 @@ export interface CategoryFilterBodyProps {
   activeSlug?: string;
   /** Hide collection nav (e.g. already in a nested context) */
   showCollections?: boolean;
+  /** Optional draft mode: update local state instead of the catalog URL. */
+  draft?: CatalogFilterDraft;
+  onDraftChange?: Dispatch<SetStateAction<CatalogFilterDraft>>;
   className?: string;
+}
+
+export type CatalogFilterDraft = {
+  stock: StockFilter;
+  types: string[];
+  sale: boolean;
+  minPrice: number | null;
+  maxPrice: number | null;
+};
+
+export function emptyCatalogFilterDraft(): CatalogFilterDraft {
+  return {
+    stock: "all",
+    types: [],
+    sale: false,
+    minPrice: null,
+    maxPrice: null,
+  };
+}
+
+export function countCatalogFilters(draft: CatalogFilterDraft) {
+  return (
+    (draft.stock !== "all" ? 1 : 0) +
+    draft.types.length +
+    (draft.sale ? 1 : 0) +
+    (draft.minPrice != null || draft.maxPrice != null ? 1 : 0)
+  );
+}
+
+function priceChipLabel(draft: CatalogFilterDraft) {
+  if (draft.minPrice != null && draft.maxPrice != null) {
+    return `$${draft.minPrice}–$${draft.maxPrice}`;
+  }
+  if (draft.minPrice != null) return `From $${draft.minPrice}`;
+  if (draft.maxPrice != null) return `Up to $${draft.maxPrice}`;
+  return "Any price";
+}
+
+function clampPrice(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Math.floor(value)));
+}
+
+function cleanPriceRange(
+  minValue: number,
+  maxValue: number,
+  minBound: number,
+  maxBound: number,
+) {
+  return {
+    minPrice: minValue <= minBound ? null : minValue,
+    maxPrice: maxValue >= maxBound ? null : maxValue,
+  };
 }
 
 function FilterCheck({
@@ -64,6 +120,142 @@ function FilterCheck({
   );
 }
 
+function PriceRangeFilter({
+  bounds,
+  minPrice,
+  maxPrice,
+  onChange,
+}: {
+  bounds: { min: number; max: number };
+  minPrice: number | null;
+  maxPrice: number | null;
+  onChange: (min: number | null, max: number | null) => void;
+}) {
+  const minBound = Math.max(0, Math.floor(bounds.min || 0));
+  const maxBound = Math.max(minBound, Math.ceil(bounds.max || 0));
+
+  if (maxBound <= minBound) return null;
+
+  const currentMin = clampPrice(minPrice ?? minBound, minBound, maxBound);
+  const currentMax = clampPrice(maxPrice ?? maxBound, minBound, maxBound);
+  const safeMin = Math.min(currentMin, currentMax);
+  const safeMax = Math.max(currentMin, currentMax);
+  const span = Math.max(1, maxBound - minBound);
+  const left = ((safeMin - minBound) / span) * 100;
+  const right = 100 - ((safeMax - minBound) / span) * 100;
+  const hasCustom = minPrice != null || maxPrice != null;
+
+  const commit = (nextMin: number, nextMax: number) => {
+    const clean = cleanPriceRange(nextMin, nextMax, minBound, maxBound);
+    onChange(clean.minPrice, clean.maxPrice);
+  };
+
+  const setMin = (value: number) => {
+    const next = clampPrice(value, minBound, safeMax);
+    commit(next, safeMax);
+  };
+
+  const setMax = (value: number) => {
+    const next = clampPrice(value, safeMin, maxBound);
+    commit(safeMin, next);
+  };
+
+  return (
+    <section className={cn(styles.section, styles.priceSection)}>
+      <div className={styles.priceHead}>
+        <div>
+          <p className={styles.sectionLabel}>Price range</p>
+          <p className={styles.priceSummary}>
+            {priceChipLabel({ stock: "all", types: [], sale: false, minPrice, maxPrice })}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(null, null)}
+          disabled={!hasCustom}
+          className={styles.priceReset}
+        >
+          Reset
+        </button>
+      </div>
+
+      <div className={styles.priceInputs}>
+        <label className={styles.priceInputWrap}>
+          <span>Min</span>
+          <input
+            type="number"
+            min={minBound}
+            max={safeMax}
+            value={minPrice ?? ""}
+            placeholder={`$${minBound}`}
+            onChange={(event) => {
+              const raw = event.currentTarget.value;
+              if (raw === "") {
+                onChange(null, maxPrice);
+                return;
+              }
+              setMin(Number(raw));
+            }}
+          />
+        </label>
+        <label className={styles.priceInputWrap}>
+          <span>Max</span>
+          <input
+            type="number"
+            min={safeMin}
+            max={maxBound}
+            value={maxPrice ?? ""}
+            placeholder={`$${maxBound}`}
+            onChange={(event) => {
+              const raw = event.currentTarget.value;
+              if (raw === "") {
+                onChange(minPrice, null);
+                return;
+              }
+              setMax(Number(raw));
+            }}
+          />
+        </label>
+      </div>
+
+      <div
+        className={styles.rangeWrap}
+        style={
+          {
+            "--range-left": `${left}%`,
+            "--range-right": `${right}%`,
+          } as CSSProperties
+        }
+      >
+        <div className={styles.rangeTrack} aria-hidden />
+        <input
+          aria-label="Minimum price"
+          type="range"
+          min={minBound}
+          max={maxBound}
+          value={safeMin}
+          onChange={(event) => setMin(Number(event.currentTarget.value))}
+          className={styles.rangeInput}
+        />
+        <input
+          aria-label="Maximum price"
+          type="range"
+          min={minBound}
+          max={maxBound}
+          value={safeMax}
+          onChange={(event) => setMax(Number(event.currentTarget.value))}
+          className={styles.rangeInput}
+        />
+      </div>
+
+      <div className={styles.priceTicks} aria-hidden>
+        <span>${minBound}</span>
+        <span>${maxBound}</span>
+      </div>
+    </section>
+  );
+}
+
 /**
  * Shared filter controls — desktop panel body + mobile sheet.
  * Fully URL-driven via useCatalogUrl.
@@ -73,23 +265,84 @@ export function CategoryFilterBody({
   siblings = [],
   activeSlug = "all",
   showCollections = true,
+  draft,
+  onDraftChange,
   className,
 }: CategoryFilterBodyProps) {
   const {
     stock,
     types,
     sale,
+    minPrice,
+    maxPrice,
     setStock,
     toggleType,
     setSale,
+    setPriceRange,
     clearAll,
-    hasActive,
     pending,
   } = useCatalogUrl();
 
+  const isDraftMode = Boolean(draft && onDraftChange);
+  const current: CatalogFilterDraft = draft ?? {
+    stock,
+    types,
+    sale,
+    minPrice,
+    maxPrice,
+  };
+
+  const setCurrentStock = (next: StockFilter) => {
+    if (draft && onDraftChange) {
+      onDraftChange((prev) => ({ ...prev, stock: next }));
+      return;
+    }
+    setStock(next);
+  };
+
+  const toggleCurrentType = (slug: string) => {
+    if (draft && onDraftChange) {
+      onDraftChange((prev) => {
+        const has = prev.types.includes(slug);
+        return {
+          ...prev,
+          types: has
+            ? prev.types.filter((item) => item !== slug)
+            : [...prev.types, slug],
+        };
+      });
+      return;
+    }
+    toggleType(slug);
+  };
+
+  const setCurrentSale = (next: boolean) => {
+    if (draft && onDraftChange) {
+      onDraftChange((prev) => ({ ...prev, sale: next }));
+      return;
+    }
+    setSale(next);
+  };
+
+  const setCurrentPriceRange = (min: number | null, max: number | null) => {
+    if (draft && onDraftChange) {
+      onDraftChange((prev) => ({ ...prev, minPrice: min, maxPrice: max }));
+      return;
+    }
+    setPriceRange(min, max);
+  };
+
+  const clearCurrent = () => {
+    if (draft && onDraftChange) {
+      onDraftChange(emptyCatalogFilterDraft());
+      return;
+    }
+    clearAll();
+  };
+
   const setStockExclusive = (value: Exclude<StockFilter, "all">) => {
-    if (stock === value) setStock("all");
-    else setStock(value);
+    if (current.stock === value) setCurrentStock("all");
+    else setCurrentStock(value);
   };
 
   const collections = [
@@ -97,59 +350,69 @@ export function CategoryFilterBody({
     ...siblings.filter((c) => c.slug === "all"),
   ];
 
-  const activeFilterCount =
-    (stock !== "all" ? 1 : 0) + types.length + (sale ? 1 : 0);
+  const activeFilterCount = countCatalogFilters(current);
+  const hasActive = activeFilterCount > 0;
 
   return (
-    <div className={cn(pending && styles.pending, className)}>
+    <div className={cn(!isDraftMode && pending && styles.pending, className)}>
       {/* Active chips */}
       {hasActive && activeFilterCount > 0 ? (
         <div className={styles.chipRow}>
-          {stock === "in" ? (
+          {current.stock === "in" ? (
             <button
               type="button"
               className={styles.chip}
-              onClick={() => setStock("all")}
+              onClick={() => setCurrentStock("all")}
             >
               In stock
               <span aria-hidden>×</span>
             </button>
           ) : null}
-          {stock === "out" ? (
+          {current.stock === "out" ? (
             <button
               type="button"
               className={styles.chip}
-              onClick={() => setStock("all")}
+              onClick={() => setCurrentStock("all")}
             >
               Out of stock
               <span aria-hidden>×</span>
             </button>
           ) : null}
-          {types.map((slug) => {
+          {current.types.map((slug) => {
             const meta = facets.types.find((t) => t.slug === slug);
             return (
               <button
                 key={slug}
                 type="button"
                 className={styles.chip}
-                onClick={() => toggleType(slug)}
+                onClick={() => toggleCurrentType(slug)}
               >
                 {meta?.name ?? slug}
                 <span aria-hidden>×</span>
               </button>
             );
           })}
-          {sale ? (
+          {current.sale ? (
             <button
               type="button"
               className={styles.chip}
-              onClick={() => setSale(false)}
+              onClick={() => setCurrentSale(false)}
             >
               On sale
               <span aria-hidden>×</span>
             </button>
           ) : null}
-          <button type="button" className={styles.clearBtn} onClick={clearAll}>
+          {current.minPrice != null || current.maxPrice != null ? (
+            <button
+              type="button"
+              className={styles.chip}
+              onClick={() => setCurrentPriceRange(null, null)}
+            >
+              {priceChipLabel(current)}
+              <span aria-hidden>×</span>
+            </button>
+          ) : null}
+          <button type="button" className={styles.clearBtn} onClick={clearCurrent}>
             Clear all
           </button>
         </div>
@@ -211,14 +474,14 @@ export function CategoryFilterBody({
           <FilterCheck
             label="In stock"
             count={facets.stock.in}
-            checked={stock === "in"}
+            checked={current.stock === "in"}
             onChange={() => setStockExclusive("in")}
             disabled={facets.stock.in === 0}
           />
           <FilterCheck
             label="Out of stock"
             count={facets.stock.out}
-            checked={stock === "out"}
+            checked={current.stock === "out"}
             onChange={() => setStockExclusive("out")}
             disabled={facets.stock.out === 0}
           />
@@ -235,13 +498,20 @@ export function CategoryFilterBody({
                 key={t.slug}
                 label={t.name}
                 count={t.count}
-                checked={types.includes(t.slug)}
-                onChange={() => toggleType(t.slug)}
+                checked={current.types.includes(t.slug)}
+                onChange={() => toggleCurrentType(t.slug)}
               />
             ))}
           </div>
         </section>
       ) : null}
+
+      <PriceRangeFilter
+        bounds={facets.price}
+        minPrice={current.minPrice}
+        maxPrice={current.maxPrice}
+        onChange={setCurrentPriceRange}
+      />
 
       {/* Offers */}
       <section className={styles.section}>
@@ -250,8 +520,8 @@ export function CategoryFilterBody({
           <FilterCheck
             label="On sale"
             count={facets.sale}
-            checked={sale}
-            onChange={() => setSale(!sale)}
+            checked={current.sale}
+            onChange={() => setCurrentSale(!current.sale)}
             disabled={facets.sale === 0}
             sale
           />
@@ -263,6 +533,6 @@ export function CategoryFilterBody({
 
 /** Active filter count for badges (stock + types + sale). */
 export function useActiveFilterCount() {
-  const { stock, types, sale } = useCatalogUrl();
-  return (stock !== "all" ? 1 : 0) + types.length + (sale ? 1 : 0);
+  const { stock, types, sale, minPrice, maxPrice } = useCatalogUrl();
+  return countCatalogFilters({ stock, types, sale, minPrice, maxPrice });
 }

@@ -11,7 +11,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   return {
-    title: `Order ${id.slice(0, 8)}… · Admin`,
+    title: `Pedido ${id.slice(0, 8)} · Admin`,
     robots: { index: false, follow: false },
   };
 }
@@ -35,13 +35,13 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Order detail"
-        description="Items, shipping, payment IDs, and allowed status transitions from the backend state machine."
+        title="Detalhe do pedido"
+        description="Itens, entrega, pagamento e atualizacao de status."
         activePath="/admin/orders"
         backHref="/admin/orders"
-        backLabel="All orders"
+        backLabel="Todos os pedidos"
       />
-      <div className="mx-auto max-w-6xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <OrderDetailView orderId={id} googleIdToken={session.googleIdToken} />
       </div>
     </div>

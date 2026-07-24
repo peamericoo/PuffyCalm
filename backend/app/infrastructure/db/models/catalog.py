@@ -91,6 +91,8 @@ class Product(Base):
     # Primary cover URL (mirrors FE imageUrl convenience field)
     image_url: Mapped[str] = mapped_column(String(1024), nullable=False, default="")
     image_alt: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    # Internal supplier reference. Never exposed from storefront catalog routes.
+    supplier_url: Mapped[str] = mapped_column(String(2048), nullable=False, default="")
     # Aggregates shown on cards/PDP (may exceed seed review rows)
     rating: Mapped[Decimal] = mapped_column(Numeric(3, 2), nullable=False, default=Decimal("0"))
     review_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

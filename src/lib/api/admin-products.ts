@@ -26,6 +26,8 @@ export type AdminProductListItem = {
   price: number;
   currency: string;
   imageUrl: string;
+  /** Internal supplier page; returned only by authenticated Admin endpoints. */
+  supplierUrl: string;
   inStock: boolean;
   /** Available units (Phase L). 0 blocks checkout. */
   stockQty?: number;
@@ -41,6 +43,7 @@ export type AdminProductDetail = AdminProductListItem & {
   description: string;
   compareAtPrice: number | null;
   imageAlt: string;
+  supplierUrl: string;
   images: AdminProductImage[];
   categoryLabel: string | null;
   badges: string[];
@@ -75,6 +78,7 @@ export type AdminProductCreateInput = {
   currency?: string;
   imageUrl?: string;
   imageAlt?: string;
+  supplierUrl?: string;
   images?: { url: string }[];
   categorySlugs?: string[];
   categoryLabel?: string | null;
@@ -177,6 +181,7 @@ function mapListItem(raw: Record<string, unknown>): AdminProductListItem {
     price: asNumber(raw.price),
     currency: asString(raw.currency, "USD"),
     imageUrl: asString(raw.imageUrl ?? raw.image_url),
+    supplierUrl: asString(raw.supplierUrl ?? raw.supplier_url),
     inStock: Boolean(raw.inStock ?? raw.in_stock),
     stockQty:
       raw.stockQty != null || raw.stock_qty != null
@@ -207,6 +212,7 @@ function mapDetail(raw: Record<string, unknown>): AdminProductDetail {
         ? null
         : asNumber(compareRaw),
     imageAlt: asString(raw.imageAlt ?? raw.image_alt),
+    supplierUrl: asString(raw.supplierUrl ?? raw.supplier_url),
     images: imagesRaw.map((img) => {
       const i = img as Record<string, unknown>;
       return {

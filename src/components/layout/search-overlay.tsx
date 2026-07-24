@@ -42,6 +42,11 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     onClose();
   }, [onClose]);
 
+  const catalogSearchHref = useCallback((value: string) => {
+    const q = value.trim();
+    return q ? `/category/all?q=${encodeURIComponent(q)}` : "/category/all";
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const t = window.setTimeout(() => inputRef.current?.focus(), 50);
@@ -64,15 +69,20 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     const q = query.trim();
     if (!q) {
       reqId.current += 1;
-      setResults([]);
-      setStatus("idle");
-      setError(null);
-      return;
+      const idleTimer = window.setTimeout(() => {
+        setResults([]);
+        setStatus("idle");
+        setError(null);
+      }, 0);
+      return () => window.clearTimeout(idleTimer);
     }
 
     const id = ++reqId.current;
-    setStatus("loading");
-    setError(null);
+    const loadingTimer = window.setTimeout(() => {
+      if (id !== reqId.current) return;
+      setStatus("loading");
+      setError(null);
+    }, 0);
 
     const timer = window.setTimeout(() => {
       void searchCatalog(q, 6)
@@ -97,6 +107,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     }, 220);
 
     return () => {
+      window.clearTimeout(loadingTimer);
       window.clearTimeout(timer);
     };
   }, [query, open]);
@@ -146,12 +157,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             className="flex items-center gap-2 border-b border-border/50 p-3 sm:gap-3 sm:p-3.5"
             onSubmit={(e) => {
               e.preventDefault();
-              if (results[0]) {
+              if (query.trim()) {
                 handleClose();
-                router.push(`/product/${results[0].slug}`);
-              } else if (query.trim()) {
-                handleClose();
-                router.push("/category/all");
+                router.push(catalogSearchHref(query));
               }
             }}
           >
@@ -259,6 +267,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       >
                         <Link
                           href={`/product/${product.slug}`}
+                          prefetch={false}
                           transitionTypes={["nav-forward"]}
                           onClick={handleClose}
                           className={cn(
@@ -302,11 +311,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                 {results.length > 0 ? (
                   <div className="mt-1 border-t border-border/40 px-1 pt-1.5">
                     <Link
-                      href="/category/all"
+                      href={catalogSearchHref(query)}
+                      prefetch={false}
+                      transitionTypes={["catalog"]}
                       onClick={onClose}
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold text-brand-deep transition-colors hover:bg-brand-soft"
                     >
-                      Browse all products
+                      View all results for “{query.trim()}”
                       <ArrowRight className="h-3.5 w-3.5 opacity-70" />
                     </Link>
                   </div>

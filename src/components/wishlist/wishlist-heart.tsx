@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Heart } from "lucide-react";
 import {
   useIsWishlisted,
@@ -20,7 +21,7 @@ interface WishlistHeartProps {
 /**
  * Shared heart control — toggles calm list, filled when saved.
  */
-export function WishlistHeart({
+export const WishlistHeart = memo(function WishlistHeart({
   product,
   className,
   size = "md",
@@ -70,4 +71,6 @@ export function WishlistHeart({
       />
     </button>
   );
-}
+});
+
+WishlistHeart.displayName = "WishlistHeart";

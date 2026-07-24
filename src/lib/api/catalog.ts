@@ -96,6 +96,9 @@ export function normalizeCategory(raw: Record<string, unknown>): Category {
 
 function normalizeCatalogPage(raw: Record<string, unknown>): CatalogPage {
   const productsRaw = Array.isArray(raw.products) ? raw.products : [];
+  const products = productsRaw.map((p) =>
+    normalizeProduct(p as Record<string, unknown>),
+  );
   const siblingsRaw = Array.isArray(raw.siblings) ? raw.siblings : [];
   const facetsRaw =
     raw.facets && typeof raw.facets === "object"
@@ -106,6 +109,19 @@ function normalizeCatalogPage(raw: Record<string, unknown>): CatalogPage {
       ? (facetsRaw.stock as Record<string, unknown>)
       : {};
   const typesRaw = Array.isArray(facetsRaw.types) ? facetsRaw.types : [];
+  const priceRaw =
+    facetsRaw.price && typeof facetsRaw.price === "object"
+      ? (facetsRaw.price as Record<string, unknown>)
+      : {};
+  const prices = products.map((p) => p.price).filter(Number.isFinite);
+  const priceFacet = {
+    min: Number(
+      priceRaw.min ?? (prices.length > 0 ? Math.floor(Math.min(...prices)) : 0),
+    ),
+    max: Number(
+      priceRaw.max ?? (prices.length > 0 ? Math.ceil(Math.max(...prices)) : 0),
+    ),
+  };
 
   return {
     category: normalizeCategory(
@@ -113,9 +129,7 @@ function normalizeCatalogPage(raw: Record<string, unknown>): CatalogPage {
         ? raw.category
         : {}) as Record<string, unknown>,
     ),
-    products: productsRaw.map((p) =>
-      normalizeProduct(p as Record<string, unknown>),
-    ),
+    products,
     siblings: siblingsRaw.map((c) =>
       normalizeCategory(c as Record<string, unknown>),
     ),
@@ -123,8 +137,16 @@ function normalizeCatalogPage(raw: Record<string, unknown>): CatalogPage {
     stock: (raw.stock as CatalogPage["stock"]) || "all",
     types: Array.isArray(raw.types) ? (raw.types as string[]) : [],
     sale: Boolean(raw.sale),
-    total: Number(raw.total ?? productsRaw.length),
-    poolTotal: Number(raw.poolTotal ?? productsRaw.length),
+    minPrice:
+      raw.minPrice == null || raw.minPrice === ""
+        ? null
+        : Number(raw.minPrice),
+    maxPrice:
+      raw.maxPrice == null || raw.maxPrice === ""
+        ? null
+        : Number(raw.maxPrice),
+    total: Number(raw.total ?? products.length),
+    poolTotal: Number(raw.poolTotal ?? products.length),
     facets: {
       stock: {
         in: Number(stockRaw.in ?? 0),
@@ -139,17 +161,16 @@ function normalizeCatalogPage(raw: Record<string, unknown>): CatalogPage {
         };
       }),
       sale: Number(facetsRaw.sale ?? 0),
+      price: priceFacet,
     },
   };
 }
 
-async function catalogFetch(
-  path: string,
-  init?: RequestInit & { next?: { revalidate?: number; tags?: string[] } },
-): Promise<Response> {
+async function catalogFetch(path: string, init?: RequestInit): Promise<Response> {
   const url = `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
   const res = await fetch(url, {
     ...init,
+    cache: "no-store",
     headers: {
       Accept: "application/json",
       ...(init?.headers ?? {}),
@@ -173,8 +194,6 @@ async function parseCatalogError(res: Response): Promise<CatalogApiError> {
   return new CatalogApiError(message, res.status, code);
 }
 
-const DEFAULT_REVALIDATE = 60;
-
 /**
  * GET /api/v1/catalog — full category pool (client still filters/sorts).
  * Uses default stock/sale so the shelf is the unfiltered category set.
@@ -188,19 +207,31 @@ export async function fetchCatalogPage(
     sort: "featured",
     stock: "all",
   });
-  const res = await catalogFetch(`/api/v1/catalog?${qs.toString()}`, {
-    next: { revalidate: DEFAULT_REVALIDATE, tags: ["catalog", `catalog:${slug}`] },
-  });
+  const res = await catalogFetch(`/api/v1/catalog?${qs.toString()}`);
   if (!res.ok) throw await parseCatalogError(res);
   const json = (await res.json()) as Record<string, unknown>;
   return normalizeCatalogPage(json);
 }
 
+/** GET /api/v1/catalog/home — compact payload for the first storefront shelf. */
+export async function fetchHomeProductRail(limit = 8): Promise<Product[]> {
+  const safeLimit = Math.max(1, Math.min(limit, 12));
+  const res = await catalogFetch(`/api/v1/catalog/home?limit=${safeLimit}`);
+  if (!res.ok) throw await parseCatalogError(res);
+  const json = (await res.json()) as unknown;
+  if (!Array.isArray(json)) {
+    throw new CatalogApiError(
+      "Invalid home catalog response",
+      res.status,
+      "invalid_response",
+    );
+  }
+  return json.map((product) => normalizeProduct(product as Record<string, unknown>));
+}
+
 /** GET /api/v1/categories */
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await catalogFetch("/api/v1/categories", {
-    next: { revalidate: DEFAULT_REVALIDATE, tags: ["catalog", "categories"] },
-  });
+  const res = await catalogFetch("/api/v1/categories");
   if (!res.ok) throw await parseCatalogError(res);
   const json = (await res.json()) as unknown;
   if (!Array.isArray(json)) {
@@ -221,12 +252,7 @@ export async function fetchProductBySlug(
 ): Promise<ProductDetailPayload> {
   const clean = slug.trim().toLowerCase();
   const qs = related > 0 ? `?related=${related}` : "";
-  const res = await catalogFetch(`/api/v1/products/${encodeURIComponent(clean)}${qs}`, {
-    next: {
-      revalidate: DEFAULT_REVALIDATE,
-      tags: ["catalog", `product:${clean}`],
-    },
-  });
+  const res = await catalogFetch(`/api/v1/products/${encodeURIComponent(clean)}${qs}`);
   if (!res.ok) throw await parseCatalogError(res);
   const json = (await res.json()) as Record<string, unknown>;
   if (!json.product || typeof json.product !== "object") {

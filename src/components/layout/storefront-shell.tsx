@@ -5,12 +5,14 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { PromoBar } from "@/components/layout/promo-bar";
+import type { PromoSettings } from "@/types/content";
 import { cn } from "@/lib/utils";
 
 type Props = {
   children: React.ReactNode;
   /** CMS-lite promo ticker messages (Phase J). */
   promoMessages: string[];
+  promoSettings: PromoSettings;
 };
 
 /**
@@ -24,7 +26,11 @@ type Props = {
  * ambient background — that was the “lighter box” under the TopBar on
  * Product / Wishlist / Checkout / etc. Horizontal clip stays on the shell.
  */
-export function StorefrontShell({ children, promoMessages }: Props) {
+export function StorefrontShell({
+  children,
+  promoMessages,
+  promoSettings,
+}: Props) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const hasPromo = promoMessages.length > 0;
@@ -32,11 +38,11 @@ export function StorefrontShell({ children, promoMessages }: Props) {
   return (
     <div
       className={cn(
-        "app-grain flex min-h-screen w-full max-w-[100%] flex-col overflow-x-clip",
+        "flex min-h-screen w-full max-w-[100%] flex-col overflow-x-clip",
         !hasPromo && "promo-bar-collapsed",
       )}
     >
-      <PromoBar messages={promoMessages} />
+      <PromoBar messages={promoMessages} settings={promoSettings} />
       <Header />
       <main
         className={cn(

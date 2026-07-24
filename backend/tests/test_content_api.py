@@ -51,9 +51,11 @@ async def test_public_home_content_returns_defaults(client: AsyncClient) -> None
     assert res.status_code == 200, res.text
     data = res.json()
     assert "promoMessages" in data
+    assert "promoSettings" in data
     assert "heroSlides" in data
     # Clean defaults: empty until admin fills CMS (no demo Unsplash seed).
     assert isinstance(data["promoMessages"], list)
+    assert data["promoSettings"] == {"speedSeconds": 32, "color": "#3a7ca5"}
     assert isinstance(data["heroSlides"], list)
     assert data["promoMessages"] == []
     assert data["heroSlides"] == []
@@ -79,9 +81,11 @@ async def test_admin_get_and_put_home_content(
     assert get_res.status_code == 200, get_res.text
     current = get_res.json()
     assert current["promoMessages"] == []
+    assert current["promoSettings"] == {"speedSeconds": 32, "color": "#3a7ca5"}
     assert current["heroSlides"] == []
 
     new_promo = ["🚀 Phase J test promo — free shipping $75+"]
+    new_settings = {"speedSeconds": 18, "color": "#f06d52"}
     new_slides = [
         {
             "id": "slide_test_j",
@@ -99,11 +103,16 @@ async def test_admin_get_and_put_home_content(
     ]
     put_res = await client.put(
         "/api/v1/admin/content/home",
-        json={"promoMessages": new_promo, "heroSlides": new_slides},
+        json={
+            "promoMessages": new_promo,
+            "promoSettings": new_settings,
+            "heroSlides": new_slides,
+        },
     )
     assert put_res.status_code == 200, put_res.text
     saved = put_res.json()
     assert saved["promoMessages"] == new_promo
+    assert saved["promoSettings"] == new_settings
     assert len(saved["heroSlides"]) == 1
     assert saved["heroSlides"][0]["id"] == "slide_test_j"
     assert saved["heroSlides"][0]["titleLine1"] == "Test hero"
@@ -112,6 +121,7 @@ async def test_admin_get_and_put_home_content(
     pub = await client.get("/api/v1/content/home")
     assert pub.status_code == 200
     assert pub.json()["promoMessages"] == new_promo
+    assert pub.json()["promoSettings"] == new_settings
     assert pub.json()["heroSlides"][0]["titleLine1"] == "Test hero"
 
     # Restore clean empty defaults for other suites

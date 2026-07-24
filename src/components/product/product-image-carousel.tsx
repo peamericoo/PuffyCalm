@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useLayoutEffect, useRef, useState } from "react";
 import {
   CAROUSEL_INTERVAL_MS,
   useSyncedCarouselIndex,
@@ -26,6 +26,8 @@ export interface ProductImageCarouselProps {
   paused?: boolean;
   /** Next/Image quality 1–100 (default 75) */
   quality?: number;
+  /** Mount the full carousel only after a grid card has user intent. */
+  armed?: boolean;
 }
 
 /** Slides that must be decoded for seamless crossfade (current + neighbors). */
@@ -37,6 +39,55 @@ function neighborIndexes(index: number, count: number): number[] {
   return Array.from(new Set([index, prev, next]));
 }
 
+function NoProductImage({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "relative flex h-full w-full items-center justify-center bg-brand-soft text-sm text-muted-foreground",
+        className,
+      )}
+    >
+      No image
+    </div>
+  );
+}
+
+function StaticProductImage({
+  src,
+  alt,
+  className,
+  sizes,
+  priority,
+  quality,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  sizes: string;
+  priority: boolean;
+  quality: number;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative h-full w-full overflow-hidden product-plate",
+        className,
+      )}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        quality={quality}
+        priority={priority}
+        loading={priority ? "eager" : "lazy"}
+        className="object-cover object-center transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:scale-[1.03]"
+      />
+    </div>
+  );
+}
+
 /**
  * Product image carousel — full CSS crossfade kept intact.
  *
@@ -45,8 +96,9 @@ function neighborIndexes(index: number, count: number): number[] {
  * - Only current + neighbors get a real <Image> decode (window of ≤3)
  * - Off-screen: pause clock subscription (no tick re-renders), keep last frame
  * - Hover/focus/touch still freeze like before
+ * - Grid cold path: static image only, no IO/timer/layer window until armed
  */
-export function ProductImageCarousel({
+export const ProductImageCarousel = memo(function ProductImageCarousel({
   images,
   imageUrl,
   alt,
@@ -57,18 +109,69 @@ export function ProductImageCarousel({
   showDots = true,
   paused: pausedExternal = false,
   quality = 75,
+  armed = true,
 }: ProductImageCarouselProps) {
+  const slides = getProductImages({ images, imageUrl });
+
+  if (slides.length === 0) {
+    return <NoProductImage className={className} />;
+  }
+
+  if (!armed || slides.length === 1) {
+    return (
+      <StaticProductImage
+        src={slides[0]}
+        alt={alt}
+        className={className}
+        sizes={sizes}
+        priority={priority}
+        quality={quality}
+      />
+    );
+  }
+
+  return (
+    <LiveProductImageCarousel
+      slides={slides}
+      alt={alt}
+      className={className}
+      intervalMs={intervalMs}
+      sizes={sizes}
+      priority={priority}
+      showDots={showDots}
+      paused={pausedExternal}
+      quality={quality}
+    />
+  );
+});
+
+ProductImageCarousel.displayName = "ProductImageCarousel";
+
+function LiveProductImageCarousel({
+  slides,
+  alt,
+  className,
+  intervalMs,
+  sizes,
+  priority,
+  showDots,
+  paused: pausedExternal,
+  quality,
+}: {
+  slides: string[];
+  alt: string;
+  className?: string;
+  intervalMs: number;
+  sizes: string;
+  priority: boolean;
+  showDots: boolean;
+  paused: boolean;
+  quality: number;
+}) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [inView, setInView] = useState(false);
-  const slides = useMemo(
-    () => getProductImages({ images, imageUrl }),
-    [images, imageUrl],
-  );
   const [localPaused, setLocalPaused] = useState(false);
   const multi = slides.length > 1;
-
-  // Grow-only set of decoded slides — once loaded, keep DOM Image for smooth re-entry
-  const [decoded, setDecoded] = useState(() => new Set([0]));
 
   const paused =
     pausedExternal || localPaused || !multi || !inView;
@@ -79,21 +182,8 @@ export function ProductImageCarousel({
     intervalMs,
   );
 
-  // Ensure neighbors are decoded *before* they become active (no hard cut).
-  useEffect(() => {
-    const need = neighborIndexes(index, slides.length);
-    setDecoded((prev) => {
-      let changed = false;
-      const next = new Set(prev);
-      for (const i of need) {
-        if (!next.has(i)) {
-          next.add(i);
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [index, slides.length]);
+  // Decode only current + neighbors so rich grids keep motion without piling images.
+  const decoded = new Set(neighborIndexes(index, slides.length));
 
   // Initial + ongoing visibility (layout for first paint above the fold).
   useLayoutEffect(() => {
@@ -119,19 +209,6 @@ export function ProductImageCarousel({
     io.observe(el);
     return () => io.disconnect();
   }, []);
-
-  if (slides.length === 0) {
-    return (
-      <div
-        className={cn(
-          "relative flex h-full w-full items-center justify-center bg-brand-soft text-sm text-muted-foreground",
-          className,
-        )}
-      >
-        No image
-      </div>
-    );
-  }
 
   return (
     <div

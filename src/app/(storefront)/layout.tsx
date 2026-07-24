@@ -8,7 +8,10 @@ export default async function StorefrontLayout({
 }) {
   const content = await getHomeContent();
   return (
-    <StorefrontShell promoMessages={content.promoMessages}>
+    <StorefrontShell
+      promoMessages={content.promoMessages}
+      promoSettings={content.promoSettings}
+    >
       {children}
     </StorefrontShell>
   );

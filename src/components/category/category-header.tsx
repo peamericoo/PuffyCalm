@@ -33,6 +33,7 @@ export function CategoryHeader({
       >
         <Link
           href="/"
+          prefetch={false}
           transitionTypes={["nav-back"]}
           className="transition hover:text-foreground"
         >
@@ -41,6 +42,7 @@ export function CategoryHeader({
         <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
         <Link
           href="/category/all"
+          prefetch={false}
           transitionTypes={["catalog"]}
           scroll={false}
           className={cn(

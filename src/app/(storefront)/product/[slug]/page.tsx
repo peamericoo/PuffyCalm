@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/product/product-detail";
-import {
-  getProductDetail,
-  listProductSlugs,
-} from "@/lib/catalog/service";
+import { getProductDetail } from "@/lib/catalog/service";
 import { siteConfig } from "@/lib/site";
 
-/** ISR — catalog from API with short revalidate. */
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  const slugs = await listProductSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+/** Product data is admin-driven and must not serve stale pre-publish payloads. */
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,

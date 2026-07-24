@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface CategoryActiveChipsProps {
   facets: CatalogFacets;
+  display?: "mobile" | "all";
   className?: string;
 }
 
@@ -16,22 +17,36 @@ interface CategoryActiveChipsProps {
  */
 export function CategoryActiveChips({
   facets,
+  display = "mobile",
   className,
 }: CategoryActiveChipsProps) {
   const {
+    q,
     stock,
     types,
     sale,
+    minPrice,
+    maxPrice,
     hasActive,
     setStock,
     toggleType,
     setSale,
+    setPriceRange,
+    setQuery,
     clearAll,
   } = useCatalogUrl();
 
   if (!hasActive) return null;
 
   const chips: { key: string; label: string; onRemove: () => void }[] = [];
+
+  if (q) {
+    chips.push({
+      key: "query",
+      label: `Search: ${q}`,
+      onRemove: () => setQuery(""),
+    });
+  }
 
   if (stock === "in") {
     chips.push({
@@ -62,6 +77,18 @@ export function CategoryActiveChips({
       onRemove: () => setSale(false),
     });
   }
+  if (minPrice != null || maxPrice != null) {
+    chips.push({
+      key: "price",
+      label:
+        minPrice != null && maxPrice != null
+          ? `$${minPrice}–$${maxPrice}`
+          : minPrice != null
+            ? `From $${minPrice}`
+            : `Up to $${maxPrice}`,
+      onRemove: () => setPriceRange(null, null),
+    });
+  }
 
   // Sort-only active doesn't need chips row
   if (chips.length === 0) return null;
@@ -69,7 +96,8 @@ export function CategoryActiveChips({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-1.5 sm:gap-2 lg:hidden",
+        "flex flex-wrap items-center gap-1.5 sm:gap-2",
+        display === "mobile" && "lg:hidden",
         className,
       )}
     >

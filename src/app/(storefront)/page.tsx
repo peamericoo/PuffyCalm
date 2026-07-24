@@ -5,8 +5,10 @@ import { LifestyleCollections } from "@/components/home/lifestyle-collections";
 import { ShopNow } from "@/components/home/shop-now";
 import { getHomeContent } from "@/lib/api/content";
 
-/** ISR — home promo/hero from API; admin revalidateTag `home` after save. */
-export const revalidate = 60;
+/** Storefront catalog changes must appear immediately after admin/API publishes. */
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const content = await getHomeContent();

@@ -9,17 +9,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import db_session
 from app.api.v1.schemas.catalog import CatalogPageOut, CategoryOut
+from app.api.v1.schemas.product import ProductCardOut
 from app.application.catalog.service import (
     CatalogNotFoundError,
     get_catalog_page,
     get_categories,
     get_category_by_slug,
+    get_home_products,
 )
 
 router = APIRouter(tags=["catalog"])
 
 CatalogSort = Literal["featured", "price-asc", "price-desc", "rating"]
 StockFilter = Literal["all", "in", "out"]
+
+
+@router.get("/catalog/home", response_model=list[ProductCardOut])
+async def home_catalog(
+    session: Annotated[AsyncSession, Depends(db_session)],
+    limit: Annotated[int, Query(ge=1, le=12)] = 8,
+) -> list[ProductCardOut]:
+    """Lean Home shelf; card metadata only."""
+    return await get_home_products(session, limit=limit)
 
 
 @router.get("/catalog", response_model=CatalogPageOut)

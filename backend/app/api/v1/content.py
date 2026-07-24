@@ -6,13 +6,21 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import db_session
-from app.api.v1.schemas.content import HeroSlideOut, HomeContentOut, LifestyleTileOut
+from app.api.v1.schemas.content import (
+    HeroSlideOut,
+    HomeContentOut,
+    LifestyleTileOut,
+    PromoSettingsOut,
+)
 from app.application.content.service import get_home_content
 
 router = APIRouter(prefix="/content", tags=["content"])
 
 
 def _to_out(data: dict) -> HomeContentOut:
+    settings = data.get("promoSettings") or data.get("promo_settings") or {}
+    if not isinstance(settings, dict):
+        settings = {}
     slides = []
     for s in data.get("heroSlides") or []:
         if not isinstance(s, dict):
@@ -47,6 +55,12 @@ def _to_out(data: dict) -> HomeContentOut:
         )
     return HomeContentOut(
         promo_messages=list(data.get("promoMessages") or []),
+        promo_settings=PromoSettingsOut(
+            speed_seconds=int(
+                settings.get("speedSeconds") or settings.get("speed_seconds") or 32
+            ),
+            color=str(settings.get("color") or "#3a7ca5"),
+        ),
         hero_slides=slides,
         lifestyle_collections=lifestyle,
         updated_at=data.get("updatedAt"),

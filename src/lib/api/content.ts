@@ -4,8 +4,16 @@
  */
 
 import { getApiBaseUrl } from "@/lib/api/config";
-import { fallbackHomeContent } from "@/lib/content/defaults";
-import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
+import {
+  FALLBACK_PROMO_SETTINGS,
+  fallbackHomeContent,
+} from "@/lib/content/defaults";
+import type {
+  HeroSlide,
+  HomeContent,
+  LifestyleTile,
+  PromoSettings,
+} from "@/types/content";
 
 const DEFAULT_REVALIDATE = 60;
 
@@ -63,8 +71,30 @@ function normalizeLifestyle(raw: Record<string, unknown>): LifestyleTile | null 
   return { id, title, href, imageUrl, span };
 }
 
+function normalizePromoSettings(raw: unknown): PromoSettings {
+  const settings =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const rawSpeed = settings.speedSeconds ?? settings.speed_seconds;
+  const speedNumber =
+    typeof rawSpeed === "number"
+      ? rawSpeed
+      : typeof rawSpeed === "string"
+        ? Number(rawSpeed)
+        : Number.NaN;
+  const speedSeconds = Number.isFinite(speedNumber)
+    ? Math.min(120, Math.max(8, Math.round(speedNumber)))
+    : FALLBACK_PROMO_SETTINGS.speedSeconds;
+  const colorRaw = asString(settings.color).trim();
+  const color = /^#[0-9a-fA-F]{6}$/.test(colorRaw)
+    ? colorRaw
+    : FALLBACK_PROMO_SETTINGS.color;
+
+  return { speedSeconds, color };
+}
+
 export function normalizeHomeContent(raw: Record<string, unknown>): HomeContent {
   const promosRaw = raw.promoMessages ?? raw.promo_messages;
+  const promoSettingsRaw = raw.promoSettings ?? raw.promo_settings;
   const slidesRaw = raw.heroSlides ?? raw.hero_slides;
   const lifeRaw = raw.lifestyleCollections ?? raw.lifestyle_collections;
 
@@ -97,6 +127,7 @@ export function normalizeHomeContent(raw: Record<string, unknown>): HomeContent 
 
   return {
     promoMessages,
+    promoSettings: normalizePromoSettings(promoSettingsRaw),
     heroSlides,
     lifestyleCollections,
     updatedAt:

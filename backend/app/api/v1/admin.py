@@ -41,6 +41,7 @@ from app.api.v1.schemas.content import (
     HomeContentIn,
     HomeContentOut,
     LifestyleTileOut,
+    PromoSettingsOut,
 )
 from app.application.admin_categories.service import (
     AdminCategoryError,
@@ -86,7 +87,7 @@ from app.application.media.service import (
 )
 from app.application.media.validation import MediaValidationError
 from app.domain.order_rules import ALL_ORDER_STATUSES
-from app.infrastructure.db.models import Order, Product, User
+from app.infrastructure.db.models import Order, Product
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -315,6 +316,7 @@ def _product_list_item(product: Product) -> AdminProductListItemOut:
         price=float(product.price),
         currency=product.currency or "USD",
         image_url=product.image_url or "",
+        supplier_url=product.supplier_url or "",
         in_stock=product.in_stock,
         stock_qty=int(product.stock_qty or 0),
         featured=bool(product.featured),
@@ -349,6 +351,7 @@ def _product_detail(product: Product) -> AdminProductDetailOut:
         currency=product.currency or "USD",
         image_url=product.image_url or "",
         image_alt=product.image_alt or "",
+        supplier_url=product.supplier_url or "",
         images=images,
         category_slugs=_real_category_slugs(product),
         category_label=product.category_label,
@@ -651,6 +654,9 @@ async def admin_delete_media(
 
 
 def _home_content_out(data: dict) -> HomeContentOut:
+    settings = data.get("promoSettings") or data.get("promo_settings") or {}
+    if not isinstance(settings, dict):
+        settings = {}
     slides: list[HeroSlideOut] = []
     for s in data.get("heroSlides") or []:
         if not isinstance(s, dict):
@@ -685,6 +691,12 @@ def _home_content_out(data: dict) -> HomeContentOut:
         )
     return HomeContentOut(
         promo_messages=list(data.get("promoMessages") or []),
+        promo_settings=PromoSettingsOut(
+            speed_seconds=int(
+                settings.get("speedSeconds") or settings.get("speed_seconds") or 32
+            ),
+            color=str(settings.get("color") or "#3a7ca5"),
+        ),
         hero_slides=slides,
         lifestyle_collections=lifestyle,
         updated_at=data.get("updatedAt"),
@@ -749,6 +761,10 @@ async def admin_put_home_content(
     _ = user
     raw = {
         "promoMessages": body.promo_messages,
+        "promoSettings": {
+            "speedSeconds": body.promo_settings.speed_seconds,
+            "color": body.promo_settings.color,
+        },
         "heroSlides": [
             {
                 "id": s.id,

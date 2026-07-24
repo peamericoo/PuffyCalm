@@ -9,6 +9,7 @@ import {
   CatalogApiError,
   fetchCatalogPage,
   fetchCategories,
+  fetchHomeProductRail,
   fetchProductBySlug,
   type ProductDetailPayload,
 } from "@/lib/api/catalog";
@@ -94,20 +95,12 @@ export async function listProductSlugs(): Promise<string[]> {
 }
 
 /**
- * Home “What customers buy first” rail — sale first, then rating.
- * Max 6 items from published catalog. Empty array if API unreachable.
+ * Home rotating shelf — Admin "Destaque" first, then sale/rating.
+ * Empty array if API unreachable.
  */
 export async function getHomeProductRail(limit = 6): Promise<Product[]> {
   try {
-    const page = await fetchCatalogPage("all");
-    return [...page.products]
-      .sort((a, b) => {
-        const saleA = a.compareAtPrice ? 1 : 0;
-        const saleB = b.compareAtPrice ? 1 : 0;
-        if (saleB !== saleA) return saleB - saleA;
-        return b.rating - a.rating || b.reviewCount - a.reviewCount;
-      })
-      .slice(0, limit);
+    return await fetchHomeProductRail(limit);
   } catch {
     return [];
   }

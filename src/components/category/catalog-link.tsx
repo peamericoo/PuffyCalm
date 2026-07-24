@@ -9,7 +9,7 @@ type CatalogLinkProps = Omit<ComponentProps<typeof Link>, "href"> & {
 
 /**
  * Intra-catalog navigation — native View Transition type "catalog".
- * prefetch + scroll=false keep category switches light and stable.
+ * scroll=false keeps category switches stable.
  */
 export function CatalogLink({
   slug,
@@ -19,7 +19,7 @@ export function CatalogLink({
   return (
     <Link
       href={`/category/${slug}`}
-      prefetch
+      prefetch={false}
       scroll={false}
       transitionTypes={["catalog"]}
       {...rest}

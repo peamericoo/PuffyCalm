@@ -26,6 +26,7 @@ def test_normalize_happy_path() -> None:
         }
     )
     assert out["promoMessages"] == ["Hello", "World"]
+    assert out["promoSettings"] == {"speedSeconds": 32, "color": "#3a7ca5"}
     assert out["heroSlides"][0]["id"] == "s1"
     assert out["heroSlides"][0]["titleLine1"] == "A"
 
@@ -51,8 +52,15 @@ def test_normalize_allows_media_proxy_url() -> None:
 
 
 def test_normalize_allows_empty_promo_and_hero() -> None:
-    out = normalize_home_payload({"promoMessages": ["  ", ""], "heroSlides": []})
+    out = normalize_home_payload(
+        {
+            "promoMessages": ["  ", ""],
+            "promoSettings": {"speedSeconds": 18, "color": "#f06d52"},
+            "heroSlides": [],
+        }
+    )
     assert out["promoMessages"] == []
+    assert out["promoSettings"] == {"speedSeconds": 18, "color": "#f06d52"}
     assert out["heroSlides"] == []
 
 

@@ -148,7 +148,9 @@ export function CartDrawer() {
               className="pressable mt-6"
               onClick={closeCart}
             >
-              <Link href="/category/all">Continue shopping</Link>
+              <Link href="/category/all" transitionTypes={["catalog"]}>
+                Continue shopping
+              </Link>
             </Button>
           </div>
         ) : (

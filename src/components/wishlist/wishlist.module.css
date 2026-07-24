@@ -1,7 +1,5 @@
 .heroGlow {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgb(224 122 95 / 0.1), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 90% 10%, rgb(126 184 212 / 0.18), transparent 50%);
+  background: transparent;
 }
 
 .gridEnter {

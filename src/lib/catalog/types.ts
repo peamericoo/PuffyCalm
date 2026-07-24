@@ -21,12 +21,17 @@ export type CatalogQuery = {
   types?: string[];
   /** Only discounted items */
   sale?: boolean;
+  /** Price floor in product currency */
+  minPrice?: number | null;
+  /** Price ceiling in product currency */
+  maxPrice?: number | null;
 };
 
 export type CatalogFacets = {
   stock: { in: number; out: number };
   types: { slug: string; name: string; count: number }[];
   sale: number;
+  price: { min: number; max: number };
 };
 
 export type CatalogPage = {
@@ -38,6 +43,8 @@ export type CatalogPage = {
   stock: StockFilter;
   types: string[];
   sale: boolean;
+  minPrice?: number | null;
+  maxPrice?: number | null;
   /** Count after filters */
   total: number;
   /** Unfiltered category size (for “6 of 30” style) */

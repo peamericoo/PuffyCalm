@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Framed “how it looks on the storefront” panel for admin editors.
+ * Framed storefront preview panel for admin editors.
  */
 export function AdminLivePreview({
-  title = "Live preview",
+  title = "Previa",
   description,
   children,
   className,
@@ -26,7 +26,7 @@ export function AdminLivePreview({
     >
       <div className="border-b border-border/60 bg-white px-4 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          Storefront preview
+          Previa da loja
         </p>
         <h3 className="mt-0.5 font-display text-base font-semibold tracking-tight">
           {title}

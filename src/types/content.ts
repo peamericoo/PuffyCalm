@@ -22,8 +22,14 @@ export type LifestyleTile = {
   span: "tall" | "wide" | "square";
 };
 
+export type PromoSettings = {
+  speedSeconds: number;
+  color: string;
+};
+
 export type HomeContent = {
   promoMessages: string[];
+  promoSettings: PromoSettings;
   heroSlides: HeroSlide[];
   lifestyleCollections: LifestyleTile[];
   updatedAt?: string | null;

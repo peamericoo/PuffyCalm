@@ -36,8 +36,17 @@ class LifestyleTileOut(CamelModel):
     span: str = "square"
 
 
+class PromoSettingsOut(CamelModel):
+    speed_seconds: int = Field(default=32, serialization_alias="speedSeconds")
+    color: str = "#3a7ca5"
+
+
 class HomeContentOut(CamelModel):
     promo_messages: list[str] = Field(serialization_alias="promoMessages")
+    promo_settings: PromoSettingsOut = Field(
+        default_factory=PromoSettingsOut,
+        serialization_alias="promoSettings",
+    )
     hero_slides: list[HeroSlideOut] = Field(serialization_alias="heroSlides")
     lifestyle_collections: list[LifestyleTileOut] = Field(
         default_factory=list,
@@ -90,9 +99,38 @@ class LifestyleTileIn(CamelModel):
         return v
 
 
+class PromoSettingsIn(CamelModel):
+    speed_seconds: int = Field(
+        default=32,
+        alias="speedSeconds",
+        serialization_alias="speedSeconds",
+        ge=8,
+        le=120,
+    )
+    color: str = Field(
+        default="#3a7ca5",
+        min_length=7,
+        max_length=7,
+        pattern=r"^#[0-9a-fA-F]{6}$",
+    )
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def clean_color(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            color = v.strip()
+            if len(color) == 7 and color.startswith("#"):
+                return color
+        return v
+
+
 class HomeContentIn(CamelModel):
     # Empty arrays allowed — clean storefront until admin adds CMS content.
     promo_messages: list[str] = Field(alias="promoMessages", min_length=0, max_length=20)
+    promo_settings: PromoSettingsIn = Field(
+        default_factory=PromoSettingsIn,
+        alias="promoSettings",
+    )
     hero_slides: list[HeroSlideIn] = Field(alias="heroSlides", min_length=0, max_length=8)
     lifestyle_collections: list[LifestyleTileIn] = Field(
         default_factory=list,

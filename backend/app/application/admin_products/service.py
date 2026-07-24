@@ -336,6 +336,7 @@ async def create_admin_product(
         currency=str(data.get("currency") or "USD").upper()[:3],
         image_url=image_url,
         image_alt=str(data.get("image_alt") or data.get("name") or ""),
+        supplier_url=str(data.get("supplier_url") or "").strip(),
         badges=list(data.get("badges") or []),
         features=list(data.get("features") or []),
         in_stock=bool(data.get("in_stock", True)),
@@ -414,6 +415,8 @@ async def update_admin_product(
         product.image_url = str(data.get("image_url") or "")
     if "image_alt" in fields_set:
         product.image_alt = str(data.get("image_alt") or "")
+    if "supplier_url" in fields_set:
+        product.supplier_url = str(data.get("supplier_url") or "").strip()
     if "category_label" in fields_set:
         product.category_label = data.get("category_label")
     if "badges" in fields_set and data.get("badges") is not None:

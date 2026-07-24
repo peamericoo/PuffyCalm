@@ -1,6 +1,7 @@
 import { ViewTransition } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { ScrollToTopOnMount } from "@/components/motion/scroll-to-top-on-mount";
 import { ProductBuyBox } from "@/components/product/product-buy-box";
 import { ProductDeepDive } from "@/components/product/product-deep-dive";
 import { ProductGallery } from "@/components/product/product-gallery";
@@ -49,7 +50,8 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
       }}
       default="none"
     >
-      <div className="bg-white">
+      <div className="bg-transparent">
+        <ScrollToTopOnMount />
         <div className="mx-auto w-full max-w-[1200px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-7 lg:px-10">
           <nav
             aria-label="Breadcrumb"
@@ -57,6 +59,7 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
           >
             <Link
               href="/"
+              prefetch={false}
               transitionTypes={["nav-back"]}
               className="transition hover:text-foreground"
             >
@@ -65,6 +68,7 @@ export function ProductDetail({ product, related = [] }: ProductDetailProps) {
             <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
             <Link
               href={`/category/${catSlug}`}
+              prefetch={false}
               transitionTypes={["nav-back"]}
               className="transition hover:text-foreground"
             >

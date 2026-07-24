@@ -5,7 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ProductFormView } from "@/components/admin/product-form-view";
 
 export const metadata: Metadata = {
-  title: "Edit product · Admin",
+  title: "Editar produto · Admin",
   robots: { index: false, follow: false },
 };
 
@@ -29,13 +29,13 @@ export default async function AdminEditProductPage({ params }: Props) {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Edit product"
-        description="Save updates, then publish or unpublish. Revalidates storefront cache tags on success."
+        title="Editar produto"
+        description="Ajuste dados, estoque, midia e publicacao."
         activePath="/admin/products"
         backHref="/admin/products"
-        backLabel="Products"
+        backLabel="Produtos"
       />
-      <div className="mx-auto max-w-6xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <ProductFormView
           googleIdToken={session.googleIdToken}
           productId={id}

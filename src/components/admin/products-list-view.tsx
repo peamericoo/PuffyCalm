@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { ExternalLink, Loader2, Plus, RefreshCw, Search } from "lucide-react";
+import { ProductStatusBadge } from "@/components/admin/product-status-badge";
+import { Button } from "@/components/ui/button";
 import { ensureAdminBackendSession } from "@/lib/api/admin-auth";
 import {
   AdminProductsApiError,
@@ -10,8 +13,6 @@ import {
   type AdminProductListResponse,
 } from "@/lib/api/admin-products";
 import { LIST_PRODUCT_STATUS_FILTERS } from "@/lib/admin/product-status";
-import { ProductStatusBadge } from "@/components/admin/product-status-badge";
-import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ type Props = {
   googleIdToken?: string | null;
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 24;
 
 export function ProductsListView({ googleIdToken }: Props) {
   const [statusFilter, setStatusFilter] = useState("");
@@ -56,22 +57,25 @@ export function ProductsListView({ googleIdToken }: Props) {
           message:
             err.message ||
             (http === 403
-              ? "Not authorized on the API (ADMIN_EMAILS)."
-              : "Backend admin session missing — sign in again."),
+              ? "Seu email nao esta autorizado na API."
+              : "Sessao do admin expirada."),
           httpStatus: http,
         });
         return;
       }
       setState({
         status: "error",
-        message: err.message || "Failed to load products",
+        message: err.message || "Nao foi possivel carregar os produtos.",
         httpStatus: http,
       });
     }
   }, [googleIdToken, statusFilter, q, page]);
 
   useEffect(() => {
-    void load();
+    const id = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   const onFilterChange = (value: string) => {
@@ -86,83 +90,99 @@ export function ProductsListView({ googleIdToken }: Props) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Status
-            </span>
-            <select
-              value={statusFilter}
-              onChange={(e) => onFilterChange(e.target.value)}
-              className="h-10 rounded-full border border-border bg-white px-4 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
-            >
-              {LIST_PRODUCT_STATUS_FILTERS.map((opt) => (
-                <option key={opt.value || "all"} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <form onSubmit={onSearch} className="flex gap-2">
-            <label className="flex flex-col gap-1 text-sm">
+    <div className="space-y-5">
+      <div className="rounded-lg border border-border/70 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div className="grid gap-3 md:grid-cols-[13rem_minmax(18rem,32rem)]">
+            <label className="flex flex-col gap-1.5 text-sm">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Search
+                Status
               </span>
-              <input
-                value={qDraft}
-                onChange={(e) => setQDraft(e.target.value)}
-                placeholder="Name, slug, id…"
-                className="h-10 w-full min-w-[12rem] rounded-full border border-border bg-white px-4 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:w-56"
-              />
+              <select
+                value={statusFilter}
+                onChange={(e) => onFilterChange(e.target.value)}
+                className="h-11 rounded-md border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+              >
+                {LIST_PRODUCT_STATUS_FILTERS.map((opt) => (
+                  <option key={opt.value || "all"} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </label>
-            <Button type="submit" variant="outline" size="sm" className="h-10 self-end">
-              Search
+
+            <form onSubmit={onSearch} className="flex items-end gap-2">
+              <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Busca
+                </span>
+                <input
+                  value={qDraft}
+                  onChange={(e) => setQDraft(e.target.value)}
+                  placeholder="Nome, slug ou id"
+                  className="h-11 w-full rounded-md border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                />
+              </label>
+              <Button type="submit" variant="outline" className="h-11">
+                <Search className="h-4 w-4" />
+                Buscar
+              </Button>
+            </form>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void load()}
+              disabled={state.status === "loading"}
+            >
+              {state.status === "loading" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Atualizar
             </Button>
-          </form>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void load()}
-            disabled={state.status === "loading"}
-          >
-            Refresh
-          </Button>
-          <Button asChild size="sm">
-            <Link href="/admin/products/new">New product</Link>
-          </Button>
+            <Button asChild>
+              <Link href="/admin/products/new">
+                <Plus className="h-4 w-4" />
+                Novo produto
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {state.status === "loading" && (
+      {state.status === "loading" ? (
         <div
-          className="rounded-[1.35rem] border border-border/70 bg-white p-8 text-center text-sm text-muted-foreground shadow-sm"
+          className="flex items-center justify-center gap-2 rounded-lg border border-border/70 bg-white p-10 text-sm text-muted-foreground shadow-sm"
           role="status"
         >
-          Loading products…
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Carregando produtos...
         </div>
-      )}
+      ) : null}
 
-      {state.status === "auth_error" && (
-        <div className="rounded-[1.35rem] border border-amber-200 bg-amber-50/80 p-6 text-sm shadow-sm">
-          <p className="font-medium text-amber-950">Auth required</p>
+      {state.status === "auth_error" ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-6 text-sm shadow-sm">
+          <p className="font-medium text-amber-950">
+            Autenticacao necessaria
+            {state.httpStatus ? ` (${state.httpStatus})` : ""}
+          </p>
           <p className="mt-1 text-amber-900/80">{state.message}</p>
           <Link
             href="/admin"
             className="mt-3 inline-block text-sm font-medium text-brand-deep hover:underline"
           >
-            Open admin bridge
+            Abrir inicio do admin
           </Link>
         </div>
-      )}
+      ) : null}
 
-      {state.status === "error" && (
-        <div className="rounded-[1.35rem] border border-red-200 bg-red-50/80 p-6 text-sm shadow-sm">
-          <p className="font-medium text-red-950">Could not load products</p>
+      {state.status === "error" ? (
+        <div className="rounded-lg border border-red-200 bg-red-50/80 p-6 text-sm shadow-sm">
+          <p className="font-medium text-red-950">Falha ao carregar produtos</p>
           <p className="mt-1 text-red-900/80">{state.message}</p>
           <Button
             type="button"
@@ -171,160 +191,141 @@ export function ProductsListView({ googleIdToken }: Props) {
             className="mt-3"
             onClick={() => void load()}
           >
-            Retry
+            Tentar novamente
           </Button>
         </div>
-      )}
+      ) : null}
 
-      {state.status === "ok" && state.data.items.length === 0 && (
-        <div className="rounded-[1.35rem] border border-border/70 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-medium">No products match</p>
+      {state.status === "ok" && state.data.items.length === 0 ? (
+        <div className="rounded-lg border border-border/70 bg-white p-10 text-center shadow-sm">
+          <p className="text-sm font-medium">Nenhum produto encontrado</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create a draft, then publish when ready for the storefront.
+            Crie um rascunho e publique quando estiver pronto.
           </p>
           <Button asChild className="mt-4" size="sm">
-            <Link href="/admin/products/new">New product</Link>
+            <Link href="/admin/products/new">Novo produto</Link>
           </Button>
         </div>
-      )}
+      ) : null}
 
-      {state.status === "ok" && state.data.items.length > 0 && (
+      {state.status === "ok" && state.data.items.length > 0 ? (
         <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-[1.35rem] border border-border/70 bg-white shadow-sm md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">Categories</th>
-                  <th className="px-4 py-3">Stock</th>
-                  <th className="px-4 py-3 text-right">Edit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.data.items.map((p) => (
-                  <ProductRow key={p.id} product={p} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <ul className="space-y-3 md:hidden">
-            {state.data.items.map((p) => (
-              <li
-                key={p.id}
-                className="rounded-[1.25rem] border border-border/70 bg-white p-4 shadow-sm"
-              >
-                <div className="flex gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.imageUrl || "/images/placeholder-product.svg"}
-                    alt=""
-                    className="h-14 w-14 shrink-0 rounded-xl object-cover bg-muted"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <ProductStatusBadge status={p.status} />
-                      <span className="text-xs text-muted-foreground">
-                        {p.inStock ? "In stock" : "Out"}
-                      </span>
-                    </div>
-                    <Link
-                      href={`/admin/products/${p.id}`}
-                      className="mt-1 block truncate font-medium text-brand-deep hover:underline"
-                    >
-                      {p.name}
-                    </Link>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {p.slug}
-                    </p>
-                    <p className="mt-1 text-sm font-medium">
-                      {formatMoney(p.price)}
-                    </p>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <p className="text-muted-foreground">
-              Page {state.data.page} of {state.data.totalPages} ·{" "}
-              {state.data.totalItems} total
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!state.data.hasPrev}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!state.data.hasNext}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
+          <div className="overflow-hidden rounded-lg border border-border/70 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 text-sm text-muted-foreground">
+              <span>
+                {state.data.totalItems} produto
+                {state.data.totalItems === 1 ? "" : "s"}
+              </span>
+              <span>
+                Pagina {state.data.page} de {Math.max(state.data.totalPages, 1)}
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-sm">
+                <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Produto</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Preco</th>
+                    <th className="px-4 py-3">Categorias</th>
+                    <th className="px-4 py-3 text-right">Estoque</th>
+                    <th className="px-4 py-3 text-right">Acoes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {state.data.items.map((product) => (
+                    <ProductRow key={product.id} product={product} />
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!state.data.hasPrev}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              Anterior
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!state.data.hasNext}
+              onClick={() => setPage((value) => value + 1)}
+            >
+              Proxima
+            </Button>
+          </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function ProductRow({ product: p }: { product: AdminProductListItem }) {
+function ProductRow({ product }: { product: AdminProductListItem }) {
   return (
-    <tr className="border-b border-border/40 last:border-0 hover:bg-muted/20">
+    <tr className="hover:bg-muted/25">
       <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={p.imageUrl || "/images/placeholder-product.svg"}
+            src={product.imageUrl || "/images/placeholder-product.svg"}
             alt=""
-            className="h-10 w-10 rounded-lg object-cover bg-muted"
+            className="h-14 w-14 shrink-0 rounded-md bg-muted object-cover"
           />
           <div className="min-w-0">
             <Link
-              href={`/admin/products/${p.id}`}
-              className="font-medium text-brand-deep hover:underline"
+              href={`/admin/products/${product.id}`}
+              className="block truncate font-medium text-brand-deep hover:underline"
             >
-              {p.name}
+              {product.name}
             </Link>
-            <p className="truncate text-xs text-muted-foreground">{p.slug}</p>
+            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+              {product.id} / {product.slug}
+            </p>
           </div>
         </div>
       </td>
       <td className="px-4 py-3">
-        <ProductStatusBadge status={p.status} />
+        <ProductStatusBadge status={product.status} />
       </td>
-      <td className="px-4 py-3 tabular-nums">{formatMoney(p.price)}</td>
-      <td className="px-4 py-3 text-xs text-muted-foreground">
-        {p.categorySlugs.length ? p.categorySlugs.join(", ") : "—"}
+      <td className="px-4 py-3 text-right font-medium tabular-nums">
+        {formatMoney(product.price)}
       </td>
-      <td className="px-4 py-3">
+      <td className="max-w-[18rem] truncate px-4 py-3 text-muted-foreground">
+        {product.categorySlugs.length ? product.categorySlugs.join(", ") : "-"}
+      </td>
+      <td className="px-4 py-3 text-right">
         <span
           className={cn(
-            "text-xs font-medium",
-            p.inStock ? "text-emerald-700" : "text-muted-foreground",
+            "inline-flex rounded-md px-2 py-1 text-xs font-semibold",
+            product.inStock
+              ? "bg-emerald-50 text-emerald-800"
+              : "bg-zinc-100 text-zinc-700",
           )}
         >
-          {p.inStock ? "In stock" : "Out"}
+          {product.inStock ? `${product.stockQty ?? "-"} un.` : "Sem estoque"}
         </span>
       </td>
       <td className="px-4 py-3 text-right">
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/admin/products/${p.id}`}>Edit</Link>
-        </Button>
+        <div className="flex justify-end gap-2">
+          {product.supplierUrl ? (
+            <Button asChild variant="outline" size="sm">
+              <a href={product.supplierUrl} target="_blank" rel="noreferrer" aria-label={`Abrir fornecedor de ${product.name}`}>
+                <ExternalLink className="h-3.5 w-3.5" />
+                AliExpress
+              </a>
+            </Button>
+          ) : null}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/admin/products/${product.id}`}>Editar</Link>
+          </Button>
+        </div>
       </td>
     </tr>
   );

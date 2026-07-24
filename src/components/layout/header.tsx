@@ -215,6 +215,11 @@ export function Header() {
                   >
                     <Link
                       href={item.href}
+                      transitionTypes={
+                        item.href.startsWith("/category/")
+                          ? ["catalog"]
+                          : undefined
+                      }
                       onClick={closeAllMenus}
                       aria-expanded={hasChildren ? isOpen : undefined}
                       aria-haspopup={hasChildren ? "menu" : undefined}
@@ -266,6 +271,11 @@ export function Header() {
                                 <li key={child.href + child.label} role="none">
                                   <Link
                                     href={child.href}
+                                    transitionTypes={
+                                      child.href.startsWith("/category/")
+                                        ? ["catalog"]
+                                        : undefined
+                                    }
                                     role="menuitem"
                                     onClick={closeAllMenus}
                                     className={cn(
@@ -305,6 +315,11 @@ export function Header() {
                           <div className="mt-1.5 border-t border-border/40 px-1 pt-1.5">
                             <Link
                               href={item.href}
+                              transitionTypes={
+                                item.href.startsWith("/category/")
+                                  ? ["catalog"]
+                                  : undefined
+                              }
                               role="menuitem"
                               onClick={closeAllMenus}
                               className="flex items-center justify-between rounded-xl px-2.5 py-2.5 text-[12.5px] font-semibold text-brand-deep transition-colors hover:bg-brand-soft"
@@ -406,7 +421,13 @@ export function Header() {
               size="sm"
               className="pressable ml-1 hidden h-8 px-3.5 text-xs md:inline-flex"
             >
-              <Link href="/category/all">Shop sale</Link>
+              <Link
+                href="/category/all"
+                prefetch={false}
+                transitionTypes={["catalog"]}
+              >
+                Shop sale
+              </Link>
             </Button>
           </div>
         </header>
@@ -448,6 +469,11 @@ export function Header() {
                     <div className="flex items-center">
                       <Link
                         href={item.href}
+                        transitionTypes={
+                          item.href.startsWith("/category/")
+                            ? ["catalog"]
+                            : undefined
+                        }
                         onClick={closeAllMenus}
                         className="flex-1 rounded-xl px-3.5 py-3 text-[15px] font-semibold text-foreground transition-colors hover:bg-brand-soft"
                       >
@@ -479,6 +505,11 @@ export function Header() {
                             <Link
                               key={child.href + child.label}
                               href={child.href}
+                              transitionTypes={
+                                child.href.startsWith("/category/")
+                                  ? ["catalog"]
+                                  : undefined
+                              }
                               onClick={closeAllMenus}
                               className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-brand-soft"
                             >

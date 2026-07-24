@@ -15,11 +15,14 @@ export function ProductLink({
   slug,
   direction = "forward",
   children,
+  scroll = true,
   ...rest
 }: ProductLinkProps) {
   return (
     <Link
       href={`/product/${slug}`}
+      prefetch={false}
+      scroll={scroll}
       transitionTypes={direction === "back" ? ["nav-back"] : ["nav-forward"]}
       {...rest}
     >

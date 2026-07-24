@@ -5,7 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CategoriesEditorView } from "@/components/admin/categories-editor-view";
 
 export const metadata: Metadata = {
-  title: "Categories · Admin",
+  title: "Categorias · Admin",
   robots: { index: false, follow: false },
 };
 
@@ -24,13 +24,13 @@ export default async function AdminCategoriesPage() {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Categories"
-        description="Covers for Shop by mood, Filters collections, and category pages. Upload or paste media URLs."
+        title="Categorias"
+        description="Organize vitrines, filtros e capas das colecoes."
         activePath="/admin/categories"
         backHref="/admin"
-        backLabel="Admin"
+        backLabel="Inicio"
       />
-      <div className="mx-auto max-w-3xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <CategoriesEditorView googleIdToken={session.googleIdToken} />
       </div>
     </div>

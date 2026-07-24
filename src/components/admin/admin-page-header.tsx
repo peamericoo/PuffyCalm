@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { cn } from "@/lib/utils";
 
@@ -20,54 +21,53 @@ export function AdminPageHeader({
   description,
   activePath,
   backHref,
-  backLabel = "Back",
+  backLabel = "Voltar",
   className,
   children,
 }: Props) {
   return (
-    <header className={cn("border-b border-border/60 bg-white/80", className)}>
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-3 py-4 sm:px-5 sm:py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/admin"
-              className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground"
-            >
-              PuffyCalm Admin
+    <header className={cn("admin-page-header sticky top-0 z-40 border-b border-[#d9e5ed]", className)}>
+      <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-14 items-center justify-between gap-4 border-b border-[#e6eef3]">
+          <div className="flex min-w-0 items-center gap-4">
+            <Link href="/admin" className="shrink-0 font-display text-lg font-semibold tracking-tight text-foreground">
+              PuffyCalm <span className="font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-brand-deep">Ops</span>
             </Link>
-            <AdminNav activePath={activePath} />
+            <AdminNav activePath={activePath} className="hidden lg:flex" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Link
               href="/"
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+              target="_blank"
             >
-              Storefront
+              Loja <ExternalLink className="h-3.5 w-3.5" />
             </Link>
             <SignOutButton className="h-8 px-3 text-xs" />
           </div>
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
+        <div className="flex min-h-20 flex-wrap items-center justify-between gap-4 py-3">
+          <div className="min-w-0">
             {backHref ? (
               <Link
                 href={backHref}
-                className="mb-1 inline-block text-xs font-medium text-brand-deep hover:underline"
+                className="mb-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-deep hover:underline"
               >
-                ← {backLabel}
+                <ArrowLeft className="h-3.5 w-3.5" /> {backLabel}
               </Link>
             ) : null}
-            <h1 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+            <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
               {title}
             </h1>
             {description ? (
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">
                 {description}
               </p>
             ) : null}
           </div>
           {children}
         </div>
+        <AdminNav activePath={activePath} className="-mx-1 px-1 pb-3 lg:hidden" />
       </div>
     </header>
   );

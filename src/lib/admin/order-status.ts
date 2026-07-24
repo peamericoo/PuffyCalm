@@ -29,14 +29,14 @@ export const ADMIN_TRANSITIONS: Record<string, readonly string[]> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  requires_payment: "Requires payment",
-  paid: "Paid",
-  failed: "Failed",
-  cancelled: "Cancelled",
-  processing: "Processing",
-  shipped: "Shipped",
-  delivered: "Delivered",
+  pending: "Pendente",
+  requires_payment: "Aguardando pagamento",
+  paid: "Pago",
+  failed: "Falhou",
+  cancelled: "Cancelado",
+  processing: "Em preparo",
+  shipped: "Enviado",
+  delivered: "Entregue",
 };
 
 /** Tailwind classes for status pills (admin only). */
@@ -69,6 +69,6 @@ export function isTerminalStatus(status: string): boolean {
 
 /** Filter options for list (empty string = all). */
 export const LIST_STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: "", label: "All statuses" },
+  { value: "", label: "Todos os status" },
   ...ALL_ORDER_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })),
 ];

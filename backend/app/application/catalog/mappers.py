@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.api.v1.schemas.catalog import CategoryOut
-from app.api.v1.schemas.product import ProductOut, ProductSpecOut
+from app.api.v1.schemas.product import ProductCardOut, ProductOut, ProductSpecOut
 from app.infrastructure.db.models import Category, Product
 
 
@@ -56,6 +56,35 @@ def product_to_out(product: Product, *, include_specs: bool = True) -> ProductOu
         specs=specs,
         in_stock=product.in_stock,
         stock_qty=int(getattr(product, "stock_qty", 0) or 0),
+        featured=product.featured,
+        category_label=product.category_label,
+    )
+
+
+def product_to_card_out(product: Product) -> ProductCardOut:
+    """Serialize only fields rendered by a storefront grid card."""
+    images = [img.url for img in product.images]
+    if not images and product.image_url:
+        images = [product.image_url]
+
+    return ProductCardOut(
+        id=product.id,
+        slug=product.slug,
+        name=product.name,
+        price=float(product.price),
+        compare_at_price=(
+            float(product.compare_at_price)
+            if product.compare_at_price is not None
+            else None
+        ),
+        currency="USD",
+        category_slugs=category_slugs_for_product(product),
+        image_url=product.image_url or (images[0] if images else ""),
+        images=images,
+        image_alt=product.image_alt,
+        rating=float(product.rating),
+        review_count=product.review_count,
+        in_stock=product.in_stock,
         featured=product.featured,
         category_label=product.category_label,
     )

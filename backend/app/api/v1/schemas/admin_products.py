@@ -60,6 +60,7 @@ class AdminProductListItemOut(CamelModel):
     price: float
     currency: str
     image_url: str = Field(serialization_alias="imageUrl")
+    supplier_url: str = Field(default="", serialization_alias="supplierUrl")
     in_stock: bool = Field(serialization_alias="inStock")
     stock_qty: int = Field(serialization_alias="stockQty")
     featured: bool
@@ -94,6 +95,7 @@ class AdminProductDetailOut(CamelModel):
     currency: str
     image_url: str = Field(serialization_alias="imageUrl")
     image_alt: str = Field(serialization_alias="imageAlt")
+    supplier_url: str = Field(default="", serialization_alias="supplierUrl")
     images: list[AdminProductImageOut]
     category_slugs: list[str] = Field(serialization_alias="categorySlugs")
     category_label: str | None = Field(default=None, serialization_alias="categoryLabel")
@@ -145,6 +147,7 @@ class AdminProductCreateIn(CamelModel):
     currency: str = Field(default="USD", min_length=3, max_length=3)
     image_url: str = Field(default="", max_length=1024, validation_alias="imageUrl")
     image_alt: str = Field(default="", max_length=512, validation_alias="imageAlt")
+    supplier_url: str = Field(default="", max_length=2048, validation_alias="supplierUrl")
     images: list[AdminProductImageIn] = Field(default_factory=list)
     category_slugs: list[str] = Field(
         default_factory=list,
@@ -207,6 +210,14 @@ class AdminProductCreateIn(CamelModel):
     def upper_currency(cls, v: str) -> str:
         return v.strip().upper() or "USD"
 
+    @field_validator("supplier_url")
+    @classmethod
+    def normalize_supplier_url(cls, v: str) -> str:
+        s = v.strip()
+        if s and not s.startswith(("https://", "http://")):
+            raise ValueError("supplierUrl must be an http(s) URL")
+        return s
+
     @field_validator("category_slugs")
     @classmethod
     def clean_slugs(cls, v: list[str]) -> list[str]:
@@ -241,6 +252,7 @@ class AdminProductUpdateIn(CamelModel):
     )
     image_url: str | None = Field(default=None, max_length=1024, validation_alias="imageUrl")
     image_alt: str | None = Field(default=None, max_length=512, validation_alias="imageAlt")
+    supplier_url: str | None = Field(default=None, max_length=2048, validation_alias="supplierUrl")
     images: list[AdminProductImageIn] | None = None
     category_slugs: list[str] | None = Field(default=None, validation_alias="categorySlugs")
     category_label: str | None = Field(
@@ -285,6 +297,16 @@ class AdminProductUpdateIn(CamelModel):
         s = v.strip().lower()
         if not s:
             raise ValueError("slug must not be blank")
+        return s
+
+    @field_validator("supplier_url")
+    @classmethod
+    def normalize_supplier_url(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        if s and not s.startswith(("https://", "http://")):
+            raise ValueError("supplierUrl must be an http(s) URL")
         return s
 
     @field_validator("category_slugs")

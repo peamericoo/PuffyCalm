@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { HeroSlide } from "@/types/content";
@@ -15,16 +15,12 @@ type Props = {
 
 /**
  * Editorial commerce opener.
- * Desktop: soft pointer parallax. Mobile: static, clipped, no extra motion cost.
  * Slides from CMS-lite API (Phase J) — passed by the home RSC.
  */
 export function HeroCarousel({ slides }: Props) {
   const heroSlides = slides.length > 0 ? slides : [];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [parallax, setParallax] = useState({ x: 0, y: 0 });
-  const [allowParallax, setAllowParallax] = useState(false);
-  const stageRef = useRef<HTMLDivElement>(null);
   const count = heroSlides.length;
   const active = heroSlides[index] ?? heroSlides[0];
 
@@ -39,37 +35,12 @@ export function HeroCarousel({ slides }: Props) {
   const next = useCallback(() => go(index + 1), [go, index]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (hover: hover)");
-    const sync = () => setAllowParallax(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
     if (paused || count < 2) return;
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % count);
     }, AUTO_MS);
     return () => window.clearInterval(id);
   }, [paused, count]);
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!allowParallax) return;
-      const el = stageRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-      setParallax({ x, y });
-    },
-    [allowParallax],
-  );
-
-  const onPointerLeave = useCallback(() => {
-    setParallax({ x: 0, y: 0 });
-  }, []);
 
   const renderLine2 = (line: string, accent?: string) => {
     if (!accent || !line.endsWith(accent)) {
@@ -84,9 +55,6 @@ export function HeroCarousel({ slides }: Props) {
     );
   };
 
-  const px = allowParallax ? parallax.x : 0;
-  const py = allowParallax ? parallax.y : 0;
-
   /* Clean storefront: no demo images — soft brand stage until admin adds slides. */
   if (!active || count === 0) {
     return (
@@ -99,9 +67,9 @@ export function HeroCarousel({ slides }: Props) {
             className={cn(
               "relative flex w-full max-w-full flex-col justify-end overflow-hidden",
               "brand-gradient",
-              "h-[min(42dvh,340px)] min-h-[240px]",
-              "sm:h-[min(46dvh,380px)] sm:min-h-[280px] sm:rounded-[1.85rem]",
-              "lg:h-[min(48dvh,420px)] lg:min-h-[300px]",
+              "h-[min(38dvh,310px)] min-h-[230px]",
+              "sm:h-[min(42dvh,350px)] sm:min-h-[260px] sm:rounded-[1.85rem]",
+              "lg:h-[min(42dvh,365px)] lg:min-h-[280px]",
             )}
           >
             <div
@@ -131,12 +99,15 @@ export function HeroCarousel({ slides }: Props) {
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href="/category/all"
+                  prefetch={false}
+                  transitionTypes={["catalog"]}
                   className="pressable inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-foreground shadow-sm"
                 >
                   Browse shop
                 </Link>
                 <Link
                   href="/admin/content"
+                  prefetch={false}
                   className="pressable inline-flex h-11 items-center rounded-full border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm"
                 >
                   Edit home content
@@ -160,14 +131,11 @@ export function HeroCarousel({ slides }: Props) {
       {/* Same shell gutter token as top bar — no competing horizontal systems */}
       <div className="relative mx-auto w-full max-w-[min(1920px,100%)] px-0 sm:px-1.5 lg:px-2">
         <div
-          ref={stageRef}
-          onPointerMove={onPointerMove}
-          onPointerLeave={onPointerLeave}
           className={cn(
             "relative w-full max-w-full overflow-hidden",
-            "h-[min(52dvh,420px)] min-h-[320px]",
-            "sm:h-[min(56dvh,480px)] sm:min-h-[380px] sm:rounded-[1.85rem]",
-            "lg:h-[min(58dvh,540px)] lg:min-h-[420px]",
+            "h-[min(48dvh,390px)] min-h-[300px]",
+            "sm:h-[min(50dvh,430px)] sm:min-h-[340px] sm:rounded-[1.85rem]",
+            "lg:h-[min(50dvh,470px)] lg:min-h-[380px]",
           )}
         >
           {heroSlides.map((slide, i) => {
@@ -182,20 +150,7 @@ export function HeroCarousel({ slides }: Props) {
                 aria-hidden={!isActive}
               >
                 <div
-                  className={cn(
-                    /* Slight overscan only for parallax room — not a hard crop zoom */
-                    "absolute inset-0 md:inset-[-1%]",
-                    allowParallax &&
-                      "will-change-transform transition-transform duration-500 ease-out",
-                  )}
-                  style={
-                    allowParallax && isActive
-                      ? {
-                          /* Soft mouse parallax; keep scale tiny so banners stay sharp */
-                          transform: `translate3d(${px * -6}px, ${py * -4}px, 0) scale(1.015)`,
-                        }
-                      : undefined
-                  }
+                  className="absolute inset-0"
                 >
                   <Image
                     src={slide.imageUrl}
@@ -205,7 +160,7 @@ export function HeroCarousel({ slides }: Props) {
                     sizes="100vw"
                     className={cn(
                       "object-cover object-center",
-                      isActive && allowParallax && "hero-kenburns",
+                      isActive && "hero-kenburns",
                     )}
                   />
                 </div>
@@ -218,7 +173,7 @@ export function HeroCarousel({ slides }: Props) {
 
           {/* Content pad uses --shell-gutter (shared with .nav-outer) */}
           <div
-            className="relative z-10 flex h-full w-full max-w-full flex-col justify-end px-[var(--shell-gutter)] pb-5 sm:px-8 sm:pb-7 lg:px-12 lg:pb-9"
+            className="relative z-10 flex h-full w-full max-w-full flex-col justify-end px-[var(--shell-gutter)] pb-5 sm:px-8 sm:pb-6 lg:px-12 lg:pb-7"
             style={{
               paddingTop: "calc(var(--promo-h) + var(--nav-h) + 0.5rem)",
             }}
@@ -232,59 +187,33 @@ export function HeroCarousel({ slides }: Props) {
               </span>
 
               <h1
-                className={cn(
-                  "display-title mt-0 font-display font-medium tracking-tight text-white",
-                  allowParallax && "will-change-transform transition-transform duration-300 ease-out",
-                )}
-                style={
-                  allowParallax
-                    ? {
-                        transform: `translate3d(${px * 14}px, ${py * 10}px, 0)`,
-                        textShadow: "0 2px 28px rgb(0 0 0 / 0.35)",
-                      }
-                    : { textShadow: "0 2px 28px rgb(0 0 0 / 0.35)" }
-                }
+                className="display-title mt-0 font-display font-medium tracking-tight text-white"
+                style={{ textShadow: "0 2px 28px rgb(0 0 0 / 0.35)" }}
               >
-                <span className="hero-line block text-[2.45rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
+                <span className="hero-line block text-[2.45rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[3.75rem]">
                   {active.titleLine1}
                 </span>
-                <span className="hero-line hero-line--delay block text-[2.45rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[4.15rem]">
+                <span className="hero-line hero-line--delay block text-[2.45rem] leading-[0.98] sm:text-5xl md:text-6xl lg:text-[3.75rem]">
                   {renderLine2(active.titleLine2, active.titleAccent)}
                 </span>
               </h1>
 
               <p
-                className={cn(
-                  "display-lead mt-0 max-w-md text-[15px] font-medium leading-snug text-white/90 sm:max-w-lg sm:text-base lg:text-lg",
-                  allowParallax && "will-change-transform transition-transform duration-500 ease-out",
-                )}
-                style={
-                  allowParallax
-                    ? {
-                        transform: `translate3d(${px * 8}px, ${py * 6}px, 0)`,
-                        textShadow: "0 1px 16px rgb(0 0 0 / 0.4)",
-                      }
-                    : { textShadow: "0 1px 16px rgb(0 0 0 / 0.4)" }
-                }
+                className="display-lead mt-0 max-w-md text-[15px] font-medium leading-snug text-white/90 sm:max-w-lg sm:text-base lg:text-[16px]"
+                style={{ textShadow: "0 1px 16px rgb(0 0 0 / 0.4)" }}
               >
                 {active.subtitle}
               </p>
 
-              <div
-                className={cn(
-                  "flex flex-wrap items-center gap-2.5 pt-0.5 sm:gap-3",
-                  allowParallax && "will-change-transform transition-transform duration-700 ease-out",
-                )}
-                style={
-                  allowParallax
-                    ? {
-                        transform: `translate3d(${px * 4}px, ${py * 3}px, 0)`,
-                      }
-                    : undefined
-                }
-              >
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5 sm:gap-3">
                 <Link
                   href={active.ctaHref}
+                  prefetch={false}
+                  transitionTypes={
+                    active.ctaHref.startsWith("/category/")
+                      ? ["catalog"]
+                      : undefined
+                  }
                   className="pressable glass-btn-cta inline-flex h-11 items-center gap-2 rounded-full px-6 text-sm font-semibold text-white sm:h-12 sm:px-7 sm:text-[15px]"
                 >
                   {active.ctaLabel}
@@ -293,6 +222,12 @@ export function HeroCarousel({ slides }: Props) {
                 {active.secondaryHref && active.secondaryLabel ? (
                   <Link
                     href={active.secondaryHref}
+                    prefetch={false}
+                    transitionTypes={
+                      active.secondaryHref.startsWith("/category/")
+                        ? ["catalog"]
+                        : undefined
+                    }
                     className="pressable inline-flex h-11 items-center gap-1.5 rounded-full border border-white/30 bg-white/12 px-5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:h-12 sm:px-6"
                   >
                     {active.secondaryLabel}

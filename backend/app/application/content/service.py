@@ -15,6 +15,7 @@ from app.infrastructure.db.models.content import ContentBlock
 
 _HREF_RE = re.compile(r"^(/[a-zA-Z0-9/_\-.?=&%#]*|https?://\S+)$")
 _ID_RE = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
+_PROMO_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 class ContentValidationError(Exception):
@@ -105,6 +106,46 @@ def _normalize_slide(raw: dict[str, Any], *, index: int) -> dict[str, Any]:
 _LIFESTYLE_SPANS = frozenset({"tall", "wide", "square"})
 
 
+def _normalize_promo_settings(raw: Any) -> dict[str, Any]:
+    defaults = default_home_payload()["promoSettings"]
+    if raw is None:
+        return dict(defaults)
+    if not isinstance(raw, dict):
+        raise ContentValidationError(
+            "invalid_promo_settings",
+            "promoSettings must be an object",
+        )
+
+    speed_raw = raw.get("speedSeconds") if "speedSeconds" in raw else raw.get("speed_seconds")
+    if speed_raw is None:
+        speed_seconds = int(defaults["speedSeconds"])
+    else:
+        try:
+            speed_seconds = int(round(float(speed_raw)))
+        except (TypeError, ValueError):
+            raise ContentValidationError(
+                "invalid_promo_settings",
+                "promoSettings.speedSeconds must be a number",
+            ) from None
+    if speed_seconds < 8 or speed_seconds > 120:
+        raise ContentValidationError(
+            "invalid_promo_settings",
+            "promoSettings.speedSeconds must be between 8 and 120",
+        )
+
+    color = str(raw.get("color") or defaults["color"]).strip()
+    if not _PROMO_COLOR_RE.match(color):
+        raise ContentValidationError(
+            "invalid_promo_settings",
+            "promoSettings.color must be a 6-digit hex color",
+        )
+
+    return {
+        "speedSeconds": speed_seconds,
+        "color": color,
+    }
+
+
 def _normalize_lifestyle(raw: dict[str, Any], *, index: int) -> dict[str, Any]:
     lid = str(raw.get("id") or "").strip() or f"life_{index + 1}_{uuid4().hex[:6]}"
     if not _ID_RE.match(lid):
@@ -140,6 +181,9 @@ def _normalize_lifestyle(raw: dict[str, Any], *, index: int) -> dict[str, Any]:
 def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
     """Validate and normalize home CMS payload."""
     promos_raw = raw.get("promoMessages") if "promoMessages" in raw else raw.get("promo_messages")
+    settings_raw = (
+        raw.get("promoSettings") if "promoSettings" in raw else raw.get("promo_settings")
+    )
     slides_raw = raw.get("heroSlides") if "heroSlides" in raw else raw.get("hero_slides")
     life_raw = (
         raw.get("lifestyleCollections")
@@ -180,6 +224,8 @@ def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
     if len(promo_messages) > 20:
         raise ContentValidationError("invalid_promo", "Maximum 20 promo messages")
 
+    promo_settings = _normalize_promo_settings(settings_raw)
+
     if len(slides_raw) > 8:
         raise ContentValidationError("invalid_slide", "Maximum 8 hero slides")
 
@@ -214,6 +260,7 @@ def normalize_home_payload(raw: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "promoMessages": promo_messages,
+        "promoSettings": promo_settings,
         "heroSlides": hero_slides,
         "lifestyleCollections": lifestyle,
     }
@@ -245,6 +292,13 @@ async def get_home_content(session: AsyncSession) -> dict[str, Any]:
     else:
         promo_raw = defaults["promoMessages"]
 
+    if "promoSettings" in payload:
+        settings_raw = payload.get("promoSettings")
+    elif "promo_settings" in payload:
+        settings_raw = payload.get("promo_settings")
+    else:
+        settings_raw = defaults["promoSettings"]
+
     if "heroSlides" in payload:
         slides_raw = payload.get("heroSlides")
     elif "hero_slides" in payload:
@@ -259,8 +313,14 @@ async def get_home_content(session: AsyncSession) -> dict[str, Any]:
     else:
         life_raw = defaults.get("lifestyleCollections", [])
 
+    try:
+        promo_settings = _normalize_promo_settings(settings_raw)
+    except ContentValidationError:
+        promo_settings = defaults["promoSettings"]
+
     return {
         "promoMessages": promo_raw if isinstance(promo_raw, list) else defaults["promoMessages"],
+        "promoSettings": promo_settings,
         "heroSlides": slides_raw if isinstance(slides_raw, list) else defaults["heroSlides"],
         "lifestyleCollections": (
             life_raw if isinstance(life_raw, list) else defaults.get("lifestyleCollections", [])
@@ -285,6 +345,7 @@ async def update_home_content(
     await session.refresh(block)
     return {
         "promoMessages": normalized["promoMessages"],
+        "promoSettings": normalized["promoSettings"],
         "heroSlides": normalized["heroSlides"],
         "lifestyleCollections": normalized.get("lifestyleCollections") or [],
         "updatedAt": _iso(block.updated_at),

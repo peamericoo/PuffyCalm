@@ -54,7 +54,7 @@ export function ProductReviewsEditor({
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Failed to load reviews",
+            : "Falha ao carregar avaliacoes.",
       );
     } finally {
       setLoading(false);
@@ -62,12 +62,15 @@ export function ProductReviewsEditor({
   }, [googleIdToken, productId]);
 
   useEffect(() => {
-    void load();
+    const id = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   const onAdd = async () => {
     if (!author.trim() || !body.trim()) {
-      setMessage("Author and body are required.");
+      setMessage("Autor e comentario sao obrigatorios.");
       return;
     }
     setSaving(true);
@@ -89,14 +92,14 @@ export function ProductReviewsEditor({
       if (productSlug) {
         await revalidateCatalog({ productSlugs: [productSlug] });
       }
-      setMessage("Review added — product rating aggregates updated.");
+      setMessage("Avaliacao adicionada. A nota do produto foi atualizada.");
     } catch (e) {
       setMessage(
         e instanceof AdminReviewsApiError
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Create failed",
+            : "Falha ao criar avaliacao.",
       );
     } finally {
       setSaving(false);
@@ -112,14 +115,14 @@ export function ProductReviewsEditor({
       if (productSlug) {
         await revalidateCatalog({ productSlugs: [productSlug] });
       }
-      setMessage("Review deleted.");
+      setMessage("Avaliacao removida.");
     } catch (e) {
       setMessage(
         e instanceof AdminReviewsApiError
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Delete failed",
+            : "Falha ao remover avaliacao.",
       );
     }
   };
@@ -127,18 +130,17 @@ export function ProductReviewsEditor({
   return (
     <section className="mt-10 rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6">
       <h2 className="font-display text-lg font-semibold tracking-tight">
-        Reviews
+        Avaliacoes
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Demo seed reviews were cleared. Add real or marketing reviews here —
-        they power PDP ratings and review lists.
+        Adicione avaliacoes reais ou editoriais para alimentar a nota e a lista da pagina do produto.
       </p>
 
       {message ? (
         <p
           className={cn(
             "mt-3 rounded-xl border px-3 py-2 text-sm",
-            message.includes("failed") || message.includes("required")
+            message.includes("Falha") || message.includes("obrigatorios")
               ? "border-destructive/30 text-destructive"
               : "border-brand/25 bg-brand-soft/40",
           )}
@@ -149,14 +151,14 @@ export function ProductReviewsEditor({
 
       {loading ? (
         <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
         </div>
       ) : error ? (
         <p className="mt-4 text-sm text-destructive">{error}</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {reviews.length === 0 ? (
-            <li className="text-sm text-muted-foreground">No reviews yet.</li>
+            <li className="text-sm text-muted-foreground">Nenhuma avaliacao ainda.</li>
           ) : (
             reviews.map((r) => (
               <li
@@ -183,7 +185,7 @@ export function ProductReviewsEditor({
                   size="icon"
                   className="h-8 w-8 shrink-0 text-destructive"
                   onClick={() => void onDelete(r.id)}
-                  aria-label="Delete review"
+                  aria-label="Remover avaliacao"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -195,16 +197,16 @@ export function ProductReviewsEditor({
 
       <div className="mt-6 grid gap-3 border-t border-border/60 pt-6 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Author</span>
+          <span className="font-medium">Autor</span>
           <input
             className={inputClass}
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            placeholder="Customer name"
+            placeholder="Nome do cliente"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Rating</span>
+          <span className="font-medium">Nota</span>
           <select
             className={inputClass}
             value={rating}
@@ -212,13 +214,13 @@ export function ProductReviewsEditor({
           >
             {[5, 4, 3, 2, 1].map((n) => (
               <option key={n} value={n}>
-                {n} stars
+                {n} estrela{n === 1 ? "" : "s"}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-          <span className="font-medium">Title (optional)</span>
+          <span className="font-medium">Titulo (opcional)</span>
           <input
             className={inputClass}
             value={title}
@@ -226,7 +228,7 @@ export function ProductReviewsEditor({
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-          <span className="font-medium">Body</span>
+          <span className="font-medium">Comentario</span>
           <textarea
             className="min-h-[88px] w-full rounded-xl border border-border bg-white px-3 py-2 text-sm shadow-sm"
             value={body}
@@ -236,7 +238,7 @@ export function ProductReviewsEditor({
       </div>
       <div className="mt-4 flex justify-end">
         <Button type="button" onClick={() => void onAdd()} disabled={saving}>
-          {saving ? "Adding…" : "Add review"}
+          {saving ? "Adicionando..." : "Adicionar avaliacao"}
         </Button>
       </div>
     </section>

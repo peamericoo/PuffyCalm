@@ -8,7 +8,7 @@ import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Container } from "@/components/shared/container";
 
 export const metadata: Metadata = {
-  title: "Dashboard · Admin",
+  title: "Inicio · Admin",
   robots: { index: false, follow: false },
 };
 
@@ -30,29 +30,29 @@ export default async function AdminPage() {
       <section className="px-3 py-16 sm:px-5 sm:py-24">
         <Container className="max-w-md">
           <p className="text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Operations
+            Painel interno
           </p>
           <h1 className="mt-2 text-center font-display text-2xl font-semibold tracking-tight">
-            Admin sign-in
+            Entrar no admin
           </h1>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Use the owner Google account (
+            Use a conta Google autorizada (
             <span className="font-medium text-foreground">
               paletot.business@gmail.com
             </span>
-            ). Storefront customers use{" "}
+            ). Clientes da loja usam{" "}
             <Link href="/login" className="underline-offset-2 hover:underline">
               /login
             </Link>
             .
           </p>
           <div className="mt-8 rounded-[1.35rem] border border-border/70 bg-white p-6 shadow-sm">
-            <GoogleSignInButton
-              label="Sign in with Google"
+          <GoogleSignInButton
+              label="Entrar com Google"
               callbackUrl="/admin"
             />
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              FE allowlist is UX only. API requires the same email in{" "}
+            O acesso final e validado pela API com a mesma allowlist de{" "}
               <code className="text-[11px]">ADMIN_EMAILS</code> after bridge.
             </p>
           </div>
@@ -64,8 +64,8 @@ export default async function AdminPage() {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Dashboard"
-        description="Sales KPIs, order funnel, fulfillment queue, catalog health — auto-refresh every 45s."
+        title="Inicio"
+        description="Resumo operacional, pedidos para preparar e saude do catalogo."
         activePath="/admin"
       />
       <AdminDashboardView

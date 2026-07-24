@@ -5,10 +5,16 @@
 
 import { getApiBaseUrl } from "@/lib/api/config";
 import { normalizeHomeContent } from "@/lib/api/content";
-import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
+import type {
+  HeroSlide,
+  HomeContent,
+  LifestyleTile,
+  PromoSettings,
+} from "@/types/content";
 
 export type HomeContentInput = {
   promoMessages: string[];
+  promoSettings: PromoSettings;
   heroSlides: HeroSlide[];
   lifestyleCollections: LifestyleTile[];
 };
@@ -71,6 +77,10 @@ export async function saveAdminHomeContent(
     credentials: "include",
     body: JSON.stringify({
       promoMessages: input.promoMessages,
+      promoSettings: {
+        speedSeconds: input.promoSettings.speedSeconds,
+        color: input.promoSettings.color,
+      },
       heroSlides: input.heroSlides.map((s) => ({
         id: s.id,
         titleLine1: s.titleLine1,

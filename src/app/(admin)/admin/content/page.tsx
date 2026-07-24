@@ -5,7 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ContentEditorView } from "@/components/admin/content-editor-view";
 
 export const metadata: Metadata = {
-  title: "Home content · Admin",
+  title: "Conteudo da home · Admin",
   robots: { index: false, follow: false },
 };
 
@@ -27,11 +27,11 @@ export default async function AdminContentPage() {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Home content"
-        description="Promo ticker, hero slides, lifestyle tiles — with live previews. Saves revalidate the storefront."
+        title="Conteudo da home"
+        description="Barra promocional, hero e colecoes da pagina inicial."
         activePath="/admin/content"
       />
-      <div className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <ContentEditorView googleIdToken={session.googleIdToken} />
       </div>
     </div>

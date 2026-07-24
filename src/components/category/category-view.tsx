@@ -1,15 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { ViewTransition } from "react";
-import { useRouter } from "next/navigation";
-import { CategoryActiveChips } from "@/components/category/category-active-chips";
+import {
+  CategoryDesktopControls,
+  CategoryDesktopHero,
+  CategoryMobileControls,
+} from "@/components/category/category-desktop-showcase";
 import { CategoryEmpty } from "@/components/category/category-empty";
-import { CategoryFilters } from "@/components/category/category-filters";
-import { CategoryHeader } from "@/components/category/category-header";
-import { CategoryMobileFilters } from "@/components/category/category-mobile-filters";
+import { CategoryPagination } from "@/components/category/category-pagination";
 import { CategoryProductGrid } from "@/components/category/category-product-grid";
-import { CategoryToolbar } from "@/components/category/category-toolbar";
 import { useCatalogDerived } from "@/components/category/use-catalog-derived";
 import type { CatalogPage } from "@/lib/catalog/types";
 import { cn } from "@/lib/utils";
@@ -19,50 +19,39 @@ interface CategoryViewProps {
   className?: string;
 }
 
-function FiltersFallback() {
-  return (
-    <div
-      className="hidden lg:block"
-      style={{ viewTransitionName: "catalog-filters" }}
-      aria-hidden
-    >
-      <div className="h-[22rem] rounded-[1.5rem] bg-white/45" />
-    </div>
-  );
-}
-
 /**
  * Premium catalog — aligned grid shell, client filter/sort, light native VT.
- * Product cards unchanged. No full-page morph (avoids glass snapshot freezes).
+ * Mobile keeps the existing stack; desktop uses editorial hero + horizontal controls.
  */
 export function CategoryView({ data, className }: CategoryViewProps) {
   const { category, siblings, facets } = data;
-  const { products, total, poolTotal, pending, sort, stock, types, sale } =
+  const {
+    products,
+    total,
+    poolTotal,
+    page,
+    pageCount,
+    pageSize,
+    pending,
+    q,
+    sort,
+    stock,
+    types,
+    sale,
+    minPrice,
+    maxPrice,
+  } =
     useCatalogDerived(data);
-  const router = useRouter();
-
-  // Warm sibling routes so category switches stay instant
-  useEffect(() => {
-    for (const s of siblings) {
-      router.prefetch(`/category/${s.slug}`);
-    }
-  }, [router, siblings]);
 
   const shelfKey = useMemo(
     () =>
-      `${category.slug}:${sort}:${stock}:${types.join(",")}:${sale ? 1 : 0}`,
-    [category.slug, sale, sort, stock, types],
+      `${category.slug}:${q}:${sort}:${stock}:${types.join(",")}:${sale ? 1 : 0}:${minPrice ?? ""}:${maxPrice ?? ""}:${page}`,
+    [category.slug, maxPrice, minPrice, page, q, sale, sort, stock, types],
   );
 
   return (
     <div className={cn("shop-stage relative min-h-[70vh]", className)}>
-      {/* Cheap ambient — no blur-3xl (paint thrash during nav) */}
-      <span
-        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_80%_70%_at_50%_-10%,rgb(255_255_255/0.55),transparent_70%)]"
-        aria-hidden
-      />
-
-      <div className="relative mx-auto w-full max-w-[1400px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-5 sm:pb-20 sm:pt-5 lg:px-6">
+      <div className="relative mx-auto w-full max-w-[1500px] px-[var(--shell-gutter)] pb-16 pt-4 sm:px-5 sm:pb-20 sm:pt-5 lg:px-6 lg:pt-7">
         {/*
           Named title pair — same view-transition-name on every category route
           so old/new titles crossfade instead of hard-cutting.
@@ -82,67 +71,71 @@ export function CategoryView({ data, className }: CategoryViewProps) {
           default="none"
         >
           <div key={category.slug} className="catalog-title-block">
-            <CategoryHeader category={category} total={poolTotal} />
+            <CategoryDesktopHero
+              category={category}
+              siblings={siblings}
+              products={data.products}
+              total={poolTotal}
+            />
           </div>
         </ViewTransition>
 
-        <div
-          className={cn(
-            "mt-6 grid grid-cols-1 gap-5 sm:mt-7 sm:gap-6",
-            "lg:mt-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start lg:gap-7",
-            "xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-8",
-          )}
-        >
-          {/* Filters — stable named VT group (no morph thrash) */}
-          <Suspense fallback={<FiltersFallback />}>
-            <ViewTransition name="catalog-filters" default="none">
-              <CategoryFilters
-                facets={facets}
-                siblings={siblings}
-                activeSlug={category.slug}
-              />
-            </ViewTransition>
-          </Suspense>
-
+        <div className="mt-6 sm:mt-7 lg:mt-7">
           <div className="min-w-0">
             <Suspense
               fallback={
                 <div className="mb-4 h-10 w-full rounded-full bg-white/40" />
               }
             >
-              <div className="mb-3.5 flex flex-col gap-2.5 sm:mb-4">
-                <CategoryToolbar
-                  total={total}
-                  poolTotal={poolTotal}
-                  trailing={
-                    <CategoryMobileFilters
-                      facets={facets}
-                      siblings={siblings}
-                      activeSlug={category.slug}
-                      resultCount={total}
-                    />
-                  }
-                />
-                <CategoryActiveChips facets={facets} />
-              </div>
+              <CategoryMobileControls
+                category={category}
+                siblings={siblings}
+                facets={facets}
+                products={data.products}
+                total={total}
+                pending={pending}
+                className="mb-4 lg:hidden"
+              />
+              <CategoryDesktopControls
+                category={category}
+                siblings={siblings}
+                facets={facets}
+                products={data.products}
+                total={total}
+                poolTotal={poolTotal}
+                pending={pending}
+                className="mb-5 hidden lg:block"
+              />
             </Suspense>
 
-            {/* Shelf only crossfades — GPU opacity/transform, not whole page */}
-            <ViewTransition update="catalog-shelf" default="none">
+            <div
+              key={shelfKey}
+              className={cn(
+                "catalog-shelf",
+                pending && "opacity-80 transition-opacity duration-150",
+              )}
+            >
               <div
-                key={shelfKey}
-                className={cn(
-                  "catalog-shelf",
-                  pending && "opacity-80 transition-opacity duration-150",
-                )}
-              >
-                {products.length === 0 ? (
-                  <CategoryEmpty categoryName={category.name} />
-                ) : (
-                  <CategoryProductGrid products={products} />
-                )}
-              </div>
-            </ViewTransition>
+                id="catalog-results"
+                className="scroll-mt-[calc(var(--promo-h)+var(--nav-h)+1.25rem)]"
+              />
+              {total === 0 ? (
+                <CategoryEmpty categoryName={category.name} />
+              ) : (
+                <>
+                  <CategoryProductGrid
+                    products={products}
+                    variant="editorial"
+                  />
+                  <CategoryPagination
+                    page={page}
+                    pageCount={pageCount}
+                    total={total}
+                    pageSize={pageSize}
+                  />
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

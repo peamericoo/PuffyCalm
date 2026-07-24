@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Crop, Loader2, Upload } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { ensureAdminBackendSession } from "@/lib/api/admin-auth";
 import {
   AdminMediaApiError,
@@ -9,10 +9,7 @@ import {
   MEDIA_MAX_BYTES,
   uploadAdminMedia,
 } from "@/lib/api/admin-media";
-import {
-  AdminImageCropDialog,
-  FramePreview,
-} from "@/components/admin/admin-image-crop-dialog";
+import { FramePreview } from "@/components/admin/admin-image-crop-dialog";
 import type { AspectPreset } from "@/lib/admin/image-crop";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,11 +33,11 @@ const inputClass =
   "h-10 w-full min-w-0 rounded-xl border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30";
 
 /**
- * Global admin image control: URL, upload, crop/frame, framed preview.
+ * Global admin image control: URL, direct upload, framed preview.
  * Layout always stacks cleanly — never squeezes action buttons.
  */
 export function AdminImageField({
-  label = "Image",
+  label = "Imagem",
   value,
   onChange,
   googleIdToken,
@@ -54,17 +51,15 @@ export function AdminImageField({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
-  const [revokeOnClose, setRevokeOnClose] = useState<string | null>(null);
 
   const defaultHelp =
     help ??
-    "Upload → adjust the frame (pan/zoom) → applies the crop. Or paste a URL and click Adjust frame.";
+    "Envie uma imagem ou cole uma URL. O enquadramento sera redesenhado em uma etapa separada.";
 
   const uploadFile = async (file: File) => {
     if (file.size > MEDIA_MAX_BYTES) {
       throw new Error(
-        `File exceeds ${Math.round(MEDIA_MAX_BYTES / (1024 * 1024))} MiB limit`,
+        `Arquivo maior que ${Math.round(MEDIA_MAX_BYTES / (1024 * 1024))} MiB.`,
       );
     }
     await ensureAdminBackendSession({ googleIdToken });
@@ -72,62 +67,27 @@ export function AdminImageField({
       file,
       productId: productId || undefined,
     });
-    if (!result.url) throw new Error("Upload returned no public URL");
+    if (!result.url) throw new Error("A API nao retornou a URL da imagem.");
     onChange(result.url);
   };
 
-  const openCropFromFile = (file: File | null) => {
+  const onFileSelected = async (file: File | null) => {
     if (!file) return;
-    setError(null);
-    if (file.size > MEDIA_MAX_BYTES) {
-      setError(
-        `File exceeds ${Math.round(MEDIA_MAX_BYTES / (1024 * 1024))} MiB limit`,
-      );
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setRevokeOnClose(url);
-    setCropSrc(url);
-  };
-
-  const openCropFromValue = () => {
-    if (!value.trim()) {
-      setError("Add or upload an image first.");
-      return;
-    }
-    setError(null);
-    setRevokeOnClose(null);
-    const raw = value.trim();
-    if (raw.startsWith("blob:") || raw.startsWith("data:")) {
-      setCropSrc(raw);
-      return;
-    }
-    setCropSrc(`/api/admin/media-proxy?url=${encodeURIComponent(raw)}`);
-  };
-
-  const closeCrop = () => {
-    if (revokeOnClose) URL.revokeObjectURL(revokeOnClose);
-    setRevokeOnClose(null);
-    setCropSrc(null);
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const onCropApply = async (file: File) => {
     setUploading(true);
     setError(null);
     try {
       await uploadFile(file);
-      closeCrop();
     } catch (e) {
       setError(
         e instanceof AdminMediaApiError
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Upload failed",
+            : "Falha no upload.",
       );
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -154,7 +114,7 @@ export function AdminImageField({
           className="sr-only"
           disabled={uploading}
           onChange={(e) => {
-            openCropFromFile(e.target.files?.[0] ?? null);
+            void onFileSelected(e.target.files?.[0] ?? null);
           }}
         />
         <Button
@@ -168,25 +128,14 @@ export function AdminImageField({
           {uploading ? (
             <>
               <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              Working…
+              Enviando...
             </>
           ) : (
             <>
               <Upload className="mr-1.5 h-4 w-4" />
-              Upload & frame
+              Enviar imagem
             </>
           )}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-10 shrink-0"
-          disabled={uploading || !value.trim()}
-          onClick={openCropFromValue}
-        >
-          <Crop className="mr-1.5 h-4 w-4" />
-          Adjust frame
         </Button>
       </div>
 
@@ -199,16 +148,6 @@ export function AdminImageField({
         </p>
       ) : null}
 
-      {cropSrc ? (
-        <AdminImageCropDialog
-          open
-          imageSrc={cropSrc}
-          aspect={aspect}
-          title={`Frame · ${label}`}
-          onCancel={closeCrop}
-          onApply={onCropApply}
-        />
-      ) : null}
     </div>
   );
 }

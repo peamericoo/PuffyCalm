@@ -10,9 +10,12 @@ import { siteConfig } from "@/lib/site";
  * Filters/sort live in the URL but are applied client-side only,
  * so changing them never re-runs RSC (keeps the UI fluid).
  *
- * Data: FastAPI catalog (Phase B). ISR revalidate 60s.
+ * Data: FastAPI catalog (Phase B). Dynamic to avoid stale App Router payloads
+ * after direct admin/API product publishes.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export async function generateStaticParams() {
   const slugs = await listCatalogSlugs();
@@ -51,19 +54,23 @@ export async function generateMetadata({
 function CategoryFallback() {
   return (
     <div className="shop-stage min-h-[70vh] px-[var(--shell-gutter)] pt-6 sm:px-5">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="mb-6 h-8 w-40 animate-pulse rounded-full bg-white/50" />
-        <div className="mb-8 h-12 w-64 animate-pulse rounded-2xl bg-white/55" />
-        <div className="grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
-          <div className="hidden h-80 animate-pulse rounded-[1.5rem] bg-white/50 lg:block" />
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[4/5] animate-pulse rounded-[1.2rem] bg-white/55"
-              />
-            ))}
+      <div className="mx-auto max-w-[1500px]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(28rem,1.08fr)]">
+          <div>
+            <div className="mb-6 h-8 w-44 animate-pulse rounded-full bg-white/50" />
+            <div className="mb-5 h-20 w-72 animate-pulse rounded-2xl bg-white/55 lg:h-24 lg:w-96" />
+            <div className="h-8 w-80 max-w-full animate-pulse rounded-full bg-white/45" />
           </div>
+          <div className="hidden min-h-[18rem] animate-pulse rounded-[2rem] bg-white/50 lg:block" />
+        </div>
+        <div className="my-6 h-14 animate-pulse rounded-[1.15rem] bg-white/55 lg:my-7" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4 xl:gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-[4/5] animate-pulse rounded-[1.2rem] bg-white/55"
+            />
+          ))}
         </div>
       </div>
     </div>

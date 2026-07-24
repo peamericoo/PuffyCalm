@@ -1,292 +1,153 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Cloud,
-  LayoutGrid,
-  Sparkles,
-  SunMedium,
-  type LucideIcon,
-} from "lucide-react";
-import { ProductCard } from "@/components/product/product-card";
+import { ArrowRight } from "lucide-react";
+import { ShopFeelAutoRail } from "@/components/home/shop-feel-auto-rail";
+import { HomeProductGrid } from "@/components/home/home-product-grid";
 import { Reveal } from "@/components/shared/reveal";
-import { DisplayStack } from "@/components/shared/section-heading";
 import { categoryDisplayImage } from "@/lib/catalog/category-image";
 import { getHomeProductRail, listCategories } from "@/lib/catalog/service";
-import type { Product } from "@/types/product";
+import type { Category, Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
 type ShopCategory = {
   label: string;
   href: string;
   tagline: string;
-  icon: LucideIcon;
-  /** Optional real merch photo — never stock Unsplash demo. */
   imageUrl?: string;
   count: string;
+  accent: string;
 };
 
-const MOOD_ICONS: Record<string, LucideIcon> = {
-  recovery: Sparkles,
-  comfort: Cloud,
-  everyday: SunMedium,
+const CATEGORY_ORDER = ["recovery", "comfort", "everyday"] as const;
+
+const CATEGORY_COPY: Record<(typeof CATEGORY_ORDER)[number], string> = {
+  recovery: "Relieve tension & recharge faster",
+  comfort: "Support that feels like a hug",
+  everyday: "Small rituals for a better day",
 };
 
-const MOOD_TAGLINES: Record<string, string> = {
-  recovery: "Unknot today",
-  comfort: "Sit softer",
-  everyday: "Upgrade daily",
+const CATEGORY_ACCENTS: Record<(typeof CATEGORY_ORDER)[number], string> = {
+  recovery: "from-[#d9edf9] via-[#edf7fc] to-[#b8d5e8]",
+  comfort: "from-[#e5f3fb] via-[#f7fbfd] to-[#c9e4f5]",
+  everyday: "from-[#f6dfc2] via-[#f9ead8] to-[#d7edf7]",
 };
 
-function isRealMerchImage(url: string | undefined | null): url is string {
-  return categoryDisplayImage(url) != null;
+function buildFallbackCategories(productTotal: number): ShopCategory[] {
+  return CATEGORY_ORDER.map((slug) => ({
+    label: slug === "everyday" ? "Everyday" : slug[0]!.toUpperCase() + slug.slice(1),
+    href: `/category/${slug}`,
+    tagline: CATEGORY_COPY[slug],
+    count: productTotal > 0 ? String(productTotal) : "-",
+    accent: CATEGORY_ACCENTS[slug],
+  }));
 }
 
-async function buildShopCategories(
-  publishedTotal: number,
-): Promise<ShopCategory[]> {
-  let recoveryCount = "—";
-  let comfortCount = "—";
-  let everydayCount = "—";
-  let allCount = publishedTotal > 0 ? String(publishedTotal) : "—";
-  let recoveryImg: string | undefined;
-  let comfortImg: string | undefined;
-  let everydayImg: string | undefined;
+function categoryToShopCard(category: Category, slug: (typeof CATEGORY_ORDER)[number]) {
+  return {
+    label: category.name,
+    href: `/category/${category.slug}`,
+    tagline: category.tagline || CATEGORY_COPY[slug],
+    imageUrl: categoryDisplayImage(category.imageUrl) ?? undefined,
+    count: String(category.productCount),
+    accent: CATEGORY_ACCENTS[slug],
+  } satisfies ShopCategory;
+}
 
+async function buildShopCategories(productTotal: number): Promise<ShopCategory[]> {
   try {
-    const cats = await listCategories();
-    for (const c of cats) {
-      if (c.slug === "recovery") {
-        recoveryCount = String(c.productCount);
-        if (isRealMerchImage(c.imageUrl)) recoveryImg = c.imageUrl;
-      }
-      if (c.slug === "comfort") {
-        comfortCount = String(c.productCount);
-        if (isRealMerchImage(c.imageUrl)) comfortImg = c.imageUrl;
-      }
-      if (c.slug === "everyday") {
-        everydayCount = String(c.productCount);
-        if (isRealMerchImage(c.imageUrl)) everydayImg = c.imageUrl;
-      }
-      if (c.slug === "all") {
-        allCount = String(c.productCount);
-      }
-    }
-  } catch {
-    /* counts stay as placeholders */
-  }
+    const categories = await listCategories();
+    const bySlug = new Map(categories.map((category) => [category.slug, category]));
+    const cards = CATEGORY_ORDER.map((slug) => {
+      const category = bySlug.get(slug);
+      return category
+        ? categoryToShopCard(category, slug)
+        : buildFallbackCategories(productTotal).find((item) =>
+            item.href.endsWith(slug),
+          )!;
+    });
 
-  return [
-    {
-      label: "Recovery",
-      href: "/category/recovery",
-      tagline: MOOD_TAGLINES.recovery,
-      icon: MOOD_ICONS.recovery,
-      imageUrl: recoveryImg,
-      count: recoveryCount,
-    },
-    {
-      label: "Comfort",
-      href: "/category/comfort",
-      tagline: MOOD_TAGLINES.comfort,
-      icon: MOOD_ICONS.comfort,
-      imageUrl: comfortImg,
-      count: comfortCount,
-    },
-    {
-      label: "Everyday",
-      href: "/category/everyday",
-      tagline: MOOD_TAGLINES.everyday,
-      icon: MOOD_ICONS.everyday,
-      imageUrl: everydayImg,
-      count: everydayCount,
-    },
-    {
-      label: "All products",
-      href: "/category/all",
-      tagline: "Full catalog",
-      icon: LayoutGrid,
-      count: allCount,
-    },
-  ];
+    return cards;
+  } catch {
+    return buildFallbackCategories(productTotal);
+  }
 }
 
-function CategoryThumb({
-  cat,
-  sizeClass,
-}: {
-  cat: ShopCategory;
-  sizeClass: string;
-}) {
-  const Icon = cat.icon;
+function CategoryCard({ category }: { category: ShopCategory }) {
   return (
-    <span
+    <Link
+      href={category.href}
+      prefetch={false}
+      transitionTypes={["catalog"]}
       className={cn(
-        "relative shrink-0 overflow-hidden rounded-2xl shadow-sm ring-1 ring-white/80",
-        sizeClass,
+        "group relative min-h-[162px] overflow-hidden rounded-[1.15rem] border border-white/70 shadow-[0_18px_44px_-32px_rgb(26_35_50/0.3)] outline-none transition duration-300 sm:min-h-[178px] lg:min-h-[192px] xl:min-h-[206px]",
+        "hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-30px_rgb(26_35_50/0.34)] focus-visible:ring-2 focus-visible:ring-brand/35",
       )}
     >
-      {cat.imageUrl ? (
+      <span
+        className={cn("absolute inset-0 bg-gradient-to-br", category.accent)}
+        aria-hidden
+      />
+
+      {category.imageUrl ? (
         <Image
-          src={cat.imageUrl}
+          src={category.imageUrl}
           alt=""
           fill
-          sizes="64px"
-          quality={65}
-          loading="lazy"
-          className="object-cover transition-transform duration-500 group-hover/cat:scale-110"
+          sizes="(max-width: 1024px) 92vw, 33vw"
+          quality={74}
+          className="object-cover object-center transition-transform duration-700 group-hover:scale-[1.045]"
         />
       ) : (
-        <span
-          className="absolute inset-0 brand-gradient opacity-90"
-          aria-hidden
-        />
+        <span className="absolute inset-0 brand-gradient opacity-85" />
       )}
-      <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/40 to-transparent" />
-      <span className="absolute inset-0 flex items-center justify-center">
-        <Icon
-          className="h-4 w-4 text-white drop-shadow-sm"
-          strokeWidth={2.25}
-        />
+
+      <span
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgb(10_22_38/0.06)_0%,rgb(10_22_38/0.18)_58%,rgb(10_22_38/0.34)_100%)]"
+        aria-hidden
+      />
+      <span
+        className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_18%_18%,rgb(255_255_255/0.22),transparent_58%)]"
+        aria-hidden
+      />
+
+      <span className="relative z-10 flex h-full min-h-[162px] w-full items-end justify-between gap-3 px-4 py-4 sm:min-h-[178px] sm:px-5 sm:py-5 lg:min-h-[192px] xl:min-h-[206px]">
+        <span className="min-w-0 max-w-[72%]">
+          <span className="block font-display text-[1.55rem] font-medium leading-none tracking-tight text-white drop-shadow-[0_2px_14px_rgb(10_22_38/0.35)] sm:text-[1.75rem] lg:text-[1.95rem]">
+            {category.label}
+          </span>
+          <span className="mt-2 line-clamp-2 block max-w-[15rem] text-[12px] font-semibold leading-snug text-white/86 drop-shadow-[0_1px_10px_rgb(10_22_38/0.38)] sm:text-[13px]">
+            {category.tagline}
+          </span>
+          <span className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-white drop-shadow-[0_1px_10px_rgb(10_22_38/0.38)]">
+            {category.count} products
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </span>
+        </span>
       </span>
-    </span>
+    </Link>
   );
 }
 
-function CategoryRail({
-  shopCategories,
-  className,
-}: {
-  shopCategories: ShopCategory[];
-  className?: string;
-}) {
+function ShopByFeelSection({ categories }: { categories: ShopCategory[] }) {
   return (
-    <aside
-      className={cn(
-        "glass-panel relative overflow-hidden rounded-[1.5rem] p-4 xl:p-5",
-        className,
-      )}
-    >
-      <span
-        className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-brand/30 blur-3xl"
-        aria-hidden
-      />
-      <span
-        className="pointer-events-none absolute -bottom-10 -left-6 h-32 w-32 rounded-full bg-brand-deep/10 blur-3xl"
-        aria-hidden
-      />
-
-      <div className="relative mb-4 px-0.5">
-        <DisplayStack
-          eyebrow="Browse"
-          title="Pick how you want to feel"
-          description="Recovery · comfort · everyday — jump in."
-          size="sm"
-          accent="feel"
-          aura
-          noReveal
-          className="display-stack--compact"
-        />
+    <Reveal delay={40} variant="soft" once={false}>
+      <div className="mx-auto max-w-[1680px]" aria-label="Shop by feel">
+        <ShopFeelAutoRail>
+          <div className="shop-feel-rail flex w-max gap-3.5 pr-[var(--shell-gutter)] lg:grid lg:w-auto lg:grid-cols-3 lg:gap-5 lg:pr-0 xl:gap-6">
+            {categories.map((category) => (
+              <CategoryCard key={category.href} category={category} />
+            ))}
+          </div>
+        </ShopFeelAutoRail>
       </div>
-
-      <nav
-        className="relative flex flex-col gap-2"
-        aria-label="Shop categories"
-      >
-        {shopCategories.map((cat, i) => (
-            <Link
-              key={cat.label}
-              href={cat.href}
-              className={cn(
-                "group/cat flex items-center gap-3 rounded-2xl p-2 pr-3 transition-all duration-300",
-                "hover:bg-white/65 hover:shadow-[0_10px_28px_-16px_rgb(26_35_50/0.28)]",
-                "active:scale-[0.99]",
-                i === 0 && "bg-white/50 ring-1 ring-white/70",
-              )}
-            >
-              <CategoryThumb cat={cat} sizeClass="h-14 w-14" />
-
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[15px] font-semibold text-foreground">
-                    {cat.label}
-                  </span>
-                  <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-                    {cat.count}
-                  </span>
-                </span>
-                <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
-                  {cat.tagline}
-                </span>
-              </span>
-
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-brand-deep/45 transition-all duration-300 group-hover/cat:translate-x-0.5 group-hover/cat:-translate-y-0.5 group-hover/cat:text-brand-deep" />
-            </Link>
-        ))}
-      </nav>
-
-      <div className="relative mt-4 border-t border-white/45 pt-4">
-        <Link
-          href="/category/all"
-          className="pressable glass-btn-cta flex h-11 w-full items-center justify-center gap-1.5 rounded-full text-sm font-semibold text-white"
-        >
-          Shop everything
-          <ArrowUpRight className="h-4 w-4" />
-        </Link>
-        <p className="mt-2.5 text-center text-[11px] text-muted-foreground">
-          Guest checkout · free shipping $75+
-        </p>
-      </div>
-    </aside>
-  );
-}
-
-function MobileMoodStrip({
-  shopCategories,
-}: {
-  shopCategories: ShopCategory[];
-}) {
-  return (
-    <div className="lg:hidden">
-      <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
-        <DisplayStack
-          eyebrow="Browse"
-          title="Shop by mood"
-          size="sm"
-          accent="mood"
-          aura={false}
-          noReveal
-          className="display-stack--compact min-w-0"
-        />
-        <Link
-          href="/category/all"
-          className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          View all
-        </Link>
-      </div>
-      <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1 no-scrollbar">
-        {shopCategories.map((cat) => (
-            <Link
-              key={cat.label}
-              href={cat.href}
-              className="group/mcat relative flex w-[5.25rem] shrink-0 flex-col items-center gap-1.5"
-            >
-              <CategoryThumb cat={cat} sizeClass="h-16 w-16" />
-              <span className="w-full truncate text-center text-[12px] font-medium text-foreground">
-                {cat.label}
-              </span>
-            </Link>
-        ))}
-      </div>
-    </div>
+    </Reveal>
   );
 }
 
 function CatalogEmpty({ isError }: { isError: boolean }) {
   return (
     <div
-      className="glass-panel rounded-[1.5rem] px-6 py-10 text-center"
+      className="mx-auto max-w-[760px] rounded-[1.25rem] border border-white/70 bg-white/58 px-6 py-10 text-center shadow-[0_18px_40px_-34px_rgb(26_35_50/0.25)]"
       role="status"
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -298,10 +159,12 @@ function CatalogEmpty({ isError }: { isError: boolean }) {
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
         {isError
           ? "Please refresh in a moment. Your cart is unaffected."
-          : "Add products in Admin → Products, upload photos, then Publish. They appear here automatically."}
+          : "Add products in Admin, upload photos, then publish. They appear here automatically."}
       </p>
       <Link
         href={isError ? "/category/all" : "/admin/products"}
+        prefetch={false}
+        transitionTypes={isError ? ["catalog"] : undefined}
         className="mt-4 inline-flex text-sm font-semibold text-brand-deep underline-offset-4 hover:underline"
       >
         {isError ? "Try the collection" : "Open products admin"}
@@ -311,78 +174,32 @@ function CatalogEmpty({ isError }: { isError: boolean }) {
 }
 
 /**
- * Premium shop stage:
- * Desktop — glass category rail left + product grid.
- * Mobile  — products first, compact mood strip after (no tall rail).
- *
- * Products from catalog service (API Phase B).
+ * Home shop stage.
+ * Categories use Admin -> Categories cover images. Product order is controlled
+ * by Admin -> Products -> Destaque, then falls back to the published catalog.
  */
 export async function ShopNow() {
-  let conversionCatalog: Product[] = [];
+  let products: Product[] = [];
   let catalogError = false;
 
   try {
-    conversionCatalog = await getHomeProductRail(6);
+    products = await getHomeProductRail(8);
   } catch {
     catalogError = true;
   }
 
-  const shopCategories = await buildShopCategories(conversionCatalog.length);
+  const categories = await buildShopCategories(products.length);
 
   return (
-    <section className="relative overflow-x-clip px-[var(--shell-gutter)] pb-10 pt-2 sm:px-5 sm:pb-14 sm:pt-4">
-      <div className="mx-auto max-w-[1440px]">
-        <div className="mb-5 sm:mb-8">
-          <DisplayStack
-            eyebrow="Shop"
-            title="Start with what works"
-            description="Curated picks · free shipping over $75 · guest checkout"
-            accent="works"
-            motion="rise"
-            className="max-w-xl"
-          />
-        </div>
+    <section className="relative overflow-x-clip px-[var(--shell-gutter)] pb-10 pt-4 sm:px-5 sm:pb-14 sm:pt-5 lg:pb-16 lg:pt-6">
+      <div className="mx-auto max-w-[1680px] space-y-6 sm:space-y-7">
+        <ShopByFeelSection categories={categories} />
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-          <Reveal
-            delay={60}
-            className="hidden lg:sticky lg:top-[calc(var(--promo-h)+5.5rem)] lg:block lg:self-start"
-          >
-            <CategoryRail shopCategories={shopCategories} />
-          </Reveal>
-
-          <div className="min-w-0 order-1 lg:order-none">
-            {catalogError || conversionCatalog.length === 0 ? (
-              <CatalogEmpty isError={catalogError} />
-            ) : (
-              <Reveal delay={60} className="shop-now-grid">
-                <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3">
-                  {conversionCatalog.map((product, i) => (
-                    <div
-                      key={product.id}
-                      className="shop-now-grid__item h-full min-h-0"
-                      style={{ transitionDelay: `${60 + i * 35}ms` }}
-                    >
-                      <ProductCard
-                        product={product}
-                        compact
-                        priority={i < 2}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </Reveal>
-            )}
-
-            <div className="mt-6 lg:hidden">
-              <Reveal delay={120}>
-                <div className="glass-panel rounded-[1.25rem] px-3 py-3.5">
-                  <MobileMoodStrip shopCategories={shopCategories} />
-                </div>
-              </Reveal>
-            </div>
-          </div>
-        </div>
+        {catalogError || products.length === 0 ? (
+          <CatalogEmpty isError={catalogError} />
+        ) : (
+          <HomeProductGrid products={products} />
+        )}
       </div>
     </section>
   );

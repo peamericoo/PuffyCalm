@@ -5,7 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ProductsListView } from "@/components/admin/products-list-view";
 
 export const metadata: Metadata = {
-  title: "Products · Admin",
+  title: "Produtos · Admin",
   robots: { index: false, follow: false },
 };
 
@@ -27,11 +27,11 @@ export default async function AdminProductsPage() {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Products"
-        description="Create drafts, edit catalog fields, publish to the storefront. Image URLs only until Phase I."
+        title="Produtos"
+        description="Crie lancamentos, ajuste estoque e publique na loja."
         activePath="/admin/products"
       />
-      <div className="mx-auto max-w-6xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <ProductsListView googleIdToken={session.googleIdToken} />
       </div>
     </div>

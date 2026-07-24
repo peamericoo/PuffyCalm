@@ -47,6 +47,7 @@ type FormState = {
   compareAtPrice: string;
   imageUrl: string;
   imageAlt: string;
+  supplierUrl: string;
   /** One URL per line — order = gallery order */
   imagesText: string;
   categorySlugs: string[];
@@ -72,6 +73,7 @@ function emptyForm(): FormState {
     compareAtPrice: "",
     imageUrl: "",
     imageAlt: "",
+    supplierUrl: "",
     imagesText: "",
     categorySlugs: [],
     categoryLabel: "",
@@ -96,6 +98,7 @@ function detailToForm(d: AdminProductDetail): FormState {
     compareAtPrice: d.compareAtPrice != null ? String(d.compareAtPrice) : "",
     imageUrl: d.imageUrl,
     imageAlt: d.imageAlt,
+    supplierUrl: d.supplierUrl,
     imagesText: d.images.map((i) => i.url).join("\n"),
     categorySlugs: d.categorySlugs,
     categoryLabel: d.categoryLabel ?? "",
@@ -193,9 +196,9 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         err.status ??
         (e instanceof AdminProductsApiError ? e.status : undefined);
       if (http === 401 || http === 403) {
-        setAuthError(err.message || "Backend admin session missing.");
+        setAuthError(err.message || "Sessao do admin expirada.");
       } else {
-        setLoadError(err.message || "Failed to load product");
+        setLoadError(err.message || "Falha ao carregar produto.");
       }
     } finally {
       setLoading(false);
@@ -203,7 +206,10 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
   }, [googleIdToken, productId]);
 
   useEffect(() => {
-    void load();
+    const id = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -226,7 +232,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
     return () => {
       const price = Number(form.price);
       if (!Number.isFinite(price) || price <= 0) {
-        throw new Error("Price must be a positive number");
+        throw new Error("O preco precisa ser maior que zero.");
       }
       const compareRaw = form.compareAtPrice.trim();
       const compareAtPrice =
@@ -235,7 +241,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         compareRaw !== "" &&
         (!Number.isFinite(compareAtPrice) || (compareAtPrice as number) <= 0)
       ) {
-        throw new Error("Compare-at price must be positive or empty");
+        throw new Error("O preco comparativo precisa ser positivo ou vazio.");
       }
       const images = parseLines(form.imagesText).map((url) => ({ url }));
       const imageUrl =
@@ -249,6 +255,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         compareAtPrice,
         imageUrl,
         imageAlt: form.imageAlt || form.name.trim(),
+        supplierUrl: form.supplierUrl.trim(),
         images,
         categorySlugs: form.categorySlugs,
         categoryLabel: form.categoryLabel.trim() || null,
@@ -278,7 +285,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
     if (!rev.ok) {
       setMessage(
         (m) =>
-          `${m ?? "Saved."} Cache revalidate skipped: ${rev.error ?? "unknown"} (ISR ≤60s fallback).`,
+          `${m ?? "Salvo."} A revalidacao de cache falhou: ${rev.error ?? "erro desconhecido"}. A vitrine atualiza pelo ISR em ate 60s.`,
       );
     }
   };
@@ -292,7 +299,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       await ensureAdminBackendSession({ googleIdToken });
       const body = payloadFromForm();
       if (!body.slug || !body.name) {
-        throw new Error("Name and slug are required");
+        throw new Error("Nome e slug sao obrigatorios.");
       }
       if (isCreate) {
         const createBody = {
@@ -302,7 +309,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         };
         const created = await createAdminProduct(createBody);
         await afterMutate(created);
-        setMessage("Product created.");
+        setMessage("Produto criado.");
         router.push(`/admin/products/${created.id}`);
         router.refresh();
         return;
@@ -312,9 +319,9 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       setForm(detailToForm(updated));
       setLoadedSlug(updated.slug);
       await afterMutate(updated, prev);
-      setMessage("Product saved.");
+      setMessage("Produto salvo.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : "Falha ao salvar.");
     } finally {
       setSaving(false);
     }
@@ -334,9 +341,9 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       setForm(detailToForm(published));
       setLoadedSlug(published.slug);
       await afterMutate(published);
-      setMessage("Published — product is visible on the storefront.");
+      setMessage("Publicado. O produto esta visivel na loja.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed");
+      setError(err instanceof Error ? err.message : "Falha ao publicar.");
     } finally {
       setLifecycleBusy(false);
     }
@@ -352,9 +359,9 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       const unpublished = await unpublishAdminProduct(productId);
       setForm(detailToForm(unpublished));
       await afterMutate(unpublished);
-      setMessage("Unpublished — removed from public catalog.");
+      setMessage("Despublicado. O produto saiu do catalogo publico.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unpublish failed");
+      setError(err instanceof Error ? err.message : "Falha ao despublicar.");
     } finally {
       setLifecycleBusy(false);
     }
@@ -378,7 +385,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         const file = files[i]!;
         if (file.size > MEDIA_MAX_BYTES) {
           throw new Error(
-            `${file.name} exceeds ${MEDIA_MAX_BYTES / (1024 * 1024)} MiB limit`,
+            `${file.name} ultrapassa ${MEDIA_MAX_BYTES / (1024 * 1024)} MiB.`,
           );
         }
         const wantCover = opts.setCover && i === 0;
@@ -414,63 +421,26 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         await afterMutate(detail);
         setMessage(
           urls.length === 1
-            ? "Image uploaded and linked to product."
-            : `${urls.length} images uploaded and linked.`,
+            ? "Imagem enviada e vinculada ao produto."
+            : `${urls.length} imagens enviadas e vinculadas.`,
         );
       } else {
         setMessage(
           urls.length === 1
-            ? "Image uploaded — save product to persist gallery."
-            : `${urls.length} images uploaded — save product to persist gallery.`,
+            ? "Imagem enviada. Salve o produto para persistir a galeria."
+            : `${urls.length} imagens enviadas. Salve o produto para persistir a galeria.`,
         );
       }
     } catch (err) {
       const msg =
         err instanceof AdminMediaApiError || err instanceof Error
           ? err.message
-          : "Upload failed";
+          : "Falha no upload.";
       setError(msg);
     } finally {
       setUploading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div
-        className="rounded-[1.35rem] border border-border/70 bg-white p-8 text-center text-sm text-muted-foreground shadow-sm"
-        role="status"
-      >
-        Loading…
-      </div>
-    );
-  }
-
-  if (authError) {
-    return (
-      <div className="rounded-[1.35rem] border border-amber-200 bg-amber-50/80 p-6 text-sm shadow-sm">
-        <p className="font-medium text-amber-950">Auth required</p>
-        <p className="mt-1 text-amber-900/80">{authError}</p>
-        <Link
-          href="/admin"
-          className="mt-3 inline-block text-sm font-medium text-brand-deep hover:underline"
-        >
-          Open admin bridge
-        </Link>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="rounded-[1.35rem] border border-red-200 bg-red-50/80 p-6 text-sm shadow-sm">
-        <p className="font-medium text-red-950">{loadError}</p>
-        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void load()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
 
   const galleryUrls = useMemo(
     () =>
@@ -491,8 +461,8 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
     return {
       id: form.id || "preview",
       slug: form.slug || "preview-product",
-      name: form.name || "Product name",
-      shortDescription: form.shortDescription || "Short description",
+      name: form.name || "Nome do produto",
+      shortDescription: form.shortDescription || "Descricao curta",
       description: form.description || "",
       price,
       compareAtPrice:
@@ -501,7 +471,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       categorySlugs: form.categorySlugs,
       imageUrl: cover,
       images,
-      imageAlt: form.imageAlt || form.name || "Product",
+      imageAlt: form.imageAlt || form.name || "Produto",
       rating: 0,
       reviewCount: 0,
       badges: form.badgesText
@@ -517,6 +487,43 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
       categoryLabel: form.categoryLabel || undefined,
     };
   }, [form, galleryUrls]);
+
+  if (loading) {
+    return (
+      <div
+        className="rounded-[1.35rem] border border-border/70 bg-white p-8 text-center text-sm text-muted-foreground shadow-sm"
+        role="status"
+      >
+        Carregando...
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="rounded-[1.35rem] border border-amber-200 bg-amber-50/80 p-6 text-sm shadow-sm">
+        <p className="font-medium text-amber-950">Autenticacao necessaria</p>
+        <p className="mt-1 text-amber-900/80">{authError}</p>
+        <Link
+          href="/admin"
+          className="mt-3 inline-block text-sm font-medium text-brand-deep hover:underline"
+        >
+          Abrir inicio do admin
+        </Link>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="rounded-[1.35rem] border border-red-200 bg-red-50/80 p-6 text-sm shadow-sm">
+        <p className="font-medium text-red-950">{loadError}</p>
+        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void load()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={(e) => void onSave(e)} className="space-y-6">
@@ -537,7 +544,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               onClick={() => void onPublish()}
               disabled={lifecycleBusy || saving}
             >
-              Publish
+              Publicar
             </Button>
           ) : null}
           {!isCreate && form.status === "published" ? (
@@ -548,18 +555,18 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               onClick={() => void onUnpublish()}
               disabled={lifecycleBusy || saving}
             >
-              Unpublish
+              Despublicar
             </Button>
           ) : null}
           {!isCreate && form.status === "published" ? (
             <Button asChild variant="outline" size="sm">
               <Link href={`/product/${form.slug}`} target="_blank">
-                View storefront
+                Ver na loja
               </Link>
             </Button>
           ) : null}
           <Button type="submit" size="sm" disabled={saving || lifecycleBusy}>
-            {saving ? "Saving…" : isCreate ? "Create draft" : "Save"}
+            {saving ? "Salvando..." : isCreate ? "Criar rascunho" : "Salvar"}
           </Button>
         </div>
       </div>
@@ -575,20 +582,29 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4 rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold">Basics</h2>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start">
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+        <section className="space-y-4 rounded-lg border border-border/70 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold">Dados principais</h2>
           {isCreate ? (
-            <Field label="Product id (SKU-like, optional)">
+            <Field label="ID do produto (opcional)">
               <input
                 value={form.id}
                 onChange={(e) => setField("id", e.target.value)}
-                placeholder="auto-generated if empty"
+                placeholder="gerado automaticamente se vazio"
                 className={inputClass}
               />
             </Field>
           ) : null}
-          <Field label="Name *">
+          {!isCreate && form.supplierUrl ? (
+            <Button asChild variant="outline" size="sm">
+              <a href={form.supplierUrl} target="_blank" rel="noreferrer">
+                Abrir AliExpress
+              </a>
+            </Button>
+          ) : null}
+          <Field label="Nome *">
             <input
               required
               value={form.name}
@@ -613,10 +629,10 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               onChange={(e) => setField("slug", e.target.value.toLowerCase())}
               className={inputClass}
               pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-              title="lowercase alphanumeric with hyphens"
+              title="use letras minusculas, numeros e hifens"
             />
           </Field>
-          <Field label="Short description">
+          <Field label="Descricao curta">
             <textarea
               value={form.shortDescription}
               onChange={(e) => setField("shortDescription", e.target.value)}
@@ -624,7 +640,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               className={textareaClass}
             />
           </Field>
-          <Field label="Description">
+          <Field label="Descricao completa">
             <textarea
               value={form.description}
               onChange={(e) => setField("description", e.target.value)}
@@ -633,7 +649,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Price (USD) *">
+            <Field label="Preco (USD) *">
               <input
                 required
                 type="number"
@@ -644,7 +660,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
                 className={inputClass}
               />
             </Field>
-            <Field label="Compare at">
+            <Field label="Preco comparativo">
               <input
                 type="number"
                 min={0.01}
@@ -652,7 +668,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
                 value={form.compareAtPrice}
                 onChange={(e) => setField("compareAtPrice", e.target.value)}
                 className={inputClass}
-                placeholder="optional"
+                placeholder="opcional"
               />
             </Field>
           </div>
@@ -663,7 +679,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
                 checked={form.inStock}
                 onChange={(e) => setField("inStock", e.target.checked)}
               />
-              In stock
+              Em estoque
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -671,11 +687,11 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
                 checked={form.featured}
                 onChange={(e) => setField("featured", e.target.checked)}
               />
-              Featured
+              Destaque na Home
             </label>
           </div>
           {isCreate ? (
-            <Field label="Initial status">
+            <Field label="Status inicial">
               <select
                 value={form.status}
                 onChange={(e) =>
@@ -683,13 +699,13 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
                 }
                 className={inputClass}
               >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
+                <option value="draft">Rascunho</option>
+                <option value="published">Publicado</option>
+                <option value="archived">Arquivado</option>
               </select>
             </Field>
           ) : null}
-          <Field label="Max qty per order">
+          <Field label="Maximo por pedido">
             <input
               type="number"
               min={1}
@@ -701,15 +717,11 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
           </Field>
         </section>
 
-        <section className="space-y-4 rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold">Media & taxonomy</h2>
-          <p className="text-xs text-muted-foreground">
-            <strong>Upload & frame</strong> crops to product-card ratio (4:5).
-            Cover is the main card image; gallery lines are extra PDP shots.
-          </p>
+        <section className="space-y-4 rounded-lg border border-border/70 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold">Midia e organizacao</h2>
 
           <AdminImageField
-            label="Cover image (product card frame)"
+            label="Imagem principal"
             value={form.imageUrl}
             onChange={(url) => {
               setForm((prev) => {
@@ -731,7 +743,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
             aspect="product"
           />
 
-          <Field label="Image alt">
+          <Field label="Texto alternativo da imagem">
             <input
               value={form.imageAlt}
               onChange={(e) => setField("imageAlt", e.target.value)}
@@ -739,9 +751,19 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
             />
           </Field>
 
+          <Field label="Link do AliExpress (interno)">
+            <input
+              type="url"
+              value={form.supplierUrl}
+              onChange={(e) => setField("supplierUrl", e.target.value)}
+              className={inputClass}
+              placeholder="https://www.aliexpress.com/item/..."
+            />
+          </Field>
+
           <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Quick add to gallery (no crop)
+              Adicionar imagens a galeria
             </span>
             <label className="inline-flex cursor-pointer">
               <input
@@ -763,12 +785,12 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
                     : "hover:bg-muted",
                 )}
               >
-                {uploading ? "Uploading…" : "Add files to gallery"}
+                {uploading ? "Enviando..." : "Adicionar arquivos"}
               </span>
             </label>
           </div>
 
-          <Field label="Gallery URLs (one per line, order preserved)">
+          <Field label="URLs da galeria (uma por linha)">
             <textarea
               value={form.imagesText}
               onChange={(e) => setField("imagesText", e.target.value)}
@@ -777,11 +799,11 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               placeholder={"https://…/1.jpg\nhttps://…/2.jpg"}
             />
           </Field>
-          <Field label="Categories">
+          <Field label="Categorias">
             <div className="flex flex-wrap gap-2">
               {categories.length === 0 ? (
                 <span className="text-xs text-muted-foreground">
-                  No categories loaded
+                  Nenhuma categoria carregada
                 </span>
               ) : (
                 categories.map((c) => {
@@ -805,15 +827,15 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               )}
             </div>
           </Field>
-          <Field label="Category label (display)">
+          <Field label="Rotulo de categoria">
             <input
               value={form.categoryLabel}
               onChange={(e) => setField("categoryLabel", e.target.value)}
               className={inputClass}
-              placeholder="e.g. Recovery"
+              placeholder="ex.: Recuperacao"
             />
           </Field>
-          <Field label="Badges (comma-separated)">
+          <Field label="Selos (separados por virgula)">
             <input
               value={form.badgesText}
               onChange={(e) => setField("badgesText", e.target.value)}
@@ -821,7 +843,7 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               placeholder="bestseller, new, sale, limited"
             />
           </Field>
-          <Field label="Features (one per line)">
+          <Field label="Beneficios (um por linha)">
             <textarea
               value={form.featuresText}
               onChange={(e) => setField("featuresText", e.target.value)}
@@ -829,17 +851,17 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
               className={textareaClass}
             />
           </Field>
-          <Field label="Specs (label|value per line)">
+          <Field label="Especificacoes (rotulo|valor por linha)">
             <textarea
               value={form.specsText}
               onChange={(e) => setField("specsText", e.target.value)}
               rows={4}
               className={textareaClass}
-              placeholder={"Weight|1.2 kg\nPower|USB-C"}
+              placeholder={"Peso|1.2 kg\nEnergia|USB-C"}
             />
           </Field>
         </section>
-      </div>
+          </div>
 
       {productId ? (
         <ProductReviewsEditor
@@ -848,16 +870,18 @@ export function ProductFormView({ googleIdToken, productId }: Props) {
           googleIdToken={googleIdToken}
         />
       ) : null}
+        </div>
 
       <AdminLivePreview
-        title="Product card"
-        description="Same card used on home / category grids (compact)."
-        className="max-w-sm"
+        title="Previa do produto"
+        description="Referencia visual do card exibido na loja."
+        className="xl:sticky xl:top-24"
       >
-        <div className="mx-auto w-[200px]">
-          <ProductCard product={previewProduct} compact />
+        <div className="mx-auto w-full max-w-[280px]">
+          <ProductCard product={previewProduct} mediaMode="always" />
         </div>
       </AdminLivePreview>
+      </div>
     </form>
   );
 }

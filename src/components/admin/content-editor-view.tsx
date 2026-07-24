@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   AdminContentApiError,
@@ -14,7 +14,12 @@ import { AdminLivePreview } from "@/components/admin/admin-live-preview";
 import { HeroCarousel } from "@/components/home/hero-carousel";
 import { LifestyleCollections } from "@/components/home/lifestyle-collections";
 import { Button } from "@/components/ui/button";
-import type { HeroSlide, HomeContent, LifestyleTile } from "@/types/content";
+import type {
+  HeroSlide,
+  HomeContent,
+  LifestyleTile,
+  PromoSettings,
+} from "@/types/content";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,6 +31,23 @@ const inputClass =
 
 const textareaClass =
   "w-full rounded-xl border border-border bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30";
+
+const DEFAULT_PROMO_SETTINGS: PromoSettings = {
+  speedSeconds: 32,
+  color: "#3a7ca5",
+};
+
+function cleanPromoSpeed(value: number): number {
+  return Number.isFinite(value)
+    ? Math.min(120, Math.max(8, Math.round(value)))
+    : DEFAULT_PROMO_SETTINGS.speedSeconds;
+}
+
+function cleanPromoColor(value: string): string {
+  return /^#[0-9a-fA-F]{6}$/.test(value)
+    ? value
+    : DEFAULT_PROMO_SETTINGS.color;
+}
 
 function Field({
   label,
@@ -76,6 +98,10 @@ export function ContentEditorView({ googleIdToken }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [promoText, setPromoText] = useState("");
+  const [promoSpeed, setPromoSpeed] = useState(
+    DEFAULT_PROMO_SETTINGS.speedSeconds,
+  );
+  const [promoColor, setPromoColor] = useState(DEFAULT_PROMO_SETTINGS.color);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [lifestyle, setLifestyle] = useState<LifestyleTile[]>([]);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -87,6 +113,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
       await ensureAdminBackendSession({ googleIdToken });
       const data: HomeContent = await fetchAdminHomeContent();
       setPromoText(data.promoMessages.join("\n"));
+      setPromoSpeed(cleanPromoSpeed(data.promoSettings.speedSeconds));
+      setPromoColor(cleanPromoColor(data.promoSettings.color));
       setSlides(data.heroSlides.map((s) => ({ ...s })));
       setLifestyle(data.lifestyleCollections.map((t) => ({ ...t })));
       setUpdatedAt(data.updatedAt ?? null);
@@ -96,7 +124,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Failed to load content";
+        : "Falha ao carregar conteudo.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -104,7 +132,10 @@ export function ContentEditorView({ googleIdToken }: Props) {
   }, [googleIdToken]);
 
   useEffect(() => {
-    void load();
+    const id = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   const updateSlide = (index: number, patch: Partial<HeroSlide>) => {
@@ -129,7 +160,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
 
   const addSlide = () => {
     if (slides.length >= 8) {
-      setMessage("Maximum 8 hero slides.");
+      setMessage("Maximo de 8 slides no hero.");
       return;
     }
     setMessage(null);
@@ -141,21 +172,25 @@ export function ContentEditorView({ googleIdToken }: Props) {
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
+    const promoSettings = {
+      speedSeconds: cleanPromoSpeed(promoSpeed),
+      color: cleanPromoColor(promoColor),
+    };
 
     // Empty promo/hero/lifestyle is allowed. Present items must be complete.
     for (const s of slides) {
       if (!s.titleLine1.trim() || !s.titleLine2.trim()) {
-        setMessage("Each slide needs title lines.");
+        setMessage("Cada slide precisa das duas linhas de titulo.");
         return;
       }
       if (!s.imageUrl.trim()) {
-        setMessage("Each slide needs an image URL (upload via Media, paste /media/… or https).");
+        setMessage("Cada slide precisa de uma imagem.");
         return;
       }
     }
     for (const t of lifestyle) {
       if (!t.title.trim() || !t.href.trim() || !t.imageUrl.trim()) {
-        setMessage("Each lifestyle tile needs title, link, and image URL.");
+        setMessage("Cada bloco de colecao precisa de titulo, link e imagem.");
         return;
       }
     }
@@ -166,6 +201,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
       await ensureAdminBackendSession({ googleIdToken });
       const saved = await saveAdminHomeContent({
         promoMessages,
+        promoSettings,
         heroSlides: slides.map((s) => ({
           ...s,
           titleAccent: s.titleAccent?.trim() || undefined,
@@ -175,6 +211,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
         lifestyleCollections: lifestyle.map((t) => ({ ...t })),
       });
       setPromoText(saved.promoMessages.join("\n"));
+      setPromoSpeed(cleanPromoSpeed(saved.promoSettings.speedSeconds));
+      setPromoColor(cleanPromoColor(saved.promoSettings.color));
       setSlides(saved.heroSlides.map((s) => ({ ...s })));
       setLifestyle(saved.lifestyleCollections.map((t) => ({ ...t })));
       setUpdatedAt(saved.updatedAt ?? null);
@@ -182,10 +220,10 @@ export function ContentEditorView({ googleIdToken }: Props) {
       const rev = await revalidateHome();
       if (!rev.ok) {
         setMessage(
-          `Saved. Cache revalidate skipped: ${rev.error ?? "unknown"} (ISR ≤60s fallback).`,
+          `Salvo. A revalidacao falhou: ${rev.error ?? "erro desconhecido"}. A loja atualiza em ate 60s.`,
         );
       } else {
-        setMessage("Home content saved — storefront revalidated.");
+        setMessage("Conteudo da home salvo e loja revalidada.");
       }
     } catch (e) {
       const msg =
@@ -193,7 +231,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Save failed";
+            : "Falha ao salvar.";
       setMessage(msg);
     } finally {
       setSaving(false);
@@ -204,7 +242,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
     return (
       <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading home content…
+        Carregando conteudo da home...
       </div>
     );
   }
@@ -214,7 +252,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
       <div className="rounded-[1.25rem] border border-destructive/30 bg-destructive/5 p-6 text-sm">
         <p className="font-medium text-destructive">{error}</p>
         <Button type="button" variant="outline" className="mt-4" onClick={() => void load()}>
-          Retry
+          Tentar novamente
         </Button>
       </div>
     );
@@ -230,17 +268,20 @@ export function ContentEditorView({ googleIdToken }: Props) {
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
+  const promoPreviewStyle = {
+    "--promo-base": cleanPromoColor(promoColor),
+    "--promo-speed": `${cleanPromoSpeed(promoSpeed)}s`,
+  } as CSSProperties;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          Promo, hero, and lifestyle — with live storefront previews. Use{" "}
-          <strong>Upload & frame</strong> to control crop before save.
+          Edite a barra promocional, o hero e as colecoes da home.
           {updatedAt ? (
             <>
               {" "}
-              Last saved:{" "}
+              Ultimo salvamento:{" "}
               <time dateTime={updatedAt}>
                 {new Date(updatedAt).toLocaleString()}
               </time>
@@ -251,10 +292,10 @@ export function ContentEditorView({ googleIdToken }: Props) {
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving…
+              Salvando...
             </>
           ) : (
-            "Save & revalidate home"
+            "Salvar e atualizar loja"
           )}
         </Button>
       </div>
@@ -263,8 +304,8 @@ export function ContentEditorView({ googleIdToken }: Props) {
         <p
           className={cn(
             "rounded-xl border px-4 py-3 text-sm",
-            message.startsWith("Home content saved") ||
-              message.startsWith("Saved.")
+            message.startsWith("Conteudo da home salvo") ||
+              message.startsWith("Salvo.")
               ? "border-brand/25 bg-brand-soft/40 text-foreground"
               : "border-destructive/30 bg-destructive/5 text-destructive",
           )}
@@ -274,48 +315,92 @@ export function ContentEditorView({ googleIdToken }: Props) {
         </p>
       ) : null}
 
-      <div className="grid w-full min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start">
+      <div className="grid w-full min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(420px,520px)] xl:items-start">
       <div className="min-w-0 max-w-full space-y-8">
 
-      <section className="rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-lg border border-border/70 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="font-display text-lg font-semibold tracking-tight">
-          Promo ticker
+          Barra promocional
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          One message per line. Loops in the top bar site-wide. Max 20 lines, 200
-          chars each.
+          Uma mensagem por linha. Aparece no topo da loja.
         </p>
-        <Field label="Messages" className="mt-4">
+        <Field label="Mensagens" className="mt-4">
           <textarea
             value={promoText}
             onChange={(e) => setPromoText(e.target.value)}
             rows={8}
             className={cn(textareaClass, "font-mono text-[13px]")}
-            placeholder={"🎉 Launch offer…\n🚚 Free shipping $75+"}
+            placeholder={"Oferta de lancamento\nFrete gratis acima de $75"}
           />
         </Field>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+          <Field label="Cor base do degrade">
+            <div className="flex h-10 items-center gap-3 rounded-xl border border-border bg-white px-3 shadow-sm">
+              <input
+                type="color"
+                value={cleanPromoColor(promoColor)}
+                onChange={(e) => setPromoColor(cleanPromoColor(e.target.value))}
+                className="h-6 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+                aria-label="Cor base do degrade da barra promocional"
+              />
+              <input
+                value={promoColor}
+                onChange={(e) => setPromoColor(e.target.value)}
+                onBlur={(e) => setPromoColor(cleanPromoColor(e.target.value))}
+                className="min-w-0 flex-1 bg-transparent font-mono text-[13px] outline-none"
+                placeholder="#3a7ca5"
+              />
+            </div>
+          </Field>
+          <Field label={`Velocidade (${cleanPromoSpeed(promoSpeed)}s)`}>
+            <div className="flex h-10 items-center gap-2 rounded-xl border border-border bg-white px-3 shadow-sm">
+              <input
+                type="range"
+                min={8}
+                max={120}
+                step={1}
+                value={cleanPromoSpeed(promoSpeed)}
+                onChange={(e) => setPromoSpeed(Number(e.target.value))}
+                className="min-w-0 flex-1 accent-brand"
+                aria-label="Velocidade da barra promocional"
+              />
+              <input
+                type="number"
+                min={8}
+                max={120}
+                step={1}
+                value={cleanPromoSpeed(promoSpeed)}
+                onChange={(e) => setPromoSpeed(Number(e.target.value))}
+                onBlur={(e) => setPromoSpeed(cleanPromoSpeed(Number(e.target.value)))}
+                className="w-14 bg-transparent text-right text-sm font-semibold outline-none"
+                aria-label="Segundos por volta"
+              />
+            </div>
+          </Field>
+        </div>
       </section>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-display text-lg font-semibold tracking-tight">
-              Hero slides
+              Slides do hero
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Homepage carousel only. Upload images or paste URLs. Max 8 slides.
+              Carrossel principal da home. Maximo de 8 slides.
             </p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={addSlide}>
             <Plus className="mr-1.5 h-4 w-4" />
-            Add slide
+            Adicionar slide
           </Button>
         </div>
 
         {slides.map((slide, index) => (
           <div
             key={slide.id}
-            className="rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6"
+            className="rounded-lg border border-border/70 bg-white p-5 shadow-sm sm:p-6"
           >
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
               <p className="text-sm font-semibold">
@@ -332,7 +417,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   className="h-8 w-8"
                   disabled={index === 0}
                   onClick={() => moveSlide(index, -1)}
-                  aria-label="Move up"
+                  aria-label="Mover para cima"
                 >
                   <ChevronUp className="h-4 w-4" />
                 </Button>
@@ -343,7 +428,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   className="h-8 w-8"
                   disabled={index === slides.length - 1}
                   onClick={() => moveSlide(index, 1)}
-                  aria-label="Move down"
+                  aria-label="Mover para baixo"
                 >
                   <ChevronDown className="h-4 w-4" />
                 </Button>
@@ -353,7 +438,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   size="icon"
                   className="h-8 w-8 text-destructive hover:text-destructive"
                   onClick={() => removeSlide(index)}
-                  aria-label="Remove slide"
+                  aria-label="Remover slide"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -361,7 +446,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Title line 1">
+              <Field label="Titulo linha 1">
                 <input
                   className={inputClass}
                   value={slide.titleLine1}
@@ -370,7 +455,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Title line 2">
+              <Field label="Titulo linha 2">
                 <input
                   className={inputClass}
                   value={slide.titleLine2}
@@ -379,17 +464,17 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Accent on line 2 (optional)">
+              <Field label="Destaque na linha 2 (opcional)">
                 <input
                   className={inputClass}
                   value={slide.titleAccent ?? ""}
                   onChange={(e) =>
                     updateSlide(index, { titleAccent: e.target.value })
                   }
-                  placeholder="word at end of line 2"
+                  placeholder="palavra destacada"
                 />
               </Field>
-              <Field label="Image alt">
+              <Field label="Texto alternativo">
                 <input
                   className={inputClass}
                   value={slide.imageAlt}
@@ -398,7 +483,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Subtitle" className="sm:col-span-2">
+              <Field label="Subtitulo" className="sm:col-span-2">
                 <textarea
                   className={textareaClass}
                   rows={2}
@@ -410,14 +495,14 @@ export function ContentEditorView({ googleIdToken }: Props) {
               </Field>
               <AdminImageField
                 className="sm:col-span-2"
-                label="Hero image"
+                label="Imagem do hero"
                 value={slide.imageUrl}
                 onChange={(url) => updateSlide(index, { imageUrl: url })}
                 googleIdToken={googleIdToken}
                 aspect="hero"
-                help="Upload & frame to 16:9 (matches home hero). Adjust frame anytime."
+                help="Envie uma imagem ampla para o hero ou cole uma URL."
               />
-              <Field label="CTA label">
+              <Field label="Texto do botao principal">
                 <input
                   className={inputClass}
                   value={slide.ctaLabel}
@@ -426,7 +511,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="CTA href">
+              <Field label="Link do botao principal">
                 <input
                   className={cn(inputClass, "font-mono text-[13px]")}
                   value={slide.ctaHref}
@@ -435,7 +520,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Secondary label (optional)">
+              <Field label="Texto do botao secundario (opcional)">
                 <input
                   className={inputClass}
                   value={slide.secondaryLabel ?? ""}
@@ -444,7 +529,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Secondary href (optional)">
+              <Field label="Link do botao secundario (opcional)">
                 <input
                   className={cn(inputClass, "font-mono text-[13px]")}
                   value={slide.secondaryHref ?? ""}
@@ -462,11 +547,10 @@ export function ContentEditorView({ googleIdToken }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-display text-lg font-semibold tracking-tight">
-              Lifestyle tiles
+              Colecoes da home
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Home “Made for real days” mosaic. Empty = section hidden. Max 8.
-              Upload images directly or paste a URL.
+              Mosaico visual abaixo do hero. Vazio = secao escondida.
             </p>
           </div>
           <Button
@@ -475,20 +559,20 @@ export function ContentEditorView({ googleIdToken }: Props) {
             size="sm"
             onClick={() => {
               if (lifestyle.length >= 8) {
-                setMessage("Maximum 8 lifestyle tiles.");
+                setMessage("Maximo de 8 colecoes.");
                 return;
               }
               setLifestyle((prev) => [...prev, emptyLife(prev.length + 1)]);
             }}
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Add tile
+            Adicionar bloco
           </Button>
         </div>
 
         {lifestyle.length === 0 ? (
           <p className="rounded-[1.25rem] border border-dashed border-border/80 bg-white/60 px-4 py-6 text-center text-sm text-muted-foreground">
-            No lifestyle tiles — storefront hides this block until you add some.
+            Nenhuma colecao cadastrada. A loja esconde esta secao enquanto estiver vazia.
           </p>
         ) : null}
 
@@ -498,7 +582,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
             className="rounded-[1.35rem] border border-border/70 bg-white p-5 shadow-sm sm:p-6"
           >
             <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
-              <p className="text-sm font-semibold">Tile {index + 1}</p>
+              <p className="text-sm font-semibold">Bloco {index + 1}</p>
               <Button
                 type="button"
                 variant="ghost"
@@ -507,13 +591,13 @@ export function ContentEditorView({ googleIdToken }: Props) {
                 onClick={() =>
                   setLifestyle((prev) => prev.filter((_, i) => i !== index))
                 }
-                aria-label="Remove tile"
+                aria-label="Remover bloco"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Field label="Title">
+              <Field label="Titulo">
                 <input
                   className={inputClass}
                   value={tile.title}
@@ -526,7 +610,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                   }
                 />
               </Field>
-              <Field label="Link href">
+              <Field label="Link">
                 <input
                   className={cn(inputClass, "font-mono text-[13px]")}
                   value={tile.href}
@@ -542,7 +626,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
               </Field>
               <AdminImageField
                 className="sm:col-span-2"
-                label="Tile image"
+                label="Imagem do bloco"
                 value={tile.imageUrl}
                 onChange={(url) =>
                   setLifestyle((prev) =>
@@ -554,7 +638,7 @@ export function ContentEditorView({ googleIdToken }: Props) {
                 googleIdToken={googleIdToken}
                 aspect="square"
               />
-              <Field label="Layout span">
+              <Field label="Formato">
                 <select
                   className={inputClass}
                   value={tile.span}
@@ -571,9 +655,9 @@ export function ContentEditorView({ googleIdToken }: Props) {
                     )
                   }
                 >
-                  <option value="tall">tall</option>
-                  <option value="wide">wide</option>
-                  <option value="square">square</option>
+                  <option value="tall">Alto</option>
+                  <option value="wide">Largo</option>
+                  <option value="square">Quadrado</option>
                 </select>
               </Field>
             </div>
@@ -583,22 +667,25 @@ export function ContentEditorView({ googleIdToken }: Props) {
 
       <div className="flex justify-end pb-4">
         <Button type="button" onClick={() => void onSave()} disabled={saving}>
-          {saving ? "Saving…" : "Save & revalidate home"}
+          {saving ? "Salvando..." : "Salvar e atualizar loja"}
         </Button>
       </div>
       </div>
 
-      {/* Live previews — full width below editor on small screens; side rail on lg+ */}
+      {/* Previews */}
       <div className="min-w-0 max-w-full space-y-4 lg:sticky lg:top-24 lg:self-start">
         <AdminLivePreview
-          title="Promo ticker"
-          description="Same marquee strip as the top of the store."
+          title="Barra promocional"
+          description="Mesmo componente exibido no topo da loja."
         >
           {previewPromos.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No promo lines yet.</p>
+            <p className="text-xs text-muted-foreground">Nenhuma mensagem ainda.</p>
           ) : (
-            <div className="promo-bar relative h-9 overflow-hidden rounded-lg text-white">
-              <div className="flex h-full w-max items-center gap-8 whitespace-nowrap px-3 text-[11px] font-medium">
+            <div
+              className="promo-bar relative h-9 overflow-hidden rounded-lg text-white"
+              style={promoPreviewStyle}
+            >
+              <div className="animate-marquee flex h-full w-max items-center gap-8 whitespace-nowrap px-3 text-[11px] font-medium">
                 {[...previewPromos, ...previewPromos].map((t, i) => (
                   <span key={`${t}-${i}`} className="inline-flex items-center gap-8">
                     {t}
@@ -611,12 +698,12 @@ export function ContentEditorView({ googleIdToken }: Props) {
         </AdminLivePreview>
 
         <AdminLivePreview
-          title="Hero carousel"
-          description="Exact home hero component (softer zoom on storefront)."
+          title="Hero"
+          description="Preview do componente principal da home."
         >
           {previewSlides.length === 0 ? (
             <p className="rounded-xl bg-white/80 px-3 py-8 text-center text-xs text-muted-foreground">
-              Add a complete slide (titles + framed image) to preview.
+              Adicione um slide completo para visualizar.
             </p>
           ) : (
             <div className="max-h-[420px] overflow-auto overflow-x-hidden rounded-xl bg-white shadow-sm ring-1 ring-border/50 [&_section]:pb-0 [&_h1]:text-2xl! sm:[&_h1]:text-3xl!">
@@ -626,11 +713,11 @@ export function ContentEditorView({ googleIdToken }: Props) {
         </AdminLivePreview>
 
         <AdminLivePreview
-          title="Lifestyle mosaic"
-          description="Home lifestyle block — hidden on site when empty."
+          title="Colecoes"
+          description="Bloco visual da home. Fica oculto quando esta vazio."
         >
           {previewLifestyle.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No lifestyle tiles yet.</p>
+            <p className="text-xs text-muted-foreground">Nenhum bloco ainda.</p>
           ) : (
             <div className="overflow-hidden rounded-xl bg-white ring-1 ring-border/50">
               <LifestyleCollections tiles={previewLifestyle} />

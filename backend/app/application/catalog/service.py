@@ -7,7 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.schemas.catalog import CatalogPageOut, CategoryOut
-from app.api.v1.schemas.product import ProductDetailOut, ProductOut, SearchResponseOut
+from app.api.v1.schemas.product import (
+    ProductCardOut,
+    ProductDetailOut,
+    ProductOut,
+    SearchResponseOut,
+)
 from app.application.catalog.filter_sort import (
     CatalogSort,
     StockFilter,
@@ -16,7 +21,11 @@ from app.application.catalog.filter_sort import (
     score_search,
     sort_products,
 )
-from app.application.catalog.mappers import category_to_out, product_to_out
+from app.application.catalog.mappers import (
+    category_to_out,
+    product_to_card_out,
+    product_to_out,
+)
 from app.domain.product_rules import ProductStatus
 from app.infrastructure.db.models import Category, Product, product_categories
 
@@ -36,6 +45,11 @@ _PRODUCT_LOAD = (
     selectinload(Product.categories),
     selectinload(Product.images),
     selectinload(Product.specs),
+)
+
+_PRODUCT_CARD_LOAD = (
+    selectinload(Product.categories),
+    selectinload(Product.images),
 )
 
 
@@ -102,6 +116,31 @@ async def get_categories(session: AsyncSession) -> list[CategoryOut]:
     cats = await _load_all_categories(session)
     counts = await _product_counts_by_category(session)
     return [category_to_out(c, counts.get(c.slug, 0)) for c in cats]
+
+
+async def get_home_products(
+    session: AsyncSession,
+    *,
+    limit: int = 8,
+) -> list[ProductCardOut]:
+    """Small, card-only home shelf. Avoids fetching PDP copy and specs."""
+    safe_limit = max(1, min(limit, 12))
+    result = await session.execute(
+        select(Product)
+        .where(Product.status == _PUBLISHED)
+        .options(*_PRODUCT_CARD_LOAD)
+        .order_by(Product.id)
+    )
+    products = list(result.scalars().unique().all())
+    products.sort(
+        key=lambda product: (
+            not bool(product.featured),
+            product.compare_at_price is None,
+            -float(product.rating),
+            -int(product.review_count),
+        )
+    )
+    return [product_to_card_out(product) for product in products[:safe_limit]]
 
 
 async def get_category_by_slug(session: AsyncSession, slug: str) -> CategoryOut:

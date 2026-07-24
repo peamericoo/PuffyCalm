@@ -5,7 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { OrdersListView } from "@/components/admin/orders-list-view";
 
 export const metadata: Metadata = {
-  title: "Orders · Admin",
+  title: "Pedidos · Admin",
   robots: { index: false, follow: false },
 };
 
@@ -28,11 +28,11 @@ export default async function AdminOrdersPage() {
   return (
     <div className="min-h-full">
       <AdminPageHeader
-        title="Orders"
-        description="Live data from the API — no invented metrics. Filter by status, open a row for fulfillment."
+        title="Pedidos"
+        description="Acompanhe vendas, preparo e entrega."
         activePath="/admin/orders"
       />
-      <div className="mx-auto max-w-6xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <OrdersListView googleIdToken={session.googleIdToken} />
       </div>
     </div>

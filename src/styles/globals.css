@@ -538,18 +538,93 @@ body {
 .shop-now-grid .shop-now-grid__item {
   opacity: 0;
   transform: translate3d(0, 26px, 0);
-  filter: blur(5px);
-  will-change: opacity, transform, filter;
+  will-change: opacity, transform;
   transition:
-    opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 1s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .shop-now-grid[data-reveal="in"] .shop-now-grid__item {
   opacity: 1;
   transform: none;
-  filter: blur(0);
+}
+
+.home-section-heading {
+  position: relative;
+}
+
+.home-section-kicker {
+  margin-bottom: 0.45rem;
+  color: var(--brand-deep);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-section-title {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.55rem;
+  color: var(--foreground);
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.7rem, 2.1vw, 2.35rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.home-section-title::after {
+  content: "";
+  display: inline-block;
+  width: clamp(2.5rem, 5vw, 4.8rem);
+  height: 2px;
+  margin-bottom: 0.28em;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgb(20 116 183 / 0.78),
+    rgb(230 113 83 / 0.72)
+  );
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-section-heading:hover .home-section-title::after {
+  transform: scaleX(1.14);
+}
+
+.home-section-note {
+  margin-top: 0.65rem;
+  max-width: 31rem;
+  color: rgb(77 103 126 / 0.86);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+@keyframes home-row-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.home-product-rails {
+  --home-row-fade: 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-product-row {
+  animation: home-row-fade var(--home-row-fade) both;
+  will-change: opacity;
+}
+
+.home-product-row--bottom {
+  animation-delay: 70ms;
 }
 
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
@@ -559,6 +634,11 @@ body {
     filter: none;
     will-change: auto;
     transition: none;
+  }
+
+  .home-product-row {
+    animation: none;
+    will-change: auto;
   }
 }
 
@@ -790,33 +870,10 @@ body {
   }
 }
 
-/* Subtle film grain — premium feel, almost invisible */
-.app-grain {
-  position: relative;
-  overflow-x: clip;
-  max-width: 100%;
-  width: 100%;
-}
-
-.app-grain::before {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  opacity: 0.035;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
 /* ── Mobile performance: cut continuous / scroll motion, keep icon taps ── */
 @media (max-width: 767px) {
   body {
     background-attachment: scroll;
-  }
-
-  .app-grain::before {
-    display: none; /* film grain is pure cost on mobile GPU */
   }
 
   .hero-kenburns,
@@ -891,14 +948,53 @@ body {
   font-family: var(--font-display), Georgia, "Times New Roman", serif;
 }
 
+/* Admin is a wide operational workspace, distinct from the storefront's soft cards. */
+.admin-workspace {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgb(244 249 252 / 0.98) 0, rgb(239 246 250 / 0.92) 18rem, #f5f8fa 42rem),
+    #f5f8fa;
+  color: var(--foreground);
+}
+
+.admin-page-header {
+  background: rgb(250 253 255 / 0.94);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+.admin-workspace section.rounded-lg,
+.admin-workspace aside.rounded-lg,
+.admin-workspace details.rounded-lg {
+  border-color: rgb(211 225 234 / 0.9);
+  box-shadow: 0 12px 30px -28px rgb(23 53 74 / 0.28);
+}
+
+.admin-workspace input,
+.admin-workspace textarea,
+.admin-workspace select {
+  border-color: rgb(201 218 229 / 0.92) !important;
+  box-shadow: 0 1px 1px rgb(18 49 69 / 0.03);
+}
+
 /*
  * Clears promo bar + floating nav on internal pages.
- * Padding only — never set background/box-shadow here. The body ambient
- * gradient must remain continuous (Home is the visual reference).
+ * Internal pages need their stage painted from the top padding down; otherwise
+ * the nav gap uses the body wash and creates a visible horizontal break before
+ * Product / Category / Wishlist / Checkout content starts.
  */
 .page-offset {
   padding-top: calc(var(--promo-h) + var(--nav-h) + 1.35rem);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(255 255 255 / 0.55), transparent 55%),
+    linear-gradient(180deg, #dceef8 0%, #e8f4fa 35%, #e3f1f9 100%);
+  box-shadow: none;
+}
+
+.page-offset > .shop-stage {
   background: transparent;
+  box-shadow: none;
 }
 
 .product-plate {
@@ -986,7 +1082,7 @@ body {
 }
 
 .animate-marquee {
-  animation: marquee 32s linear infinite;
+  animation: marquee var(--promo-speed, 32s) linear infinite;
 }
 
 .animate-marquee:hover {
@@ -1052,6 +1148,10 @@ body {
   padding-left: max(var(--shell-gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--shell-gutter), env(safe-area-inset-right, 0px));
   box-sizing: border-box;
+  view-transition-name: none;
+  isolation: isolate;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @media (min-width: 640px) {
@@ -1125,7 +1225,74 @@ body {
 }
 
 .promo-bar {
+  --promo-base: #3a7ca5;
+  --promo-speed: 32s;
   background: linear-gradient(90deg, #2f6a8c 0%, #3a7ca5 40%, #5a9fc4 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--promo-base) 78%, #0f2433) 0%,
+    var(--promo-base) 44%,
+    color-mix(in oklab, var(--promo-base) 68%, white) 100%
+  );
+  view-transition-name: none;
+  isolation: isolate;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.shop-feel-mobile-scroll {
+  scrollbar-width: none;
+  contain: layout paint;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shop-feel-mobile-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .shop-feel-mobile-scroll {
+    margin-inline: calc(var(--shell-gutter) * -1);
+    padding-inline: var(--shell-gutter);
+  }
+
+  .shop-feel-rail > a {
+    flex: 0 0 calc(100vw - (var(--shell-gutter) * 2));
+    min-height: 136px;
+  }
+
+  .shop-feel-rail > a > span:last-child {
+    min-height: 136px;
+    padding: 0.875rem;
+  }
+
+  .shop-feel-rail > a > span:last-child span span:first-child {
+    font-size: 1.35rem;
+  }
+
+  .shop-feel-rail > a > span:last-child span span:nth-child(2) {
+    margin-top: 0.375rem;
+    font-size: 11px;
+  }
+
+  .shop-feel-rail > a > span:last-child span span:nth-child(3) {
+    margin-top: 0.75rem;
+    font-size: 11px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .shop-feel-rail > a {
+    flex-basis: min(44vw, 24rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .shop-feel-rail > a {
+    flex: initial;
+  }
 }
 
 .stagger > * {

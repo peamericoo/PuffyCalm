@@ -43,6 +43,26 @@ class ProductOut(CamelModel):
     category_label: str | None = Field(default=None, serialization_alias="categoryLabel")
 
 
+class ProductCardOut(CamelModel):
+    """Lean storefront card contract; detail-only copy never reaches the home rail."""
+
+    id: str
+    slug: str
+    name: str
+    price: float
+    compare_at_price: float | None = Field(default=None, serialization_alias="compareAtPrice")
+    currency: Literal["USD"] = "USD"
+    category_slugs: list[str] = Field(serialization_alias="categorySlugs")
+    image_url: str = Field(serialization_alias="imageUrl")
+    images: list[str]
+    image_alt: str = Field(serialization_alias="imageAlt")
+    rating: float
+    review_count: int = Field(serialization_alias="reviewCount")
+    in_stock: bool = Field(serialization_alias="inStock")
+    featured: bool | None = None
+    category_label: str | None = Field(default=None, serialization_alias="categoryLabel")
+
+
 class ProductDetailOut(CamelModel):
     """PDP payload: product + optional related list."""
 
