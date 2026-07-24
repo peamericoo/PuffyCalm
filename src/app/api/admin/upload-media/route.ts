@@ -1,104 +1,122 @@
 /**
  * Same-origin proxy for admin image uploads.
  *
- * WHY: The browser blocks cross-origin cookie transmission (SameSite=Lax),
- * so a direct browser → FastAPI POST with credentials:"include" always 401s
- * once the in-memory Google ID token expires.
+ * WHY THIS EXISTS:
+ * The browser cannot send FastAPI HttpOnly cookies cross-origin (SameSite=Lax
+ * blocks web-*.railway.app → api-*.railway.app), so a direct browser fetch
+ * always fails with 401 / "Failed to fetch" after ~1 h when the Google ID
+ * token expires.
  *
- * HOW: The browser posts multipart to THIS Next.js route (same-origin, no CORS).
- * The server reads the Auth.js session, exchanges the Google ID token for a
- * FastAPI Bearer token server-to-server (no CORS barrier), then forwards the
- * multipart body to FastAPI with Authorization: Bearer <token>.
+ * HOW IT WORKS:
+ * 1. Browser POSTs multipart to /api/admin/upload-media (same-origin, no CORS).
+ * 2. This handler validates the Auth.js session server-side (no cookie issues).
+ * 3. It forwards the raw multipart to FastAPI using:
+ *    - URL: Railway internal network (http://api.railway.internal) in production,
+ *      or NEXT_PUBLIC_API_URL on dev — resolved from API_INTERNAL_URL env var.
+ *    - Auth: X-Internal-Upload-Key shared secret (INTERNAL_UPLOAD_KEY env var).
+ *      No Google token, no JWT, no expiry, no CORS.
+ *
+ * NEVER returns 401 to the browser (would trigger middleware redirect to login).
+ * Auth failures are returned as 403 so the admin page shows an error in-place.
  */
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getApiBaseUrl } from "@/lib/api/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Exchange Google ID token → FastAPI access token (server-side, no CORS). */
-async function getBackendAccessToken(googleIdToken: string): Promise<string> {
-  const base = getApiBaseUrl();
-  const res = await fetch(`${base}/api/v1/auth/google-exchange`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ idToken: googleIdToken }),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Backend auth exchange failed (${res.status}): ${text}`);
-  }
-  const data = (await res.json()) as Record<string, unknown>;
-  const token =
-    (data.accessToken as string | undefined) ??
-    (data.access_token as string | undefined) ??
-    "";
-  if (!token) throw new Error("Backend exchange returned no access token");
-  return token;
+/**
+ * Resolve the internal API base URL.
+ * - In production Railway: use http://api.railway.internal (private network, no TLS overhead, no public egress)
+ * - Locally / fallback: use the public API URL from env
+ */
+function getInternalApiBase(): string {
+  // Explicit internal URL override (e.g. set API_INTERNAL_URL=http://api.railway.internal on web service)
+  const explicit = process.env.API_INTERNAL_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+
+  // Fallback: use NEXT_PUBLIC_API_URL (works locally and as a safe fallback)
+  const pub = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (pub) return pub.replace(/\/$/, "");
+
+  return "http://localhost:8080";
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Verify Auth.js session server-side (no CORS, no cookie issue)
+  // 1. Validate Auth.js session server-side — no cookies, no CORS, always works.
   const session = await auth();
   const role = session?.user?.role;
-  if (!session?.user || (role !== "admin" && role !== "staff")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
-  // 2. Get a valid FastAPI Bearer token via server-to-server exchange
-  const googleIdToken = session.googleIdToken?.trim() ?? "";
-  if (!googleIdToken) {
+  // Return 403 (not 401) so Next.js middleware does NOT redirect to /login.
+  if (!session?.user || (role !== "admin" && role !== "staff")) {
     return NextResponse.json(
-      {
-        error:
-          "No Google ID token in session — sign out and sign in again to refresh.",
-      },
-      { status: 401 },
+      { detail: { message: "Admin session required", code: "unauthorized" } },
+      { status: 403 },
     );
   }
 
-  let accessToken: string;
-  try {
-    accessToken = await getBackendAccessToken(googleIdToken);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Backend auth failed";
-    return NextResponse.json({ error: msg }, { status: 502 });
-  }
-
-  // 3. Forward the raw multipart body to FastAPI
-  //    We must NOT re-parse the multipart — just pipe the raw bytes + boundary.
+  // 2. Validate content-type before consuming the body.
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.startsWith("multipart/form-data")) {
     return NextResponse.json(
-      { error: "Expected multipart/form-data" },
+      { detail: { message: "Expected multipart/form-data", code: "bad_request" } },
       { status: 400 },
     );
   }
 
-  const base = getApiBaseUrl();
-  const body = await request.arrayBuffer();
+  // 3. Get shared secret — must be configured on both web + api Railway services.
+  const internalKey = process.env.INTERNAL_UPLOAD_KEY?.trim() ?? "";
+  if (!internalKey) {
+    return NextResponse.json(
+      {
+        detail: {
+          message:
+            "Upload proxy not configured — INTERNAL_UPLOAD_KEY missing on web service.",
+          code: "not_configured",
+        },
+      },
+      { status: 503 },
+    );
+  }
+
+  // 4. Read body ONCE (streams can only be consumed once).
+  let body: ArrayBuffer;
+  try {
+    body = await request.arrayBuffer();
+  } catch {
+    return NextResponse.json(
+      { detail: { message: "Failed to read request body", code: "body_error" } },
+      { status: 400 },
+    );
+  }
+
+  // 5. Forward raw multipart to FastAPI internal endpoint.
+  const base = getInternalApiBase();
+  const targetUrl = `${base}/api/v1/admin/media/internal`;
 
   let apiRes: Response;
   try {
-    apiRes = await fetch(`${base}/api/v1/admin/media`, {
+    apiRes = await fetch(targetUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": contentType, // preserve boundary
+        "Content-Type": contentType, // MUST preserve multipart boundary
+        "X-Internal-Upload-Key": internalKey,
       },
       body,
+      // Explicit timeout via AbortSignal (Node 18+)
+      signal: AbortSignal.timeout(30_000),
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Network error";
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[upload-media] fetch to API failed:", msg, "url:", targetUrl);
     return NextResponse.json(
-      { error: `Failed to reach API: ${msg}` },
+      { detail: { message: `API unreachable: ${msg}`, code: "api_unreachable" } },
       { status: 502 },
     );
   }
 
-  // 4. Return FastAPI's JSON response (success or error) as-is
+  // 6. Pipe FastAPI's response back as-is.
   const responseText = await apiRes.text();
   return new NextResponse(responseText, {
     status: apiRes.status,

@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+import hmac
+import os
+
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import RequireAdmin, RequireStaff, db_session
@@ -575,6 +578,80 @@ async def admin_upload_media(
     Optional ``productId`` appends a ``product_images`` row and may set cover.
     """
     _ = user
+    raw = await file.read()
+    try:
+        result = await upload_media(
+            session,
+            data=raw,
+            declared_content_type=file.content_type,
+            product_id=product_id,
+            set_cover=set_cover,
+        )
+    except MediaValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    except MediaNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    except MediaServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"message": exc.message, "code": exc.code},
+        ) from exc
+    return AdminMediaUploadOut(
+        key=result.key,
+        url=result.url,
+        content_type=result.content_type,
+        size_bytes=result.size_bytes,
+        product_id=result.product_id,
+        sort_order=result.sort_order,
+        set_cover=result.set_cover,
+    )
+
+
+@router.post(
+    "/media/internal",
+    response_model=AdminMediaUploadOut,
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False,  # hide from public docs
+)
+async def admin_upload_media_internal(
+    session: Annotated[AsyncSession, Depends(db_session)],
+    file: Annotated[UploadFile, File(description="Image file (jpeg/png/webp/gif)")],
+    x_internal_upload_key: Annotated[str | None, Header()] = None,
+    product_id: Annotated[
+        str | None,
+        Form(alias="productId", description="Optional product id to append gallery"),
+    ] = None,
+    set_cover: Annotated[
+        bool,
+        Form(alias="setCover", description="Set as product cover image_url"),
+    ] = False,
+) -> AdminMediaUploadOut:
+    """
+    Internal-only multipart upload called by the Next.js server proxy.
+
+    Authenticated via the ``X-Internal-Upload-Key`` header (shared secret
+    between the web and api Railway services). No JWT cookie required —
+    the Next.js server validates the admin Auth.js session before forwarding.
+    """
+    expected = os.environ.get("INTERNAL_UPLOAD_KEY", "").strip()
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"message": "Internal upload not configured", "code": "not_configured"},
+        )
+    provided = (x_internal_upload_key or "").strip()
+    if not provided or not hmac.compare_digest(provided, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Invalid internal key", "code": "invalid_key"},
+        )
+
     raw = await file.read()
     try:
         result = await upload_media(
